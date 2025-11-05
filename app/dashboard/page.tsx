@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
 import { links, pastes } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { LinksList } from '@/components/dashboard/links-list';
 import { PastesList } from '@/components/dashboard/pastes-list';
 
@@ -19,13 +19,13 @@ export default async function DashboardPage() {
   // Lade Links des Benutzers
   const userLinks = await db.query.links.findMany({
     where: eq(links.userId, userId),
-    orderBy: (links, { desc }) => [desc(links.createdAt)],
+    orderBy: [desc(links.createdAt)],
   });
 
   // Lade Pastes des Benutzers
   const userPastes = await db.query.pastes.findMany({
     where: eq(pastes.userId, userId),
-    orderBy: (pastes, { desc }) => [desc(pastes.createdAt)],
+    orderBy: [desc(pastes.createdAt)],
   });
 
   return (
