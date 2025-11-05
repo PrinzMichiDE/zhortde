@@ -9,11 +9,11 @@ export function Header() {
   const { data: session, status } = useSession();
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-100 sticky top-0 z-50">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/" className="text-2xl font-bold text-indigo-600">
+            <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:from-indigo-700 hover:to-purple-700 transition-all">
               Zhort
             </Link>
             <div className="hidden md:flex space-x-4">
@@ -28,6 +28,12 @@ export function Header() {
                 className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
               >
                 Paste
+              </Link>
+              <Link
+                href="/api"
+                className="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                API
               </Link>
               {session && (
                 <Link
@@ -82,7 +88,7 @@ export function Header() {
                 </Link>
                 <Link
                   href="/register"
-                  className="bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded-md text-sm font-medium"
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 px-4 py-2 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200"
                 >
                   Registrieren
                 </Link>

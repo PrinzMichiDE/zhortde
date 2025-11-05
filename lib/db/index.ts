@@ -1,11 +1,15 @@
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import Database from 'better-sqlite3';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
 import * as schema from './schema';
-import { join } from 'path';
 
-// Verwende einen persistenten SQLite-Speicherort
-const dbPath = process.env.DATABASE_URL || join(process.cwd(), 'zhort.db');
-const sqlite = new Database(dbPath);
+// PostgreSQL-Verbindung
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
 
-export const db = drizzle(sqlite, { schema });
+const client = postgres(connectionString, {
+  max: 10,
+  idle_timeout: 20,
+  connect_timeout: 10,
+});
+
+export const db = drizzle(client, { schema });
 
