@@ -1,0 +1,135 @@
+-- ========================================
+-- ZHORT - Complete Database Schema
+-- ========================================
+-- Run this script to create ALL tables at once
+-- Safe to run multiple times (uses IF NOT EXISTS)
+
+-- 1. STATS TABLE
+CREATE TABLE IF NOT EXISTS "stats" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"key" text NOT NULL,
+	"value" integer NOT NULL,
+	CONSTRAINT "stats_key_unique" UNIQUE("key")
+);
+
+-- 2. USERS TABLE
+CREATE TABLE IF NOT EXISTS "users" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"password_hash" text NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
+
+-- 3. LINKS TABLE
+CREATE TABLE IF NOT EXISTS "links" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"short_code" text NOT NULL,
+	"long_url" text NOT NULL,
+	"user_id" integer,
+	"is_public" boolean DEFAULT true NOT NULL,
+	"hits" integer DEFAULT 0 NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "links_short_code_unique" UNIQUE("short_code")
+);
+
+-- 4. PASTES TABLE
+CREATE TABLE IF NOT EXISTS "pastes" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"slug" text NOT NULL,
+	"content" text NOT NULL,
+	"user_id" integer,
+	"syntax_highlighting_language" text,
+	"is_public" boolean DEFAULT true NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "pastes_slug_unique" UNIQUE("slug")
+);
+
+-- 5. BLOCKED DOMAINS TABLE (for blocklist)
+CREATE TABLE IF NOT EXISTS "blocked_domains" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"domain" text NOT NULL,
+	"last_updated" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "blocked_domains_domain_unique" UNIQUE("domain")
+);
+
+-- ========================================
+-- INDEXES (for performance)
+-- ========================================
+
+-- Index for fast domain lookups in blocklist
+CREATE INDEX IF NOT EXISTS "blocked_domains_domain_idx" 
+ON "blocked_domains" ("domain");
+
+-- ========================================
+-- FOREIGN KEYS
+-- ========================================
+
+-- Links foreign key to users
+ALTER TABLE "links" 
+DROP CONSTRAINT IF EXISTS "links_user_id_users_id_fk";
+
+ALTER TABLE "links" 
+ADD CONSTRAINT "links_user_id_users_id_fk" 
+FOREIGN KEY ("user_id") 
+REFERENCES "public"."users"("id") 
+ON DELETE cascade 
+ON UPDATE no action;
+
+-- Pastes foreign key to users
+ALTER TABLE "pastes" 
+DROP CONSTRAINT IF EXISTS "pastes_user_id_users_id_fk";
+
+ALTER TABLE "pastes" 
+ADD CONSTRAINT "pastes_user_id_users_id_fk" 
+FOREIGN KEY ("user_id") 
+REFERENCES "public"."users"("id") 
+ON DELETE cascade 
+ON UPDATE no action;
+
+-- ========================================
+-- INITIAL DATA
+-- ========================================
+
+-- Initialize stats counters
+INSERT INTO "stats" ("key", "value") 
+VALUES 
+  ('visitors', 126819),
+  ('links', 126819)
+ON CONFLICT ("key") DO NOTHING;
+
+-- ========================================
+-- VERIFICATION
+-- ========================================
+
+-- Success message
+DO $$
+DECLARE
+  stats_count integer;
+  users_count integer;
+  links_count integer;
+  pastes_count integer;
+  blocked_count integer;
+BEGIN
+  SELECT COUNT(*) INTO stats_count FROM stats;
+  SELECT COUNT(*) INTO users_count FROM users;
+  SELECT COUNT(*) INTO links_count FROM links;
+  SELECT COUNT(*) INTO pastes_count FROM pastes;
+  SELECT COUNT(*) INTO blocked_count FROM blocked_domains;
+  
+  RAISE NOTICE '========================================';
+  RAISE NOTICE '✅ All tables created successfully!';
+  RAISE NOTICE '========================================';
+  RAISE NOTICE 'stats: % rows', stats_count;
+  RAISE NOTICE 'users: % rows', users_count;
+  RAISE NOTICE 'links: % rows', links_count;
+  RAISE NOTICE 'pastes: % rows', pastes_count;
+  RAISE NOTICE 'blocked_domains: % rows', blocked_count;
+  RAISE NOTICE '========================================';
+  RAISE NOTICE 'Next steps:';
+  RAISE NOTICE '1. Restart your application';
+  RAISE NOTICE '2. Blocklist will auto-load on first request';
+  RAISE NOTICE '3. Try creating a link or paste!';
+  RAISE NOTICE '========================================';
+END $$;
+

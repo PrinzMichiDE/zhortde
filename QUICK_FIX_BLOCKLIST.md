@@ -1,33 +1,48 @@
-# ⚡ Quick Fix: Blocklist Tabelle fehlt
+# ⚡ Quick Fix: Datenbank-Tabellen fehlen
 
-## Problem
+## Probleme
 
 ```
 relation "blocked_domains" does not exist
+relation "pastes" does not exist  
+relation "links" does not exist
+relation "users" does not exist
 ```
 
-Die `blocked_domains` Tabelle wurde noch nicht in der Datenbank erstellt.
+Die Datenbank-Tabellen wurden noch nicht erstellt.
 
 ---
 
 ## ✅ Lösung (2 Minuten)
 
-### Option A: Via SQL Query (Einfachste Methode)
+### Option A: Alle Tabellen auf einmal (Empfohlen)
 
-Führen Sie diese SQL-Befehle in Ihrer PostgreSQL-Datenbank aus:
+Verwenden Sie das komplette Schema-Script:
 
-```sql
--- Create blocked_domains table
-CREATE TABLE IF NOT EXISTS "blocked_domains" (
-	"id" serial PRIMARY KEY NOT NULL,
-	"domain" text NOT NULL,
-	"last_updated" timestamp DEFAULT now() NOT NULL,
-	CONSTRAINT "blocked_domains_domain_unique" UNIQUE("domain")
-);
+**Via Vercel Postgres Query:**
+1. Öffnen Sie die Datei `scripts/create-all-tables.sql` in Ihrem Editor
+2. Kopieren Sie den **gesamten Inhalt**
+3. Gehen Sie zu **Vercel Dashboard** → **Storage** → **Query**
+4. Fügen Sie das Script ein und klicken Sie auf **Run Query**
 
--- Create index for fast lookups
-CREATE INDEX IF NOT EXISTS "blocked_domains_domain_idx" ON "blocked_domains" ("domain");
+**Via psql (lokal):**
+```powershell
+psql postgresql://postgres:zhort123@localhost:5432/zhort -f scripts/create-all-tables.sql
 ```
+
+**Via Docker:**
+```powershell
+docker exec -i zhort-postgres psql -U postgres -d zhort < scripts/create-all-tables.sql
+```
+
+Dies erstellt:
+- ✅ `stats` - Besucher- und Link-Counter
+- ✅ `users` - Benutzer-Accounts
+- ✅ `links` - Gekürzte URLs
+- ✅ `pastes` - Code-Snippets
+- ✅ `blocked_domains` - Blocklist (~280k Domains)
+- ✅ Alle Indexes und Foreign Keys
+- ✅ Initial-Daten (Counter: 126.819)
 
 #### Für Vercel Postgres:
 1. Gehen Sie zu [Vercel Dashboard](https://vercel.com/dashboard)
