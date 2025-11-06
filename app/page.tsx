@@ -156,8 +156,8 @@ export default function Home() {
                 </p>
                 <a
                   href={shortUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
+            target="_blank"
+            rel="noopener noreferrer"
                   className="text-lg font-bold text-indigo-600 hover:text-indigo-700 break-all transition-colors"
                 >
                   {shortUrl}
