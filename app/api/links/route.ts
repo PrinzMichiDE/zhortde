@@ -103,8 +103,19 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating link:', error);
     
-    // Bessere Fehlerbehandlung für PostgreSQL-Fehler
+    // Bessere Fehlerbehandlung
     const errorMessage = error instanceof Error ? error.message : 'Fehler beim Erstellen des Links';
+    
+    // Spezielle Fehlerbehandlung für DB-Verbindungsprobleme
+    if (errorMessage.includes('PostgreSQL connection string') || errorMessage.includes('Invalid URL')) {
+      return NextResponse.json(
+        { 
+          error: 'Datenbank-Konfigurationsfehler',
+          details: process.env.NODE_ENV === 'development' ? errorMessage : 'Bitte kontaktieren Sie den Administrator'
+        },
+        { status: 503 } // Service Unavailable
+      );
+    }
     
     return NextResponse.json(
       { 

@@ -33,6 +33,12 @@ export const pastes = pgTable('pastes', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+export const blockedDomains = pgTable('blocked_domains', {
+  id: serial('id').primaryKey(),
+  domain: text('domain').notNull().unique(),
+  lastUpdated: timestamp('last_updated').notNull().defaultNow(),
+});
+
 export type Stat = typeof stats.$inferSelect;
 export type NewStat = typeof stats.$inferInsert;
 
@@ -44,4 +50,7 @@ export type NewLink = typeof links.$inferInsert;
 
 export type Paste = typeof pastes.$inferSelect;
 export type NewPaste = typeof pastes.$inferInsert;
+
+export type BlockedDomain = typeof blockedDomains.$inferSelect;
+export type NewBlockedDomain = typeof blockedDomains.$inferInsert;
 

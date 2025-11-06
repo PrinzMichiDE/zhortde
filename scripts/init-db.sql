@@ -42,6 +42,17 @@ CREATE TABLE IF NOT EXISTS "pastes" (
 	CONSTRAINT "pastes_slug_unique" UNIQUE("slug")
 );
 
+-- Create blocked_domains table for blocklist
+CREATE TABLE IF NOT EXISTS "blocked_domains" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"domain" text NOT NULL,
+	"last_updated" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "blocked_domains_domain_unique" UNIQUE("domain")
+);
+
+-- Create index for fast domain lookups
+CREATE INDEX IF NOT EXISTS "blocked_domains_domain_idx" ON "blocked_domains" ("domain");
+
 -- Add foreign keys
 ALTER TABLE "links" DROP CONSTRAINT IF EXISTS "links_user_id_users_id_fk";
 ALTER TABLE "links" ADD CONSTRAINT "links_user_id_users_id_fk" 

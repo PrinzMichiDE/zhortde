@@ -12,8 +12,13 @@ function getDb() {
   if (!global.dbConnection) {
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
     
-    if (!connectionString) {
-      throw new Error('Database connection string not found. Set DATABASE_URL or POSTGRES_URL environment variable.');
+    // Validiere Connection String
+    if (!connectionString || !connectionString.startsWith('postgres')) {
+      throw new Error(
+        'Invalid or missing PostgreSQL connection string. ' +
+        'Set DATABASE_URL or POSTGRES_URL environment variable with a valid PostgreSQL URL. ' +
+        `Current value: ${connectionString || '(empty)'}`
+      );
     }
 
     const client = postgres(connectionString, {
@@ -31,7 +36,10 @@ function getDb() {
 // Proxy-Objekt, das DB-Abfragen erst bei tatsächlichem Zugriff ausführt
 export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
   get(_target, prop) {
-    return getDb()[prop as keyof ReturnType<typeof drizzle<typeof schema>>];
+    const dbInstance = getDb();
+    const value = dbInstance[prop as keyof typeof dbInstance];
+    // Binde Funktionen an die DB-Instanz
+    return typeof value === 'function' ? value.bind(dbInstance) : value;
   },
 });
 
