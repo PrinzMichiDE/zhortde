@@ -10,7 +10,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "db:push": "drizzle-kit push"
+    "db:push": "node scripts/push-schema.js",
+    "setup": "node scripts/setup-env.js",
+    "quickfix": "node scripts/quick-fix-env.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",

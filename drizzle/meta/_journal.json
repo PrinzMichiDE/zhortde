@@ -8,6 +8,13 @@
       "when": 1762416951614,
       "tag": "0000_loud_rockslide",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1762421531572,
+      "tag": "0001_goofy_marvel_boy",
+      "breakpoints": true
     }
   ]
 }
