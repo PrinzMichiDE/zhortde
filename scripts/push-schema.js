@@ -24,24 +24,43 @@ const envContent = fs.readFileSync(envPath, 'utf8');
 const envVars = {};
 
 envContent.split('\n').forEach(line => {
+  // Skip comments and empty lines
+  if (line.trim().startsWith('#') || !line.trim()) {
+    return;
+  }
+  
   const match = line.match(/^([^=#]+)=(.*)$/);
   if (match) {
     const key = match[1].trim();
     let value = match[2].trim();
     
-    // Remove quotes
-    value = value.replace(/^["']|["']$/g, '');
+    // Remove surrounding quotes
+    value = value.replace(/^["'](.*)["']$/, '$1');
     
-    envVars[key] = value;
+    if (value) {
+      envVars[key] = value;
+    }
   }
 });
 
 if (!envVars.DATABASE_URL && !envVars.POSTGRES_URL) {
   console.error('❌ DATABASE_URL oder POSTGRES_URL nicht in .env.local gefunden!');
+  console.log('\n📝 Ihre .env.local sollte enthalten:');
+  console.log('DATABASE_URL="postgresql://..."');
+  console.log('\noder');
+  console.log('POSTGRES_URL="postgresql://..."\n');
   process.exit(1);
 }
 
 const databaseUrl = envVars.DATABASE_URL || envVars.POSTGRES_URL;
+
+// Validate it's a PostgreSQL URL
+if (!databaseUrl.startsWith('postgres://') && !databaseUrl.startsWith('postgresql://')) {
+  console.error('❌ Ungültige DATABASE_URL!');
+  console.log(`Gefunden: ${databaseUrl}`);
+  console.log('\nMuss starten mit: postgres:// oder postgresql://\n');
+  process.exit(1);
+}
 
 console.log('\n📊 Pushing schema to database...\n');
 console.log(`Database: ${databaseUrl.replace(/:([^:@]+)@/, ':****@')}\n`);
