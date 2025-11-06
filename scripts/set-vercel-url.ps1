@@ -53,7 +53,7 @@ Write-Host "✓ .env.local erstellt/aktualisiert`n" -ForegroundColor Green
 
 # Show redacted URL
 $redactedUrl = $PostgresUrl -replace ':[^:@]+@', ':****@'
-Write-Host "📄 Konfiguration:" -ForegroundColor Cyan
+Write-Host "`n📄 Konfiguration:" -ForegroundColor Cyan
 Write-Host "DATABASE_URL=$redactedUrl" -ForegroundColor Gray
 Write-Host "NEXTAUTH_URL=http://localhost:3000" -ForegroundColor Gray
 Write-Host "NEXTAUTH_SECRET=$nextauthSecret`n" -ForegroundColor Gray

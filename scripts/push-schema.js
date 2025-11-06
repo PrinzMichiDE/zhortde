@@ -25,21 +25,27 @@ const envVars = {};
 
 envContent.split('\n').forEach(line => {
   // Skip comments and empty lines
-  if (line.trim().startsWith('#') || !line.trim()) {
+  line = line.trim();
+  if (line.startsWith('#') || !line) {
     return;
   }
   
-  const match = line.match(/^([^=#]+)=(.*)$/);
-  if (match) {
-    const key = match[1].trim();
-    let value = match[2].trim();
-    
-    // Remove surrounding quotes
-    value = value.replace(/^["'](.*)["']$/, '$1');
-    
-    if (value) {
-      envVars[key] = value;
-    }
+  const equalIndex = line.indexOf('=');
+  if (equalIndex === -1) {
+    return;
+  }
+  
+  const key = line.substring(0, equalIndex).trim();
+  let value = line.substring(equalIndex + 1).trim();
+  
+  // Remove surrounding quotes (both single and double)
+  if ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))) {
+    value = value.substring(1, value.length - 1);
+  }
+  
+  if (key && value) {
+    envVars[key] = value;
   }
 });
 
