@@ -11,7 +11,7 @@ export function Footer() {
     // Lade oder initialisiere Statistiken
     const loadStats = async () => {
       try {
-        const response = await fetch('/api/stats/visitors', {
+        const response = await fetch('/api/counter', {
           method: 'POST',
         });
         const data = await response.json();
@@ -19,6 +19,9 @@ export function Footer() {
         setLinkCount(data.links || 0);
       } catch (error) {
         console.error('Error loading stats:', error);
+        // Fallback-Werte bei Fehler
+        setVisitorCount(126819);
+        setLinkCount(126819);
       }
     };
 

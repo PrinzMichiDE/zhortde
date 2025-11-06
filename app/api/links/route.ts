@@ -102,8 +102,15 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Error creating link:', error);
+    
+    // Bessere Fehlerbehandlung für PostgreSQL-Fehler
+    const errorMessage = error instanceof Error ? error.message : 'Fehler beim Erstellen des Links';
+    
     return NextResponse.json(
-      { error: 'Fehler beim Erstellen des Links' },
+      { 
+        error: 'Fehler beim Erstellen des Links',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     );
   }

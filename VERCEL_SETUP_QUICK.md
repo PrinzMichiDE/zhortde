@@ -77,7 +77,18 @@ vercel --prod
 
 ### 4. Datenbank-Schema migrieren (2 Minuten)
 
-Nach erfolgreichem Deployment:
+Nach erfolgreichem Deployment haben Sie **zwei Optionen**:
+
+#### Option A: Via Vercel Postgres Query (Einfachste Methode)
+
+1. Gehen Sie zu **Storage** → Ihre Datenbank
+2. Klicken Sie auf **Query** Tab
+3. Kopieren Sie den Inhalt von `scripts/init-db.sql` 
+4. Fügen Sie ihn in das Query-Feld ein
+5. Klicken Sie auf **Run Query**
+6. ✅ Fertig! Alle Tabellen sind erstellt
+
+#### Option B: Via Drizzle CLI (Fortgeschritten)
 
 ```bash
 # Vercel CLI installieren (falls noch nicht)
@@ -94,13 +105,6 @@ vercel env pull .env.local
 
 # Schema zur DB pushen
 npm run db:push
-```
-
-**Alternative (ohne lokales Setup):**
-Sie können die Migration auch über die Vercel CLI direkt ausführen:
-```bash
-vercel env pull
-DATABASE_URL=[Ihr POSTGRES_URL] npx drizzle-kit push
 ```
 
 ### 5. Verifizierung (2 Minuten)

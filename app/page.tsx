@@ -96,7 +96,7 @@ export default function Home() {
                 value={customCode}
                 onChange={(e) => setCustomCode(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''))}
                 placeholder="mein-link"
-                pattern="[a-z0-9-_]+"
+                minLength={3}
                 maxLength={50}
                 className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white text-gray-900 placeholder-gray-400 transition-colors"
               />
