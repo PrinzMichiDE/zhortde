@@ -7,11 +7,33 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { isUrlBlocked } from '@/lib/blocklist';
 import { incrementStat } from '@/lib/db/init-stats';
+import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rate-limit';
+import { hashPassword, calculateExpiration } from '@/lib/password-protection';
+import { triggerWebhooks } from '@/lib/webhooks';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const { longUrl, isPublic, customCode } = await request.json();
+    const { longUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = await request.json();
+
+    // Rate limiting
+    const identifier = session?.user?.id || getClientIp(request);
+    const action = session?.user?.id ? 'create_link_authenticated' : 'create_link_anonymous';
+    const rateLimitResult = await checkRateLimit(identifier, action);
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { 
+          error: 'Zu viele Anfragen',
+          details: `Limit: ${rateLimitResult.limit} pro Stunde. Bitte versuchen Sie es später erneut.`,
+          reset: rateLimitResult.reset,
+        },
+        { 
+          status: 429,
+          headers: getRateLimitHeaders(rateLimitResult),
+        }
+      );
+    }
 
     if (!longUrl) {
       return NextResponse.json(
@@ -85,21 +107,52 @@ export async function POST(request: NextRequest) {
       shortCode = nanoid(8);
     }
 
+    // Hash password if provided
+    const passwordHash = password ? await hashPassword(password) : null;
+
+    // Calculate expiration if provided
+    const expiresAt = expiresIn ? calculateExpiration(expiresIn) : null;
+
     // Erstelle Link
     const newLink = await db.insert(links).values({
       shortCode,
       longUrl,
       userId: session?.user?.id ? parseInt(session.user.id) : null,
       isPublic: session ? isPublic : true,
+      passwordHash,
+      expiresAt,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
     }).returning();
 
     // Inkrementiere Links Counter
     await incrementStat('links');
 
-    return NextResponse.json({
-      shortCode: newLink[0].shortCode,
-      longUrl: newLink[0].longUrl,
-    });
+    // 🔔 Trigger webhooks (fire and forget)
+    if (session?.user?.id) {
+      triggerWebhooks(parseInt(session.user.id), 'link.created', {
+        linkId: newLink[0].id,
+        shortCode: newLink[0].shortCode,
+        longUrl: newLink[0].longUrl,
+      }).catch((error) => {
+        console.error('Webhook trigger error:', error);
+      });
+    }
+
+    return NextResponse.json(
+      {
+        shortCode: newLink[0].shortCode,
+        longUrl: newLink[0].longUrl,
+        expiresAt: newLink[0].expiresAt,
+        hasPassword: !!newLink[0].passwordHash,
+      },
+      {
+        headers: getRateLimitHeaders(rateLimitResult),
+      }
+    );
   } catch (error) {
     console.error('Error creating link:', error);
     

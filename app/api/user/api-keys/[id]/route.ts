@@ -2,45 +2,53 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { links } from '@/lib/db/schema';
+import { apiKeys } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 
+/**
+ * DELETE /api/user/api-keys/[id] - Delete an API key
+ */
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Nicht autorisiert' },
-        { status: 401 }
-      );
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
-    const linkId = parseInt(id);
-    const userId = parseInt(session.user.id);
+    const apiKeyId = parseInt(id, 10);
 
-    // Lösche den Link nur, wenn er dem Benutzer gehört
+    if (isNaN(apiKeyId)) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    }
+
+    // Delete only if it belongs to the user
     const result = await db
-      .delete(links)
-      .where(and(eq(links.id, linkId), eq(links.userId, userId)))
+      .delete(apiKeys)
+      .where(
+        and(
+          eq(apiKeys.id, apiKeyId),
+          eq(apiKeys.userId, parseInt(session.user.id))
+        )
+      )
       .returning();
 
     if (result.length === 0) {
       return NextResponse.json(
-        { error: 'Link nicht gefunden oder keine Berechtigung' },
+        { error: 'API key not found' },
         { status: 404 }
       );
     }
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting link:', error);
+    console.error('API Keys DELETE error:', error);
     return NextResponse.json(
-      { error: 'Fehler beim Löschen des Links' },
+      { error: 'Failed to delete API key' },
       { status: 500 }
     );
   }

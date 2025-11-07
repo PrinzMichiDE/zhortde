@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ClipboardIcon, CheckIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { ClipboardIcon, CheckIcon, DocumentTextIcon, LockClosedIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
@@ -11,6 +11,8 @@ interface PasteDisplayProps {
   syntaxHighlightingLanguage: string | null;
   isPublic: boolean;
   createdAt: Date;
+  expiresAt?: Date | null;
+  hasPassword?: boolean;
 }
 
 export function PasteDisplay({
@@ -19,6 +21,8 @@ export function PasteDisplay({
   syntaxHighlightingLanguage,
   isPublic,
   createdAt,
+  expiresAt,
+  hasPassword,
 }: PasteDisplayProps) {
   const [copied, setCopied] = useState(false);
 
@@ -42,6 +46,18 @@ export function PasteDisplay({
             {!isPublic && (
               <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                 Privat
+              </span>
+            )}
+            {hasPassword && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                <LockClosedIcon className="h-3 w-3 mr-1" />
+                Geschützt
+              </span>
+            )}
+            {expiresAt && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                <ClockIcon className="h-3 w-3 mr-1" />
+                Läuft ab
               </span>
             )}
           </div>
@@ -95,7 +111,14 @@ export function PasteDisplay({
           )}
         </div>
         <div className="bg-gray-50 border-t border-gray-200 px-6 py-3 text-sm text-gray-500">
-          Erstellt am: {new Date(createdAt).toLocaleString('de-DE')}
+          <div className="flex justify-between items-center">
+            <span>Erstellt am: {new Date(createdAt).toLocaleString('de-DE')}</span>
+            {expiresAt && (
+              <span className="text-orange-600">
+                Läuft ab: {new Date(expiresAt).toLocaleString('de-DE')}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
