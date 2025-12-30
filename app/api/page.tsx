@@ -1,173 +1,152 @@
 export default function ApiDocsPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-      <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4">
+    <div className="max-w-5xl mx-auto px-4 py-16 sm:px-6 lg:px-8 bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-300">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 animate-fade-in">
+        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 mb-4">
           API Dokumentation
         </h1>
-        <p className="text-gray-600 mb-8">
-          Verwenden Sie unsere öffentliche API, um URLs programmatisch zu kürzen.
+        <p className="text-gray-600 dark:text-gray-300 mb-8 text-lg">
+          Verwenden Sie unsere öffentliche API oder das Model Context Protocol (MCP), um Zhort in Ihre Workflows zu integrieren.
         </p>
 
-        <div className="space-y-8">
+        <div className="space-y-12">
+          
+          {/* MCP Info */}
+          <section className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/30 rounded-xl p-6">
+            <h2 className="text-2xl font-bold text-indigo-900 dark:text-indigo-100 mb-2 flex items-center gap-2">
+              <span className="text-2xl">🤖</span>
+              AI Integration (MCP)
+            </h2>
+            <p className="text-indigo-800 dark:text-indigo-200 mb-4">
+              Zhort unterstützt das Model Context Protocol nativ. Verbinden Sie Cursor oder andere AI-Agenten direkt mit Zhort.
+            </p>
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-3 border border-indigo-200 dark:border-indigo-800 font-mono text-sm text-indigo-600 dark:text-indigo-300 break-all">
+              SSE Endpoint: https://zhort.de/api/mcp
+            </div>
+            <p className="text-sm mt-2 text-indigo-700 dark:text-indigo-400">
+              Weitere Informationen finden Sie im <a href="/dashboard/integrations" className="underline hover:text-indigo-900 dark:hover:text-indigo-200">Integrations Dashboard</a>.
+            </p>
+          </section>
+
           {/* Endpoint */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Endpoint</h2>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <code className="text-indigo-600 font-mono">
-                POST /api/v1/shorten
+            <div className="flex items-center gap-3 mb-4">
+              <span className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded font-bold text-sm border border-green-200 dark:border-green-800">POST</span>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Link erstellen</h2>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+              <code className="text-indigo-600 dark:text-indigo-400 font-mono font-bold">
+                https://zhort.de/api/v1/shorten
               </code>
             </div>
           </section>
 
           {/* Request */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Request</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Request Body</h2>
             <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Headers</h3>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <code className="text-sm">Content-Type: application/json</code>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Body</h3>
-                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+              <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto border border-gray-800 shadow-inner">
 {`{
   "url": "https://example.com/sehr/lange/url",
   "customCode": "mein-link" // optional
 }`}
-                </pre>
-                <div className="mt-2 text-sm text-gray-600">
-                  <p><strong>url</strong>: Die zu kürzende URL (erforderlich)</p>
-                  <p><strong>customCode</strong>: Individueller Short Code (optional, 3-50 Zeichen, nur a-z, 0-9, -, _)</p>
-                </div>
+              </pre>
+              <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <p><code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-800 dark:text-gray-200">url</code> (string, required): Die zu kürzende URL.</p>
+                <p><code className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-gray-800 dark:text-gray-200">customCode</code> (string, optional): Individueller Alias (3-50 Zeichen, a-z, 0-9, -, _).</p>
               </div>
             </div>
           </section>
 
           {/* Response */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Response</h2>
-            <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Response</h2>
+            <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <h3 className="text-lg font-semibold text-green-700 mb-2">Erfolg (201)</h3>
-                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+                <h3 className="text-sm font-semibold text-green-600 dark:text-green-400 mb-2 uppercase tracking-wide">Erfolg (201)</h3>
+                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm h-full border border-gray-800 shadow-inner">
 {`{
   "success": true,
-  "shortUrl": "https://zhort.app/s/abc12345",
+  "shortUrl": "https://zhort.de/s/abc12345",
   "shortCode": "abc12345",
-  "originalUrl": "https://example.com/sehr/lange/url"
+  "originalUrl": "https://example.com/..."
 }`}
                 </pre>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-red-700 mb-2">Fehler (403 - Blockiert)</h3>
-                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
+                <h3 className="text-sm font-semibold text-red-600 dark:text-red-400 mb-2 uppercase tracking-wide">Fehler (400/403)</h3>
+                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto text-sm h-full border border-gray-800 shadow-inner">
 {`{
   "success": false,
   "error": "Domain blockiert",
-  "message": "Diese Domain steht auf der Blocklist..."
+  "message": "Domain steht auf der Blocklist"
 }`}
                 </pre>
               </div>
             </div>
           </section>
 
-          {/* Beispiel */}
+          {/* Code Examples */}
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Beispiele</h2>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">Code Beispiele</h2>
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">cURL</h3>
-                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
-{`# Zufälliger Short Code
-curl -X POST https://zhort.app/api/v1/shorten \\
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">cURL</h3>
+                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto border border-gray-800 shadow-inner">
+{`curl -X POST https://zhort.de/api/v1/shorten \\
   -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com/sehr/lange/url"}'
-
-# Mit individuellem Short Code
-curl -X POST https://zhort.app/api/v1/shorten \\
-  -H "Content-Type: application/json" \\
-  -d '{"url": "https://example.com/sehr/lange/url", "customCode": "mein-link"}'`}
+  -d '{"url": "https://google.com"}'`}
                 </pre>
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">JavaScript (fetch)</h3>
-                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
-{`const response = await fetch('https://zhort.app/api/v1/shorten', {
+                <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">JavaScript / Node.js</h3>
+                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto border border-gray-800 shadow-inner">
+{`const res = await fetch('https://zhort.de/api/v1/shorten', {
   method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    url: 'https://example.com/sehr/lange/url'
-  })
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ url: 'https://google.com' })
 });
-
-const data = await response.json();
+const data = await res.json();
 console.log(data.shortUrl);`}
-                </pre>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Python (requests)</h3>
-                <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 overflow-x-auto">
-{`import requests
-
-response = requests.post(
-    'https://zhort.app/api/v1/shorten',
-    json={'url': 'https://example.com/sehr/lange/url'}
-)
-
-data = response.json()
-print(data['shortUrl'])`}
                 </pre>
               </div>
             </div>
           </section>
 
-          {/* Sicherheit */}
-          <section className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-              Blocklist-Schutz
-            </h2>
-            <p className="text-gray-700">
-              Alle URLs werden automatisch gegen die{' '}
-              <a 
-                href="https://github.com/hagezi/dns-blocklists"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 hover:text-indigo-700 font-medium"
-              >
-                Hagezi DNS Blocklist
-              </a>
-              {' '}geprüft. URLs von blockierten Domains werden abgelehnt.
-            </p>
-          </section>
+          {/* Sicherheit & Limits */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <section className="bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-200 dark:border-yellow-800/30 rounded-xl p-6">
+              <h2 className="text-lg font-bold text-yellow-800 dark:text-yellow-200 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                Sicherheit
+              </h2>
+              <p className="text-sm text-yellow-800/80 dark:text-yellow-200/70">
+                Alle URLs werden automatisch gegen globale Threat-Intelligence-Listen (Hagezi DNS Blocklist) geprüft. Phishing- und Malware-Domains werden sofort abgelehnt.
+              </p>
+            </section>
 
-          {/* Rate Limiting Info */}
-          <section className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Hinweise</h2>
-            <ul className="list-disc list-inside space-y-2 text-gray-700">
-              <li>Die API ist öffentlich und erfordert keine Authentifizierung</li>
-              <li>Erstellte Links sind standardmäßig öffentlich</li>
-              <li>Links werden nicht automatisch gelöscht</li>
-              <li>Nur HTTP und HTTPS URLs sind erlaubt</li>
-              <li>Individuelle Short Codes: 3-50 Zeichen, nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche</li>
-              <li>Short Codes sind eindeutig und können nur einmal vergeben werden</li>
-            </ul>
-          </section>
+            <section className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/30 rounded-xl p-6">
+              <h2 className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Limits
+              </h2>
+              <ul className="text-sm text-blue-800/80 dark:text-blue-200/70 space-y-1 list-disc list-inside">
+                <li>Rate Limit: 60 Requests / Minute pro IP</li>
+                <li>Maximal 50 Zeichen pro Short-Code</li>
+                <li>Links verfallen standardmäßig nicht</li>
+              </ul>
+            </section>
+          </div>
+
         </div>
       </div>
     </div>
   );
 }
-

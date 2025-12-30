@@ -14,7 +14,16 @@ import { triggerWebhooks } from '@/lib/webhooks';
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const { longUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = await request.json();
+    const body = await request.json();
+    const { longUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, hp } = body;
+
+    // 🍯 Honeypot Check
+    if (hp) {
+       return NextResponse.json(
+        { error: 'Bot detected' },
+        { status: 400 }
+      );
+    }
 
     // Rate limiting
     const identifier = session?.user?.id || getClientIp(request);
@@ -179,4 +188,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-

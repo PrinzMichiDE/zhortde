@@ -30,6 +30,7 @@ export function LinkForm() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [urlError, setUrlError] = useState('');
   const [customCodeError, setCustomCodeError] = useState('');
+  const [honeyPot, setHoneyPot] = useState(''); // Anti-Spam field
 
   const validateUrl = (url: string): boolean => {
     try {
@@ -46,6 +47,17 @@ export function LinkForm() {
     setUrlError('');
     setCustomCodeError('');
     setShortUrl('');
+
+    // Honeypot Check (Client-side pre-check, though real check is backend)
+    if (honeyPot) {
+      // Silently fail for bots
+      setLoading(true);
+      setTimeout(() => {
+        setLoading(false);
+        setLongUrl('');
+      }, 1000);
+      return;
+    }
 
     // Validierung
     if (!validateUrl(longUrl)) {
@@ -70,6 +82,7 @@ export function LinkForm() {
           customCode: customCode.trim() || undefined,
           password: password || undefined,
           expiresIn: expiresIn === 'never' ? undefined : expiresIn,
+          hp: honeyPot // Send honeypot field
         }),
       });
 
@@ -107,6 +120,20 @@ export function LinkForm() {
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-pink-500/5 to-purple-500/5 rounded-full blur-3xl -z-10"></div>
       <div className="relative">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+        {/* Honeypot Field - Hidden from real users */}
+        <div className="opacity-0 absolute top-0 left-0 h-0 w-0 overflow-hidden" aria-hidden="true">
+          <label htmlFor="hp_check">Please leave blank</label>
+          <input
+            type="text"
+            id="hp_check"
+            name="hp_check"
+            value={honeyPot}
+            onChange={(e) => setHoneyPot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+          />
+        </div>
+
         <Input
           id="url"
           type="url"
@@ -321,4 +348,3 @@ export function LinkForm() {
     </div>
   );
 }
-

@@ -25,7 +25,22 @@ import { incrementStat } from '@/lib/db/init-stats';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url, customCode } = body;
+    const { url, customCode, hp } = body; // hp = honeypot field
+
+    // 🍯 Honeypot Check
+    // Wenn das Feld 'hp' ausgefüllt ist, ist es ein Bot.
+    // Wir tun so, als ob alles geklappt hat (um ihn nicht zu trainieren) oder geben Fehler.
+    // Um Ressourcen zu sparen, brechen wir hier mit 400 ab.
+    if (hp) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Bot detected',
+          message: 'You seem to be a bot.',
+        },
+        { status: 400 }
+      );
+    }
 
     // Validierung
     if (!url || typeof url !== 'string') {
@@ -211,4 +226,3 @@ export async function GET() {
     },
   });
 }
-
