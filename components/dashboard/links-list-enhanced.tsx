@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { TrashIcon, EyeIcon, ClipboardIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, QrCodeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, EyeIcon, ClipboardIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, QrCodeIcon, ShieldCheckIcon, PencilIcon } from '@heroicons/react/24/outline';
 import { links } from '@/lib/db/schema';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,6 +28,11 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Edit state
+  const [editingLink, setEditingLink] = useState<LinkType | null>(null);
+  const [editForm, setEditForm] = useState({ longUrl: '', isPublic: false, shortCode: '' });
+  const [saving, setSaving] = useState(false);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -92,10 +97,48 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
     }
   };
 
+  const handleEditClick = (link: LinkType) => {
+    setEditingLink(link);
+    setEditForm({ longUrl: link.longUrl, isPublic: link.isPublic, shortCode: link.shortCode });
+    setOpenMenuId(null);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLink) return;
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/links/${editingLink.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          longUrl: editForm.longUrl,
+          isPublic: editForm.isPublic,
+          shortCode: editForm.shortCode
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Aktualisieren');
+      }
+
+      const updatedLink = await response.json();
+      
+      // Update local state
+      setLinks(links.map(l => l.id === updatedLink.id ? updatedLink : l));
+      setEditingLink(null);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const copyShortUrl = (shortCode: string) => {
     const baseUrl = window.location.origin;
     navigator.clipboard.writeText(`${baseUrl}/s/${shortCode}`);
-    // Optional: Toast notification here
   };
 
   const clearFilters = () => {
@@ -217,6 +260,12 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
                         {openMenuId === link.id && (
                           <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-100">
                             <div className="py-1">
+                              <button 
+                                onClick={() => handleEditClick(link)}
+                                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <PencilIcon className="h-4 w-4" /> Bearbeiten
+                              </button>
                               <Link href={`/dashboard/analytics/${link.id}`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <ChartBarIcon className="h-4 w-4" /> Analytics
                               </Link>
@@ -252,6 +301,73 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
           {filteredLinks.map((link) => (
             <LinkPreviewCard key={link.id} linkId={link.id} longUrl={link.longUrl} shortUrl={`${window.location.origin}/s/${link.shortCode}`} />
           ))}
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Link bearbeiten</h3>
+              <button onClick={() => setEditingLink(null)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Ziel-URL
+                </label>
+                <Input
+                  value={editForm.longUrl}
+                  onChange={(e) => setEditForm({...editForm, longUrl: e.target.value})}
+                  placeholder="https://..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Short Code
+                </label>
+                <div className="flex rounded-md shadow-sm">
+                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm">
+                    zhort.de/s/
+                  </span>
+                  <input
+                    type="text"
+                    value={editForm.shortCode}
+                    onChange={(e) => setEditForm({...editForm, shortCode: e.target.value})}
+                    className="flex-1 block w-full rounded-none rounded-r-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 min-h-[42px] px-3 sm:text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isPublic"
+                  checked={editForm.isPublic}
+                  onChange={(e) => setEditForm({...editForm, isPublic: e.target.checked})}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
+                  Öffentlich sichtbar
+                </label>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setEditingLink(null)}>
+                  Abbrechen
+                </Button>
+                <Button type="submit" loading={saving}>
+                  Speichern
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

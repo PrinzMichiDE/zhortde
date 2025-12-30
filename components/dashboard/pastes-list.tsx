@@ -2,8 +2,10 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { TrashIcon, EyeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, EyeIcon, DocumentTextIcon, PencilIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { pastes } from '@/lib/db/schema';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 type Paste = typeof pastes.$inferSelect;
 
@@ -14,6 +16,11 @@ interface PastesListProps {
 export function PastesList({ pastes: initialPastes }: PastesListProps) {
   const [pastes, setPastes] = useState(initialPastes);
   const [deleting, setDeleting] = useState<number | null>(null);
+  
+  // Edit state
+  const [editingPaste, setEditingPaste] = useState<Paste | null>(null);
+  const [editForm, setEditForm] = useState({ content: '', isPublic: false, language: '' });
+  const [saving, setSaving] = useState(false);
 
   const handleDelete = async (id: number) => {
     if (!confirm('Möchten Sie dieses Paste wirklich löschen?')) {
@@ -35,6 +42,48 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
       alert('Fehler beim Löschen des Paste');
     } finally {
       setDeleting(null);
+    }
+  };
+
+  const handleEditClick = (paste: Paste) => {
+    setEditingPaste(paste);
+    setEditForm({
+      content: paste.content,
+      isPublic: paste.isPublic,
+      language: paste.syntaxHighlightingLanguage || ''
+    });
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPaste) return;
+    setSaving(true);
+
+    try {
+      const response = await fetch(`/api/pastes/${editingPaste.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: editForm.content,
+          isPublic: editForm.isPublic,
+          syntaxHighlightingLanguage: editForm.language
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Fehler beim Aktualisieren');
+      }
+
+      const updatedPaste = await response.json();
+      
+      // Update local state
+      setPastes(pastes.map(p => p.id === updatedPaste.id ? updatedPaste : p));
+      setEditingPaste(null);
+    } catch (error: any) {
+      alert(error.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -104,6 +153,14 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
                 <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => handleEditClick(paste)}
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
+                    title="Bearbeiten"
+                    aria-label={`Paste ${paste.slug} bearbeiten`}
+                  >
+                    <PencilIcon className="h-5 w-5" aria-hidden="true" />
+                  </button>
                   <Link
                     href={`/p/${paste.slug}`}
                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
@@ -137,6 +194,65 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
           ))}
         </tbody>
       </table>
+
+      {/* Edit Modal */}
+      {editingPaste && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-2xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Paste bearbeiten</h3>
+              <button onClick={() => setEditingPaste(null)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Inhalt
+                </label>
+                <textarea
+                  value={editForm.content}
+                  onChange={(e) => setEditForm({...editForm, content: e.target.value})}
+                  className="w-full h-64 p-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-mono text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Sprache (Syntax Highlighting)"
+                  value={editForm.language}
+                  onChange={(e) => setEditForm({...editForm, language: e.target.value})}
+                  placeholder="z.B. javascript, python, css"
+                />
+                
+                <div className="flex items-center gap-2 pt-8">
+                  <input
+                    type="checkbox"
+                    id="isPublic"
+                    checked={editForm.isPublic}
+                    onChange={(e) => setEditForm({...editForm, isPublic: e.target.checked})}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
+                    Öffentlich sichtbar
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4">
+                <Button type="button" variant="outline" onClick={() => setEditingPaste(null)}>
+                  Abbrechen
+                </Button>
+                <Button type="submit" loading={saving}>
+                  Speichern
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
