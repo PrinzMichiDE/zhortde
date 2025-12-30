@@ -1,42 +1,184 @@
 import { LinkForm } from '@/components/link-form';
+import { 
+  LockClosedIcon, 
+  ClockIcon, 
+  QrCodeIcon,
+  ChartBarIcon,
+  ShieldCheckIcon,
+  BoltIcon,
+  GlobeAltIcon,
+  SparklesIcon
+} from '@heroicons/react/24/outline';
 
 export default function Home() {
-
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
-      <div className="max-w-4xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
-        <div className="text-center mb-12 animate-fade-in">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 mb-6 animate-gradient bg-[length:200%_auto] hover:scale-105 transition-transform duration-500">
-            Verkürzen Sie Ihre URLs
-          </h1>
-          <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto leading-relaxed">
-            Schnell, einfach und kostenlos - mit Passwortschutz, Ablaufdatum und QR-Codes
-          </p>
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 dark:bg-purple-900/20 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-30 animate-blob"></div>
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 dark:bg-indigo-900/20 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-300 dark:bg-pink-900/20 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-20 animate-blob animation-delay-4000"></div>
+      </div>
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Hero Section */}
+        <div className="pt-20 pb-16 sm:pt-24 sm:pb-20">
+          <div className="text-center mb-16 animate-fade-in">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-indigo-200/50 dark:border-indigo-800/50 rounded-full shadow-sm">
+              <SparklesIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                Professioneller URL Shortener
+              </span>
+            </div>
+
+            {/* Main Heading */}
+            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold mb-6 leading-tight">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 animate-gradient bg-[length:200%_auto]">
+                Verkürzen Sie
+              </span>
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400 animate-gradient bg-[length:200%_auto] animation-delay-1000">
+                Ihre URLs
+              </span>
+            </h1>
+
+            {/* Subtitle */}
+            <p className="text-xl sm:text-2xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8 font-light">
+              Schnell, sicher und kostenlos. Mit{' '}
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400">fortgeschrittenen Features</span>{' '}
+              für professionelle Nutzer.
+            </p>
+
+            {/* Stats */}
+            <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <BoltIcon className="h-5 w-5 text-yellow-500" />
+                <span className="font-semibold">Sofort verfügbar</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <ShieldCheckIcon className="h-5 w-5 text-green-500" />
+                <span className="font-semibold">100% sicher</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <GlobeAltIcon className="h-5 w-5 text-blue-500" />
+                <span className="font-semibold">Weltweit verfügbar</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Link Form */}
+          <div className="max-w-3xl mx-auto mb-20">
+            <LinkForm />
+          </div>
         </div>
 
-        <LinkForm />
+        {/* Features Section */}
+        <div className="pb-20">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+              Warum Zhort?
+            </h2>
+            <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              Alles was Sie für professionelles Link-Management benötigen
+            </p>
+          </div>
 
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center group hover:transform hover:scale-110 transition-all duration-300 cursor-pointer p-6 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 rounded-2xl mb-4 group-hover:shadow-2xl group-hover:shadow-indigo-300/50 dark:group-hover:shadow-indigo-500/30 transition-all duration-300 group-hover:rotate-3">
-              <span className="text-4xl group-hover:scale-110 transition-transform duration-300">🔒</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {/* Feature 1 */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-indigo-500/25">
+                  <LockClosedIcon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  Passwortschutz
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Schützen Sie sensible Links mit individuellen Passwörtern für maximale Sicherheit.
+                </p>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">Passwortschutz</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">Schützen Sie sensible Links mit Passwörtern</p>
-          </div>
-          <div className="text-center group hover:transform hover:scale-110 transition-all duration-300 cursor-pointer p-6 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 rounded-2xl mb-4 group-hover:shadow-2xl group-hover:shadow-green-300/50 dark:group-hover:shadow-green-500/30 transition-all duration-300 group-hover:rotate-3">
-              <span className="text-4xl group-hover:scale-110 transition-transform duration-300">⏰</span>
+
+            {/* Feature 2 */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-green-300 dark:hover:border-green-700 transition-all duration-300 hover:shadow-2xl hover:shadow-green-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-green-500/25">
+                  <ClockIcon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
+                  Ablaufdatum
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Automatisches Löschen nach definierter Zeit für temporäre Links und Kampagnen.
+                </p>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">Ablaufdatum</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">Links automatisch nach Zeit löschen</p>
-          </div>
-          <div className="text-center group hover:transform hover:scale-110 transition-all duration-300 cursor-pointer p-6 rounded-2xl hover:bg-white dark:hover:bg-gray-800 hover:shadow-xl border border-transparent hover:border-gray-200 dark:hover:border-gray-700">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-cyan-100 dark:from-blue-900/50 dark:to-cyan-900/50 rounded-2xl mb-4 group-hover:shadow-2xl group-hover:shadow-blue-300/50 dark:group-hover:shadow-blue-500/30 transition-all duration-300 group-hover:rotate-3">
-              <span className="text-4xl group-hover:scale-110 transition-transform duration-300">📱</span>
+
+            {/* Feature 3 */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-blue-300 dark:hover:border-blue-700 transition-all duration-300 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-blue-500/25">
+                  <QrCodeIcon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  QR-Codes
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Automatische QR-Code-Generierung für jeden Link - perfekt für Print und Mobile.
+                </p>
+              </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">QR-Codes</h3>
-            <p className="text-gray-600 dark:text-gray-400 leading-relaxed">Automatische QR-Codes für jeden Link</p>
+
+            {/* Feature 4 */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-purple-300 dark:hover:border-purple-700 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-pink-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-purple-500/25">
+                  <ChartBarIcon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                  Detaillierte Analytics
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Umfassende Statistiken zu Klicks, Geräten, Ländern und Browsern für jedes Link.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-orange-300 dark:hover:border-orange-700 transition-all duration-300 hover:shadow-2xl hover:shadow-orange-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-amber-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-orange-500/25">
+                  <BoltIcon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                  Bulk Processing
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Mehrere URLs gleichzeitig kürzen - perfekt für Marketing-Kampagnen und Newsletter.
+                </p>
+              </div>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-teal-300 dark:hover:border-teal-700 transition-all duration-300 hover:shadow-2xl hover:shadow-teal-500/10 hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-teal-500/25">
+                  <ShieldCheckIcon className="h-7 w-7 text-white" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                  Enterprise Features
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                  API-Keys, Webhooks, Custom Domains, A/B Testing und mehr für professionelle Nutzer.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>

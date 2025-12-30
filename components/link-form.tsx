@@ -101,7 +101,11 @@ export function LinkForm() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800/80 rounded-2xl shadow-xl p-6 sm:p-8 backdrop-blur-sm border border-gray-100 dark:border-gray-700 hover:shadow-2xl transition-shadow duration-300">
+    <div className="bg-white/90 dark:bg-gray-800/90 rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 backdrop-blur-md border border-gray-200/50 dark:border-gray-700/50 hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/20 transition-all duration-300 relative overflow-hidden">
+      {/* Decorative gradient overlay */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl -z-10"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-pink-500/5 to-purple-500/5 rounded-full blur-3xl -z-10"></div>
+      <div className="relative">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <Input
           id="url"
@@ -246,7 +250,7 @@ export function LinkForm() {
       </form>
 
       {shortUrl && (
-        <Alert variant="success" icon="🎉" className="mt-8">
+        <Alert variant="success" icon="🎉" className="mt-8 animate-slide-up">
           <div className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <CheckIcon className="h-5 w-5" aria-hidden="true" />
@@ -313,6 +317,7 @@ export function LinkForm() {
           </div>
         </Alert>
       )}
+      </div>
     </div>
   );
 }
