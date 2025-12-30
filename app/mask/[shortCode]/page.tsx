@@ -8,6 +8,7 @@ export default function MaskedLinkPage() {
   const params = useParams();
   const router = useRouter();
   const [targetUrl, setTargetUrl] = useState<string | null>(null);
+  const [enableFrame, setEnableFrame] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
   const [splashHtml, setSplashHtml] = useState<string>('');
   const [splashDuration, setSplashDuration] = useState(3000);
@@ -25,6 +26,7 @@ export default function MaskedLinkPage() {
         }
 
         setTargetUrl(data.targetUrl);
+        setEnableFrame(data.enableFrame);
         setSplashHtml(data.splashHtml || '');
         setSplashDuration(data.splashDuration || 3000);
 
@@ -32,7 +34,7 @@ export default function MaskedLinkPage() {
         if (data.enableSplash) {
           setTimeout(() => {
             setShowSplash(false);
-          }, data.splashDuration);
+          }, data.splashDuration || 3000);
         } else {
           setShowSplash(false);
         }
@@ -44,6 +46,13 @@ export default function MaskedLinkPage() {
 
     fetchLinkData();
   }, [params.shortCode, router]);
+
+  // Handle redirects for non-iframe masking (Splash only)
+  useEffect(() => {
+    if (!showSplash && !enableFrame && targetUrl) {
+      window.location.href = targetUrl;
+    }
+  }, [showSplash, enableFrame, targetUrl]);
 
   if (showSplash && splashHtml) {
     return (
@@ -65,6 +74,15 @@ export default function MaskedLinkPage() {
     );
   }
 
+  if (!enableFrame && targetUrl) {
+      // Show loader while redirecting
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-white">
+             <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+        </div>
+      );
+  }
+
   if (!targetUrl) {
     return null;
   }
@@ -79,4 +97,3 @@ export default function MaskedLinkPage() {
     />
   );
 }
-
