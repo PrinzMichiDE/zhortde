@@ -345,13 +345,34 @@ export const ssoDomains = pgTable('sso_domains', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+export const ssoDomainAdmins = pgTable('sso_domain_admins', {
+  id: serial('id').primaryKey(),
+  domainId: integer('domain_id').notNull().references(() => ssoDomains.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export type SsoDomain = typeof ssoDomains.$inferSelect;
 export type NewSsoDomain = typeof ssoDomains.$inferInsert;
+export type SsoDomainAdmin = typeof ssoDomainAdmins.$inferSelect;
+export type NewSsoDomainAdmin = typeof ssoDomainAdmins.$inferInsert;
 
 // Relations
-export const ssoDomainsRelations = relations(ssoDomains, ({ one }) => ({
+export const ssoDomainsRelations = relations(ssoDomains, ({ one, many }) => ({
   user: one(users, {
     fields: [ssoDomains.userId],
+    references: [users.id],
+  }),
+  admins: many(ssoDomainAdmins),
+}));
+
+export const ssoDomainAdminsRelations = relations(ssoDomainAdmins, ({ one }) => ({
+  domain: one(ssoDomains, {
+    fields: [ssoDomainAdmins.domainId],
+    references: [ssoDomains.id],
+  }),
+  user: one(users, {
+    fields: [ssoDomainAdmins.userId],
     references: [users.id],
   }),
 }));
