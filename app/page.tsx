@@ -1,4 +1,5 @@
 import { LinkForm } from '@/components/link-form';
+import { ExtensionDownload } from '@/components/extension-download';
 import { 
   LockClosedIcon, 
   ClockIcon, 
@@ -198,19 +199,10 @@ export default async function Home() {
                   <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-indigo-500/25">
                     <GlobeAltIcon className="h-7 w-7 text-white" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                    Browser Erweiterung
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
-                    Kürzen Sie URLs direkt aus Ihrem Browser mit einem Klick. Verfügbar für Chrome, Firefox und Edge.
-                  </p>
-                  <a 
-                    href="/extensions/zhort-extension.zip" 
-                    download
-                    className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-3 md:text-lg md:px-8 transition-colors shadow-lg shadow-indigo-500/25"
-                  >
-                    Extension herunterladen (ZIP)
-                  </a>
+                  
+                  {/* Client Component: Extension Download Button with Browser Detection */}
+                  <ExtensionDownload />
+
                 </div>
                 <div className="flex-1 w-full max-w-sm bg-gray-900 rounded-lg p-4 shadow-xl border border-gray-800">
                   <div className="flex items-center gap-2 mb-4 border-b border-gray-800 pb-2">
@@ -221,7 +213,7 @@ export default async function Home() {
                   </div>
                   <div className="bg-white rounded p-4 text-center">
                     <div className="font-bold text-gray-900 mb-2">Zhort Extension</div>
-                    <button className="bg-indigo-600 text-white text-sm py-1 px-3 rounded w-full">Kürzen</button>
+                    <button className="bg-indigo-600 text-white text-sm py-1 px-3 rounded w-full hover:bg-indigo-700 transition-colors">Kürzen</button>
                   </div>
                 </div>
               </div>
