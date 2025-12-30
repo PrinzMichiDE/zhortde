@@ -2,19 +2,53 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { ssoDomains } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { ssoDomains, ssoDomainAdmins } from '@/lib/db/schema';
+import { eq, or } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const domains = await db.query.ssoDomains.findMany({
-    where: eq(ssoDomains.userId, parseInt(session.user.id)),
+  const userId = parseInt(session.user.id);
+
+  // Get domains owned by user
+  const ownedDomains = await db.query.ssoDomains.findMany({
+    where: eq(ssoDomains.userId, userId),
+    with: {
+      admins: {
+        with: {
+          user: true
+        }
+      }
+    }
   });
 
-  return NextResponse.json(domains);
+  // Get domains where user is admin
+  const adminDomains = await db.query.ssoDomainAdmins.findMany({
+    where: eq(ssoDomainAdmins.userId, userId),
+    with: {
+      domain: {
+        with: {
+          admins: {
+            with: {
+              user: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  const allDomains = [
+    ...ownedDomains.map(d => ({ ...d, role: 'owner' })),
+    ...adminDomains.map(ad => ({ ...ad.domain, role: 'admin' }))
+  ];
+
+  // Remove duplicates if any (shouldn't be, but good practice)
+  const uniqueDomains = Array.from(new Map(allDomains.map(item => [item.id, item])).values());
+
+  return NextResponse.json(uniqueDomains);
 }
 
 export async function POST(request: NextRequest) {
