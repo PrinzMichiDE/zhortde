@@ -100,6 +100,7 @@ export const linkMasking = pgTable('link_masking', {
   id: serial('id').primaryKey(),
   linkId: integer('link_id').notNull().unique().references(() => links.id, { onDelete: 'cascade' }),
   
+  // Masking config
   enableFrame: boolean('enable_frame').notNull().default(false),
   enableSplash: boolean('enable_splash').notNull().default(false),
   splashDurationMs: integer('splash_duration_ms').default(3000),
@@ -135,39 +136,6 @@ export const webhooks = pgTable('webhooks', {
   lastTriggeredAt: timestamp('last_triggered_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
-
-export type Stat = typeof stats.$inferSelect;
-export type NewStat = typeof stats.$inferInsert;
-
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-
-export type Link = typeof links.$inferSelect;
-export type NewLink = typeof links.$inferInsert;
-
-export type Paste = typeof pastes.$inferSelect;
-export type NewPaste = typeof pastes.$inferInsert;
-
-export type BlockedDomain = typeof blockedDomains.$inferSelect;
-export type NewBlockedDomain = typeof blockedDomains.$inferInsert;
-
-export type RateLimit = typeof rateLimits.$inferSelect;
-export type NewRateLimit = typeof rateLimits.$inferInsert;
-
-export type LinkClick = typeof linkClicks.$inferSelect;
-export type NewLinkClick = typeof linkClicks.$inferInsert;
-
-export type SmartRedirect = typeof smartRedirects.$inferSelect;
-export type NewSmartRedirect = typeof smartRedirects.$inferInsert;
-
-export type LinkMasking = typeof linkMasking.$inferSelect;
-export type NewLinkMasking = typeof linkMasking.$inferInsert;
-
-export type ApiKey = typeof apiKeys.$inferSelect;
-export type NewApiKey = typeof apiKeys.$inferInsert;
-
-export type Webhook = typeof webhooks.$inferSelect;
-export type NewWebhook = typeof webhooks.$inferInsert;
 
 // 🏷️ Link Tags & Categories
 export const linkTags = pgTable('link_tags', {
@@ -285,6 +253,34 @@ export const linkHistory = pgTable('link_history', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// 🌿 Link-in-Bio Profiles
+export const bioProfiles = pgTable('bio_profiles', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  username: text('username').notNull().unique(), // e.g., "my/koch" -> "koch"
+  displayName: text('display_name'),
+  bio: text('bio'),
+  avatarUrl: text('avatar_url'),
+  theme: text('theme').default('light'), // 'light', 'dark', 'custom'
+  customColors: text('custom_colors'), // JSON { bg, text, button, buttonText }
+  socialLinks: text('social_links'), // JSON { twitter, instagram, linkedin, etc. }
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const bioLinks = pgTable('bio_links', {
+  id: serial('id').primaryKey(),
+  profileId: integer('profile_id').notNull().references(() => bioProfiles.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  url: text('url').notNull(),
+  icon: text('icon'), // Emoji or icon name
+  position: integer('position').notNull().default(0),
+  isActive: boolean('is_active').notNull().default(true),
+  clicks: integer('clicks').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export type LinkTag = typeof linkTags.$inferSelect;
 export type NewLinkTag = typeof linkTags.$inferInsert;
 
@@ -318,6 +314,12 @@ export type NewLinkComment = typeof linkComments.$inferInsert;
 export type LinkHistory = typeof linkHistory.$inferSelect;
 export type NewLinkHistory = typeof linkHistory.$inferInsert;
 
+export type BioProfile = typeof bioProfiles.$inferSelect;
+export type NewBioProfile = typeof bioProfiles.$inferInsert;
+
+export type BioLink = typeof bioLinks.$inferSelect;
+export type NewBioLink = typeof bioLinks.$inferInsert;
+
 // Relations
 export const linksRelations = relations(links, ({ one, many }) => ({
   user: one(users, {
@@ -335,6 +337,21 @@ export const linksRelations = relations(links, ({ one, many }) => ({
   linkComments: many(linkComments),
   linkHistory: many(linkHistory),
   teamLinks: many(teamLinks),
+}));
+
+export const bioProfilesRelations = relations(bioProfiles, ({ one, many }) => ({
+  user: one(users, {
+    fields: [bioProfiles.userId],
+    references: [users.id],
+  }),
+  links: many(bioLinks),
+}));
+
+export const bioLinksRelations = relations(bioLinks, ({ one }) => ({
+  profile: one(bioProfiles, {
+    fields: [bioLinks.profileId],
+    references: [bioProfiles.id],
+  }),
 }));
 
 export const linkClicksRelations = relations(linkClicks, ({ one }) => ({
@@ -456,4 +473,3 @@ export const linkHistoryRelations = relations(linkHistory, ({ one }) => ({
     references: [users.id],
   }),
 }));
-
