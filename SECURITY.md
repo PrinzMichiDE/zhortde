@@ -1,6 +1,9 @@
 # Security Implementation Guide
 
-This document outlines the security measures implemented in the Zhort URL Shortener application, following OWASP Top 10 best practices.
+This document outlines the comprehensive security measures implemented in the Zhort URL Shortener application, following OWASP Top 10 best practices.
+
+> **Last Updated**: December 2024  
+> **Security Level**: Production-Ready
 
 ## OWASP Top 10 Compliance
 
@@ -131,6 +134,46 @@ Sensitive configuration is stored in environment variables:
 - `NEXTAUTH_URL` - Application URL
 - `GOOGLE_SAFE_BROWSING_KEY` - Optional, for phishing detection
 
+## API Security Framework
+
+All API routes use the centralized security framework (`lib/api-security.ts`):
+
+```typescript
+// Authentication helper
+const auth = await requireAuth();
+if (!auth) return secureErrorResponse(ApiErrors.UNAUTHORIZED);
+
+// Input validation with Zod
+const validation = await validateBody(request, schema);
+if (!validation.success) {
+  return secureErrorResponse(ApiErrors.VALIDATION_ERROR(validation.error));
+}
+
+// Secure response with headers
+return secureResponse(data, 200);
+```
+
+### Protected Routes
+
+| Route | Auth Required | Admin Only | Rate Limited |
+|-------|---------------|------------|--------------|
+| `/api/links` (POST) | No | No | Yes |
+| `/api/user/*` | Yes | No | Yes |
+| `/api/admin/*` | Yes | Yes | Yes |
+| `/api/teams/*` | Yes | No | Yes |
+
+## Environment Variables
+
+Validated at startup using `lib/env.ts`:
+
+```typescript
+const envSchema = z.object({
+  DATABASE_URL: z.string().min(1),
+  NEXTAUTH_SECRET: z.string().min(32),
+  NEXTAUTH_URL: z.string().url().optional(),
+});
+```
+
 ## Reporting Security Issues
 
 If you discover a security vulnerability, please report it responsibly:
@@ -149,3 +192,18 @@ If you discover a security vulnerability, please report it responsibly:
 - [ ] Enable database connection encryption (SSL)
 - [ ] Regular dependency updates
 - [ ] Review access logs periodically
+- [ ] Test all input validation
+- [ ] Verify CSP headers in browser
+- [ ] Check for exposed sensitive data in responses
+
+## Security Files Overview
+
+| File | Purpose |
+|------|---------|
+| `middleware.ts` | Edge security (headers, rate limiting, bot detection) |
+| `lib/security.ts` | Zod schemas, XSS prevention, CSRF, hashing |
+| `lib/api-security.ts` | API route security helpers |
+| `lib/env.ts` | Environment validation |
+| `lib/rate-limit.ts` | Database-backed rate limiting |
+| `lib/blocklist.ts` | URL/domain blocklist |
+| `lib/phishing-check.ts` | Google Safe Browsing integration |

@@ -5,10 +5,29 @@ import { eq } from 'drizzle-orm';
 
 export type WebhookEvent = 'link.created' | 'link.clicked' | 'link.expired' | 'paste.created';
 
+/**
+ * Webhook data types for type safety
+ */
+export type WebhookLinkData = {
+  linkId: number;
+  shortCode: string;
+  longUrl: string;
+  ipAddress?: string;
+  userAgent?: string | null;
+  referer?: string | null;
+};
+
+export type WebhookPasteData = {
+  pasteId: number;
+  slug: string;
+};
+
+export type WebhookData = WebhookLinkData | WebhookPasteData | Record<string, unknown>;
+
 export type WebhookPayload = {
   event: WebhookEvent;
   timestamp: string;
-  data: any;
+  data: WebhookData;
 };
 
 /**
@@ -24,7 +43,7 @@ function generateSignature(payload: string, secret: string): string {
 /**
  * Trigger webhooks for a specific event
  */
-export async function triggerWebhooks(userId: number, event: WebhookEvent, data: any) {
+export async function triggerWebhooks(userId: number, event: WebhookEvent, data: WebhookData) {
   try {
     // Find all active webhooks for this user that subscribe to this event
     const userWebhooks = await db.query.webhooks.findMany({
