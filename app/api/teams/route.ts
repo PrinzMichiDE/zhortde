@@ -19,11 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     const userId = parseInt(session.user.id);
+    if (isNaN(userId)) {
+        console.error('Invalid user ID:', session.user.id);
+        return NextResponse.json({ error: 'Invalid User ID' }, { status: 400 });
+    }
 
     // Fetch teams where user is a member or owner
-    // This requires a join. Drizzle query builder handles relations nicely.
-    
-    // 1. Get all memberships for the user
     const memberships = await db.query.teamMembers.findMany({
       where: eq(teamMembers.userId, userId),
       with: {
@@ -35,19 +36,31 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    if (!memberships) {
+        return NextResponse.json([]);
+    }
+
     // 2. Map to simplified structure
-    const teamsList = memberships.map(m => ({
-      id: m.team.id,
-      name: m.team.name,
-      role: m.role,
-      memberCount: m.team.members.length,
-      createdAt: m.team.createdAt,
-    }));
+    const teamsList = memberships.map(m => {
+        if (!m.team) {
+            console.warn('Orphaned team membership found for user:', userId, 'Team ID likely missing');
+            return null;
+        }
+        return {
+            id: m.team.id,
+            name: m.team.name,
+            role: m.role,
+            memberCount: m.team.members?.length || 0,
+            createdAt: m.team.createdAt,
+        };
+    }).filter(Boolean); // Filter out nulls
 
     return NextResponse.json(teamsList);
   } catch (error) {
     console.error('Error fetching teams:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    // Return the actual error message in dev mode or generic in prod
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
   }
 }
 
@@ -79,6 +92,10 @@ export async function POST(request: NextRequest) {
         ownerId: userId,
       }).returning();
 
+      if (!newTeam) {
+          throw new Error("Failed to insert team");
+      }
+
       // 2. Add User as Owner-Member
       await tx.insert(teamMembers).values({
         teamId: newTeam.id,
@@ -94,6 +111,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error creating team:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
   }
 }
