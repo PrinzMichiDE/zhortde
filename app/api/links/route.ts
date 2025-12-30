@@ -11,12 +11,13 @@ import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rate-lim
 import { hashPassword, calculateExpiration } from '@/lib/password-protection';
 import { triggerWebhooks } from '@/lib/webhooks';
 import { logLinkAction } from '@/lib/audit-log';
+import { monetizeUrl } from '@/lib/monetization';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     const body = await request.json();
-    const { longUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, hp } = body;
+    const { longUrl: rawLongUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, hp } = body;
 
     // 🍯 Honeypot Check
     if (hp) {
@@ -45,16 +46,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!longUrl) {
+    if (!rawLongUrl) {
       return NextResponse.json(
         { error: 'URL ist erforderlich' },
         { status: 400 }
       );
     }
 
-    // Validiere URL
+    // Validiere URL (Before Monetization to check basic validity)
     try {
-      new URL(longUrl);
+      new URL(rawLongUrl);
     } catch {
       return NextResponse.json(
         { error: 'Ungültige URL' },
@@ -62,8 +63,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Prüfe gegen Blocklist
-    const blocked = await isUrlBlocked(longUrl);
+    // Monetization (Amazon Affiliate)
+    const longUrl = monetizeUrl(rawLongUrl);
+
+    // Prüfe gegen Blocklist (Check Monetized URL just in case, but usually original check is safer for domain blocking)
+    // We check rawLongUrl to prevent bypassing blocklist by monetization modifications (though unlikely for amazon)
+    // And we can check longUrl too if needed, but blocklist usually targets domains.
+    const blocked = await isUrlBlocked(rawLongUrl);
     if (blocked) {
       return NextResponse.json(
         { error: 'Diese Domain ist auf der Blocklist und kann nicht gekürzt werden' },
@@ -152,7 +158,8 @@ export async function POST(request: NextRequest) {
         isPublic,
         hasPassword: !!password,
         hasExpiration: !!expiresAt,
-        utm: { utmSource, utmMedium, utmCampaign }
+        utm: { utmSource, utmMedium, utmCampaign },
+        isMonetized: longUrl !== rawLongUrl // Log if URL was changed for monetization
       });
 
       // Trigger webhooks

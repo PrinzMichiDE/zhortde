@@ -6,6 +6,7 @@ import { links } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { isUrlBlocked } from '@/lib/blocklist';
 import { logLinkAction } from '@/lib/audit-log';
+import { monetizeUrl } from '@/lib/monetization';
 
 export async function PATCH(
   request: NextRequest,
@@ -38,23 +39,35 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { longUrl, isPublic, shortCode } = body; // Allow basic updates
+    const { longUrl: rawLongUrl, isPublic, shortCode } = body; // Allow basic updates
 
     const updateData: Partial<typeof links.$inferInsert> = {};
     const changes: Record<string, any> = {};
 
     // Validate and check longUrl
-    if (longUrl && longUrl !== currentLink.longUrl) {
-      if (await isUrlBlocked(longUrl)) {
-        return NextResponse.json({ error: 'Domain ist blockiert' }, { status: 403 });
-      }
+    if (rawLongUrl && rawLongUrl !== currentLink.longUrl) {
+      // Basic validation
       try {
-        new URL(longUrl);
+        new URL(rawLongUrl);
       } catch {
         return NextResponse.json({ error: 'Ungültige URL' }, { status: 400 });
       }
-      updateData.longUrl = longUrl;
-      changes.longUrl = { from: currentLink.longUrl, to: longUrl };
+
+      // Monetize (Amazon Affiliate)
+      const longUrl = monetizeUrl(rawLongUrl);
+
+      // Blocklist check (on raw url preferably, or monetized)
+      if (await isUrlBlocked(rawLongUrl)) {
+        return NextResponse.json({ error: 'Domain ist blockiert' }, { status: 403 });
+      }
+      
+      if (longUrl !== currentLink.longUrl) {
+         updateData.longUrl = longUrl;
+         changes.longUrl = { from: currentLink.longUrl, to: longUrl };
+         if (longUrl !== rawLongUrl) {
+            changes.isMonetized = true;
+         }
+      }
     }
 
     // Update public status
