@@ -2,7 +2,7 @@
 
 import { HTMLAttributes, forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { cn } from '@/lib/utils'; // Assuming this exists or I should create it
+import { cn } from '@/lib/utils';
 
 const cardVariants = cva(
   'rounded-xl border bg-card text-card-foreground shadow',
@@ -51,7 +51,7 @@ export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
     return (
       <div
         ref={ref}
-        className={`flex flex-col space-y-1.5 p-6 pb-0 ${className || ''}`}
+        className={cn('flex flex-col space-y-1.5 p-6 pb-0', className)}
         {...props}
       />
     );
@@ -65,7 +65,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
     return (
       <h3
         ref={ref}
-        className={`font-semibold leading-none tracking-tight ${className || ''}`}
+        className={cn('font-semibold leading-none tracking-tight', className)}
         {...props}
       />
     );
@@ -93,7 +93,7 @@ export const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElem
     return (
       <div
         ref={ref}
-        className={`p-6 pt-0 ${className || ''}`}
+        className={cn('p-6 pt-0', className)}
         {...props}
       />
     );

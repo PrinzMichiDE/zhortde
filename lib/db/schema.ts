@@ -358,6 +358,15 @@ export type SsoDomainAdmin = typeof ssoDomainAdmins.$inferSelect;
 export type NewSsoDomainAdmin = typeof ssoDomainAdmins.$inferInsert;
 
 // Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  links: many(links),
+  pastes: many(pastes),
+  ownedTeams: many(teams),
+  teamMemberships: many(teamMembers),
+  ssoDomains: many(ssoDomains),
+  ssoAdminDomains: many(ssoDomainAdmins),
+}));
+
 export const ssoDomainsRelations = relations(ssoDomains, ({ one, many }) => ({
   user: one(users, {
     fields: [ssoDomains.userId],
