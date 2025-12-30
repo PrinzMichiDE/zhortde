@@ -7,6 +7,10 @@ export type QRCodeOptions = {
   width?: number;
   margin?: number;
   errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
+  color?: {
+    dark?: string; // Hex color for dots (default: #000000)
+    light?: string; // Hex color for background (default: #ffffff)
+  };
 };
 
 /**
@@ -20,6 +24,7 @@ export async function generateQRCodeDataUrl(
     width: options.width || 300,
     margin: options.margin || 2,
     errorCorrectionLevel: options.errorCorrectionLevel || 'M',
+    color: options.color,
   };
 
   if (options.format === 'svg') {
@@ -43,6 +48,7 @@ export async function generateQRCodeBuffer(
     width: options.width || 300,
     margin: options.margin || 2,
     errorCorrectionLevel: options.errorCorrectionLevel || 'M',
+    color: options.color,
   };
 
   if (options.format === 'svg') {
@@ -65,4 +71,3 @@ export async function generateQRCodeBuffer(
 export function getQRCodeContentType(format: QRCodeFormat): string {
   return format === 'svg' ? 'image/svg+xml' : 'image/png';
 }
-

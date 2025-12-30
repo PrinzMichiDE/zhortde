@@ -29,6 +29,8 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams;
     const format = (searchParams.get('format') || 'png') as QRCodeFormat;
     const width = parseInt(searchParams.get('width') || '300');
+    const fgColor = searchParams.get('fg'); // e.g. #000000
+    const bgColor = searchParams.get('bg'); // e.g. #ffffff
 
     // Generate full URL for QR code
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -38,7 +40,11 @@ export async function GET(
     const qrBuffer = await generateQRCodeBuffer(fullUrl, {
       format,
       width,
-      errorCorrectionLevel: 'M',
+      errorCorrectionLevel: 'H', // Higher correction allows for more customization/damage
+      color: {
+        dark: fgColor ? (fgColor.startsWith('#') ? fgColor : `#${fgColor}`) : undefined,
+        light: bgColor ? (bgColor.startsWith('#') ? bgColor : `#${bgColor}`) : undefined,
+      }
     });
 
     // Return QR code with appropriate headers
@@ -58,4 +64,3 @@ export async function GET(
     );
   }
 }
-
