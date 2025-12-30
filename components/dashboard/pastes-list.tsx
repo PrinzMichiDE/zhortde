@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { TrashIcon, EyeIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
-import type { Paste } from '@/lib/db/schema';
+import { pastes } from '@/lib/db/schema';
+
+type Paste = typeof pastes.$inferSelect;
 
 interface PastesListProps {
   pastes: Paste[];
@@ -138,4 +140,3 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
     </div>
   );
 }
-

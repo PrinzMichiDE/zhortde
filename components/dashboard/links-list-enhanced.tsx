@@ -3,11 +3,13 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { TrashIcon, EyeIcon, ClipboardIcon, MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import type { Link as LinkType } from '@/lib/db/schema';
+import { links } from '@/lib/db/schema';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LinkPreviewCard } from '@/components/link-preview-card';
 import { cn } from '@/lib/utils';
+
+type LinkType = typeof links.$inferSelect;
 
 interface LinksListEnhancedProps {
   links: LinkType[];

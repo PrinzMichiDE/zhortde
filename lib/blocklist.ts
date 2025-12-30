@@ -1,9 +1,10 @@
 /**
  * Domain-Blocklist Service
- * Prüft URLs gegen die Hagezi DNS Blocklist (DB-backed)
+ * Prüft URLs gegen die Hagezi DNS Blocklist (DB-backed) und Google Safe Browsing
  */
 
 import { isDomainBlocked, checkAndUpdateBlocklist, getBlocklistStats as getDbBlocklistStats } from './db/blocklist-service';
+import { checkPhishing } from './phishing-check';
 
 // Initialisiere Blocklist beim Server-Start
 let initPromise: Promise<void> | null = null;
@@ -28,7 +29,7 @@ function extractDomain(url: string): string {
 }
 
 /**
- * Prüft ob eine URL auf der Blocklist steht
+ * Prüft ob eine URL auf der Blocklist steht oder Phishing ist
  */
 export async function isUrlBlocked(url: string): Promise<boolean> {
   try {
@@ -37,11 +38,20 @@ export async function isUrlBlocked(url: string): Promise<boolean> {
       return false;
     }
 
-    // Stelle sicher, dass Blocklist initialisiert ist
+    // 1. Lokale Blocklist prüfen (schnell)
     await ensureBlocklistInitialized();
+    const isLocalBlocked = await isDomainBlocked(domain);
+    
+    if (isLocalBlocked) {
+      return true;
+    }
 
-    // Prüfe gegen Datenbank
-    return await isDomainBlocked(domain);
+    // 2. Google Safe Browsing prüfen (API Call, langsamer)
+    // Nur prüfen, wenn lokal nicht blockiert
+    const isPhishing = await checkPhishing(url);
+    
+    return isPhishing;
+
   } catch (error) {
     console.error('Error checking if URL is blocked:', error);
     // Bei Fehler: nicht blockieren (fail-open)
@@ -64,4 +74,3 @@ export async function getBlocklistStats(): Promise<{
     return { total: 0, lastUpdate: null, ageHours: 0 };
   }
 }
-

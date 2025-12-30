@@ -164,10 +164,10 @@ export default function TeamsPage() {
                   </p>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" fullWidth size="sm">
+                    <Button variant="outline" fullWidth size="sm" onClick={() => router.push(`/dashboard/teams/${team.id}`)}>
                       Einstellungen
                     </Button>
-                    <Button fullWidth size="sm">
+                    <Button fullWidth size="sm" onClick={() => router.push(`/dashboard/teams/${team.id}`)}>
                       Ansehen &rarr;
                     </Button>
                   </div>

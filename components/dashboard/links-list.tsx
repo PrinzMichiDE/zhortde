@@ -3,9 +3,11 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { TrashIcon, EyeIcon, ClipboardIcon } from '@heroicons/react/24/outline';
-import type { Link as LinkType } from '@/lib/db/schema';
+import { links } from '@/lib/db/schema';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+type LinkType = typeof links.$inferSelect;
 
 interface LinksListProps {
   links: LinkType[];
@@ -39,7 +41,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
   };
 
   const copyShortUrl = (shortCode: string) => {
-    const baseUrl = process.env.NEXTAUTH_URL || window.location.origin;
+    const baseUrl = window.location.origin;
     navigator.clipboard.writeText(`${baseUrl}/s/${shortCode}`);
   };
 
@@ -93,7 +95,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                     onClick={() => copyShortUrl(link.shortCode)}
                     title="Kopieren"
                     aria-label={`Short Code ${link.shortCode} kopieren`}
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   >
                     <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
                   </Button>

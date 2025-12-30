@@ -117,6 +117,18 @@ export async function GET(
       .orderBy(desc(linkClicks.clickedAt))
       .limit(50);
 
+    // Time-series data (Last 30 days)
+    // Note: Drizzle raw SQL support varies by driver, ensuring safe casting
+    const clicksOverTimeResult = await db
+      .select({
+        date: sql<string>`to_char(${linkClicks.clickedAt}, 'YYYY-MM-DD')`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(linkClicks)
+      .where(eq(linkClicks.linkId, linkIdNum))
+      .groupBy(sql`to_char(${linkClicks.clickedAt}, 'YYYY-MM-DD')`)
+      .orderBy(sql`to_char(${linkClicks.clickedAt}, 'YYYY-MM-DD')`);
+
     return NextResponse.json({
       link: {
         id: link.id,
@@ -131,6 +143,7 @@ export async function GET(
         countryBreakdown,
         browserBreakdown,
         recentClicks,
+        clicksOverTime: clicksOverTimeResult,
       },
     });
   } catch (error) {
