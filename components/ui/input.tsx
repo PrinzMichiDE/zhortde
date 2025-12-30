@@ -2,15 +2,16 @@
 
 import React, { InputHTMLAttributes, forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
 const inputVariants = cva(
-  'w-full px-4 py-3 border-2 rounded-lg bg-white text-gray-900 placeholder-gray-500 transition-all duration-300 font-medium focus:outline-none focus:ring-2 min-h-[44px] dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-400',
+  'flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: 'border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 hover:border-indigo-400 dark:border-gray-600 dark:focus:border-indigo-400 dark:hover:border-gray-500',
-        error: 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400',
-        success: 'border-green-500 focus:border-green-500 focus:ring-green-500 dark:border-green-400',
+        default: '',
+        error: 'border-destructive focus-visible:ring-destructive',
+        success: 'border-green-500 focus-visible:ring-green-500',
       },
     },
     defaultVariants: {
@@ -38,10 +39,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-semibold text-gray-800 dark:text-gray-200"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
           >
             {label}
-            {props.required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
+            {props.required && <span className="text-destructive ml-1">*</span>}
           </label>
         )}
         <input
@@ -61,17 +62,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && errorText && (
           <p
             id={`${inputId}-error`}
-            className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1"
+            className="text-sm text-destructive font-medium"
             role="alert"
           >
-            <span aria-hidden="true">⚠️</span>
             {errorText}
           </p>
         )}
         {!error && helperText && (
           <p
             id={`${inputId}-helper`}
-            className="text-sm text-gray-600 dark:text-gray-400"
+            className="text-sm text-muted-foreground"
           >
             {helperText}
           </p>

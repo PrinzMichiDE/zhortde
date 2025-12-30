@@ -2,15 +2,17 @@
 
 import { HTMLAttributes, forwardRef } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils'; // Assuming this exists or I should create it
 
 const cardVariants = cva(
-  'rounded-2xl border transition-all duration-300',
+  'rounded-xl border bg-card text-card-foreground shadow',
   {
     variants: {
       variant: {
-        default: 'bg-white/80 backdrop-blur-sm shadow-xl border-gray-100 hover:shadow-2xl dark:bg-gray-800/80 dark:border-gray-700',
-        elevated: 'bg-white shadow-2xl border-gray-200 dark:bg-gray-800 dark:border-gray-700',
-        outlined: 'bg-transparent border-2 border-gray-300 dark:border-gray-600',
+        default: 'shadow-sm',
+        elevated: 'shadow-md',
+        outlined: 'bg-transparent border-2',
+        glass: 'glass-effect border-none shadow-lg',
       },
       padding: {
         none: 'p-0',
@@ -49,7 +51,7 @@ export const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivEleme
     return (
       <div
         ref={ref}
-        className={`mb-4 ${className || ''}`}
+        className={`flex flex-col space-y-1.5 p-6 pb-0 ${className || ''}`}
         {...props}
       />
     );
@@ -63,7 +65,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
     return (
       <h3
         ref={ref}
-        className={`text-xl font-bold text-gray-900 dark:text-gray-100 ${className || ''}`}
+        className={`font-semibold leading-none tracking-tight ${className || ''}`}
         {...props}
       />
     );
@@ -77,7 +79,7 @@ export const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElem
     return (
       <div
         ref={ref}
-        className={className || ''}
+        className={`p-6 pt-0 ${className || ''}`}
         {...props}
       />
     );

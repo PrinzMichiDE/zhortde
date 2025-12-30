@@ -152,7 +152,7 @@ export default function CustomDomainsPage() {
                 <GlobeAltIcon className="h-6 w-6" />
                 Meine Domains
               </CardTitle>
-              <Button onClick={() => setShowForm(!showForm)} variant="primary" size="sm">
+              <Button onClick={() => setShowForm(!showForm)} variant="default" size="sm">
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Domain hinzufügen
               </Button>
@@ -172,7 +172,7 @@ export default function CustomDomainsPage() {
                   helperText="Geben Sie die Subdomain ein (z.B. links.example.com)"
                 />
                 <div className="flex gap-2">
-                  <Button type="submit" variant="primary">
+                  <Button type="submit" variant="default">
                     Domain hinzufügen
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>

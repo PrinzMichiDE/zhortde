@@ -204,7 +204,7 @@ export default function ABTestingPage() {
                 <BeakerIcon className="h-6 w-6" />
                 Varianten
               </CardTitle>
-              <Button onClick={() => setShowForm(!showForm)} variant="primary" size="sm">
+              <Button onClick={() => setShowForm(!showForm)} variant="default" size="sm">
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Neue Variante
               </Button>
@@ -245,7 +245,7 @@ export default function ABTestingPage() {
                   </Alert>
                 )}
                 <div className="flex gap-2">
-                  <Button type="submit" variant="primary" disabled={totalTraffic + formData.trafficPercentage > 100}>
+                  <Button type="submit" variant="default" disabled={totalTraffic + formData.trafficPercentage > 100}>
                     Variante erstellen
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>

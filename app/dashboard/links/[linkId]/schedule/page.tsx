@@ -159,7 +159,7 @@ export default function LinkSchedulePage() {
                 <CalendarIcon className="h-6 w-6" />
                 Zeitpläne
               </CardTitle>
-              <Button onClick={() => setShowForm(!showForm)} variant="primary" size="sm">
+              <Button onClick={() => setShowForm(!showForm)} variant="default" size="sm">
                 <PlusIcon className="h-5 w-5 mr-2" />
                 Neuer Schedule
               </Button>
@@ -212,7 +212,7 @@ export default function LinkSchedulePage() {
                   />
                 </div>
                 <div className="flex gap-2">
-                  <Button type="submit" variant="primary">
+                  <Button type="submit" variant="default">
                     Schedule erstellen
                   </Button>
                   <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
