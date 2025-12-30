@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { HeartIcon } from '@heroicons/react/24/solid';
 import { CookieSettingsButton } from './cookie-settings-button';
+import { useTranslations, useLocale } from 'next-intl';
 
 export function Footer() {
   const [visitorCount, setVisitorCount] = useState<number>(0);
@@ -11,6 +12,8 @@ export function Footer() {
   const [animatedLinks, setAnimatedLinks] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const footerRef = useRef<HTMLElement>(null);
+  const t = useTranslations('footer');
+  const locale = useLocale();
 
   useEffect(() => {
     // Lade oder initialisiere Statistiken
@@ -99,7 +102,7 @@ export function Footer() {
   }, [linkCount, isVisible]);
 
   const formatNumber = (num: number) => {
-    return num.toLocaleString('de-DE');
+    return num.toLocaleString(locale);
   };
 
   return (
@@ -119,7 +122,7 @@ export function Footer() {
           >
             <h3 className="text-lg font-semibold mb-3 text-foreground flex items-center justify-center md:justify-start">
               <span className="inline-block animate-pulse">📊</span>
-              <span className="ml-2">Statistiken</span>
+              <span className="ml-2">{t('statistics')}</span>
             </h3>
             <div className="space-y-4">
               <div className="group flex items-center justify-center md:justify-start space-x-2 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-all duration-300 hover:scale-105">
@@ -129,7 +132,7 @@ export function Footer() {
                 <span className="text-xl font-bold text-foreground tabular-nums">
                   {formatNumber(animatedVisitors)}
                 </span>
-                <span className="text-muted-foreground text-sm">Besucher</span>
+                <span className="text-muted-foreground text-sm">{t('visitors')}</span>
               </div>
               <div className="group flex items-center justify-center md:justify-start space-x-2 p-3 rounded-lg bg-accent/50 hover:bg-accent transition-all duration-300 hover:scale-105">
                 <svg className="w-5 h-5 text-primary group-hover:animate-bounce" fill="currentColor" viewBox="0 0 20 20">
@@ -138,7 +141,7 @@ export function Footer() {
                 <span className="text-xl font-bold text-foreground tabular-nums">
                   {formatNumber(animatedLinks)}
                 </span>
-                <span className="text-muted-foreground text-sm">Links</span>
+                <span className="text-muted-foreground text-sm">{t('links')}</span>
               </div>
             </div>
           </div>
@@ -153,10 +156,10 @@ export function Footer() {
               Zhort
             </h3>
             <p className="text-muted-foreground text-sm hover:text-foreground transition-colors duration-300">
-              Kostenloser URL Shortener & Pastebin
+              {t('freeService')}
             </p>
             <p className="text-muted-foreground/60 text-xs mt-2 hover:text-muted-foreground transition-colors duration-300">
-              © {new Date().getFullYear()} Zhort. Alle Rechte vorbehalten.
+              © {new Date().getFullYear()} Zhort. {t('allRightsReserved')}
             </p>
           </div>
 
@@ -168,11 +171,11 @@ export function Footer() {
           >
             <h3 className="text-lg font-semibold mb-3 text-foreground flex items-center justify-center md:justify-end">
               <HeartIcon className="w-5 h-5 mr-2 text-destructive animate-pulse hover:scale-125 transition-transform duration-300" />
-              Unterstützen
+              {t('support')}
             </h3>
             <div className="space-y-3 flex flex-col items-center md:items-end">
               <p className="text-sm text-muted-foreground mb-2 max-w-xs">
-                Alles für immer kostenlos. Damit es so bleibt, brauchen wir Ihre Unterstützung.
+                {t('supportText')}
               </p>
               <a
                 href="https://www.michelfritzsch.de/unterstuetzen"
@@ -182,7 +185,7 @@ export function Footer() {
               >
                 <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer"></span>
                 <HeartIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                <span className="font-semibold">Unterstützen</span>
+                <span className="font-semibold">{t('supportButton')}</span>
               </a>
             </div>
           </div>
@@ -200,7 +203,7 @@ export function Footer() {
                 href="/api" 
                 className="hover:text-primary transition-all duration-300 hover:scale-110 inline-block relative group"
               >
-                <span className="relative z-10">API Dokumentation</span>
+                <span className="relative z-10">{t('apiDocs')}</span>
                 <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-primary to-primary/60 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </a>
               <span className="mx-1 animate-pulse">•</span>
@@ -216,26 +219,16 @@ export function Footer() {
                 href="/datenschutz" 
                 className="hover:text-primary transition-all duration-300 hover:scale-110 inline-block relative group"
               >
-                <span className="relative z-10">Datenschutz</span>
-                <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-primary to-primary/60 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
-              </a>
-              <span className="mx-1 animate-pulse">•</span>
-              <a 
-                href="https://www.michelfritzsch.de/impressum" 
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-primary transition-all duration-300 hover:scale-110 inline-block relative group"
-              >
-                <span className="relative z-10">Impressum</span>
+                <span className="relative z-10">{t('cookieSettings')}</span>
                 <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-primary to-primary/60 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </a>
               <span className="mx-1 animate-pulse">•</span>
               <CookieSettingsButton />
             </div>
             <div className="flex items-center gap-2 group">
-              <span>Made with</span>
+              <span>{t('madeWith')}</span>
               <span className="inline-block text-destructive animate-pulse group-hover:scale-125 group-hover:animate-bounce transition-transform duration-300">❤</span>
-              <span>by</span>
+              <span>{t('by')}</span>
               <span className="font-semibold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent transition-all duration-300">Michel</span>
             </div>
           </div>

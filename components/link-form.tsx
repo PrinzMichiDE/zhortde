@@ -14,6 +14,7 @@ import { EXPIRATION_OPTIONS } from '@/lib/password-protection';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Alert } from './ui/alert';
+import { useTranslations } from 'next-intl';
 
 export function LinkForm() {
   const { data: session } = useSession();
@@ -31,6 +32,9 @@ export function LinkForm() {
   const [urlError, setUrlError] = useState('');
   const [customCodeError, setCustomCodeError] = useState('');
   const [honeyPot, setHoneyPot] = useState(''); // Anti-Spam field
+  const t = useTranslations('linkForm');
+  const te = useTranslations('expiration');
+  const tc = useTranslations('common');
 
   const validateUrl = (url: string): boolean => {
     try {
@@ -61,12 +65,12 @@ export function LinkForm() {
 
     // Validierung
     if (!validateUrl(longUrl)) {
-      setUrlError('Bitte geben Sie eine gültige URL ein (beginnt mit http:// oder https://)');
+      setUrlError(t('validUrlError'));
       return;
     }
 
     if (customCode && (customCode.length < 3 || customCode.length > 50)) {
-      setCustomCodeError('Der Short Code muss zwischen 3 und 50 Zeichen lang sein');
+      setCustomCodeError(t('customCodeLengthError'));
       return;
     }
 
@@ -89,7 +93,7 @@ export function LinkForm() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Fehler beim Kürzen der URL');
+        throw new Error(data.error || t('shorteningError'));
       }
 
       const baseUrl = window.location.origin;
@@ -101,7 +105,7 @@ export function LinkForm() {
       setExpiresIn('never');
       setShowAdvanced(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Ein Fehler ist aufgetreten');
+      setError(err instanceof Error ? err.message : tc('error'));
     } finally {
       setLoading(false);
     }
@@ -137,13 +141,13 @@ export function LinkForm() {
         <Input
           id="url"
           type="url"
-          label="Lange URL"
+          label={t('longUrl')}
           value={longUrl}
           onChange={(e) => {
             setLongUrl(e.target.value);
             setUrlError('');
           }}
-          placeholder="https://example.com/sehr/lange/url"
+          placeholder={t('placeholder')}
           required
           error={!!urlError}
           errorText={urlError}
@@ -151,7 +155,7 @@ export function LinkForm() {
 
         <div>
           <label htmlFor="customCode" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-            Individueller Short Code (optional)
+            {t('customCode')}
           </label>
           <div className="flex items-center space-x-2">
             <span className="text-gray-600 dark:text-gray-400 text-sm font-semibold bg-gray-100 dark:bg-gray-700 px-3 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 min-h-[44px] flex items-center">/s/</span>
@@ -163,12 +167,12 @@ export function LinkForm() {
                 setCustomCode(e.target.value.toLowerCase().replace(/[^a-z0-9-_]/g, ''));
                 setCustomCodeError('');
               }}
-              placeholder="mein-link"
+              placeholder={t('customCodePlaceholder')}
               minLength={3}
               maxLength={50}
               error={!!customCodeError}
               errorText={customCodeError}
-              helperText="Nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche erlaubt"
+              helperText={t('customCodeHelper')}
               className="flex-1"
             />
           </div>
@@ -191,9 +195,9 @@ export function LinkForm() {
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
-          <span>Erweiterte Optionen</span>
+          <span>{t('advancedOptions')}</span>
           <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50 px-2 py-0.5 rounded-full transition-colors">
-            {showAdvanced ? 'Ausblenden' : 'Anzeigen'}
+            {showAdvanced ? t('hide') : t('show')}
           </span>
         </button>
 
@@ -206,20 +210,20 @@ export function LinkForm() {
               label={
                 <span className="flex items-center">
                   <LockClosedIcon className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                  Passwortschutz (optional)
+                  {t('passwordProtection')}
                 </span>
               }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Passwort eingeben"
-              helperText="Link ist nur mit diesem Passwort zugänglich"
+              placeholder={t('passwordPlaceholder')}
+              helperText={t('passwordHelper')}
             />
 
             {/* Expiration */}
             <div>
               <label htmlFor="expiresIn" className="flex items-center text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                 <ClockIcon className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                Ablaufdatum
+                {t('expiration')}
               </label>
               <select
                 id="expiresIn"
@@ -227,11 +231,13 @@ export function LinkForm() {
                 onChange={(e) => setExpiresIn(e.target.value)}
                 className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 font-medium cursor-pointer min-h-[44px]"
               >
-                {EXPIRATION_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
+                <option value="never">{te('never')}</option>
+                <option value="1h">{te('1hour')}</option>
+                <option value="1d">{te('1day')}</option>
+                <option value="7d">{te('7days')}</option>
+                <option value="30d">{te('30days')}</option>
+                <option value="90d">{te('90days')}</option>
+                <option value="1y">{te('1year')}</option>
               </select>
             </div>
 
@@ -239,7 +245,7 @@ export function LinkForm() {
             {session && (
               <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  Öffentlich sichtbar
+                  {t('publicVisible')}
                 </span>
                 <Switch
                   checked={isPublic}
@@ -272,7 +278,7 @@ export function LinkForm() {
           fullWidth
           size="lg"
         >
-          {loading ? 'Wird gekürzt...' : 'URL kürzen'}
+          {loading ? t('shortening') : t('shortenUrl')}
         </Button>
       </form>
 
@@ -281,30 +287,30 @@ export function LinkForm() {
           <div className="space-y-4">
             <h3 className="text-lg font-bold flex items-center gap-2">
               <CheckIcon className="h-5 w-5" aria-hidden="true" />
-              Link erfolgreich erstellt!
+              {t('success')}
             </h3>
             
             <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-md border border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 transition-colors">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <span aria-hidden="true">🔗</span>
-                  <span>Ihre Kurz-URL:</span>
+                  <span>{t('yourShortUrl')}:</span>
                 </span>
                 <Button
                   variant={copied ? 'success' : 'outline'}
                   size="sm"
                   onClick={copyToClipboard}
-                  aria-label={copied ? 'Kopiert' : 'In Zwischenablage kopieren'}
+                  aria-label={copied ? tc('copied') : tc('copy')}
                 >
                   {copied ? (
                     <>
                       <CheckIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                      Kopiert!
+                      {tc('copied')}
                     </>
                   ) : (
                     <>
                       <ClipboardIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                      Kopieren
+                      {tc('copy')}
                     </>
                   )}
                 </Button>
@@ -328,7 +334,7 @@ export function LinkForm() {
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold rounded-lg border-2 border-indigo-200 dark:border-indigo-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 shadow-sm hover:shadow-md min-h-[44px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
               >
                 <QrCodeIcon className="h-5 w-5" aria-hidden="true" />
-                QR-Code anzeigen
+                {t('showQr')}
               </a>
               <a
                 href={`/api/qr/${shortCode}?format=png&width=600`}
@@ -338,7 +344,7 @@ export function LinkForm() {
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                QR herunterladen
+                {t('downloadQr')}
               </a>
             </div>
           </div>

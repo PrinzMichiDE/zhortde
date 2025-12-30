@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { GlobeAltIcon, ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 
 type Browser = 'chrome' | 'firefox' | 'edge' | 'safari' | 'opera' | 'unknown';
 
 export function ExtensionDownload() {
   const [browser, setBrowser] = useState<Browser>('unknown');
   const [showGuide, setShowGuide] = useState(false);
+  const t = useTranslations('extension');
 
   useEffect(() => {
     // Einfache Browser-Erkennung
@@ -44,50 +46,50 @@ export function ExtensionDownload() {
       case 'chrome':
         return {
           name: 'Chrome',
-          label: 'Zu Chrome hinzufügen',
-          icon: '/chrome-logo.svg', // Fallback to generic if not present
+          label: t('addToChrome'),
+          icon: '/chrome-logo.svg',
           color: 'bg-blue-600 hover:bg-blue-700',
           steps: [
-            'Entpacke die heruntergeladene ZIP-Datei.',
-            'Öffne chrome://extensions/ in der Adressleiste.',
-            'Aktiviere den "Entwicklermodus" oben rechts.',
-            'Klicke auf "Entpackte Erweiterung laden" und wähle den Ordner.'
+            t('step1chrome'),
+            t('step2chrome'),
+            t('step3chrome'),
+            t('step4chrome')
           ]
         };
       case 'edge':
         return {
           name: 'Edge',
-          label: 'Für Edge abrufen',
+          label: t('addToEdge'),
           color: 'bg-slate-700 hover:bg-slate-800',
           steps: [
-            'Entpacke die heruntergeladene ZIP-Datei.',
-            'Öffne edge://extensions/ in der Adressleiste.',
-            'Aktiviere den "Entwicklermodus" im Menü links.',
-            'Klicke auf "Entpackte Erweiterung laden" und wähle den Ordner.'
+            t('step1edge'),
+            t('step2edge'),
+            t('step3edge'),
+            t('step4edge')
           ]
         };
       case 'firefox':
         return {
           name: 'Firefox',
-          label: 'Zu Firefox hinzufügen',
+          label: t('addToFirefox'),
           color: 'bg-orange-600 hover:bg-orange-700',
           steps: [
-            'Entpacke die heruntergeladene ZIP-Datei.',
-            'Öffne about:debugging#/runtime/this-firefox',
-            'Klicke auf "Temporäres Add-on laden".',
-            'Wähle die manifest.json Datei im entpackten Ordner.'
+            t('step1firefox'),
+            t('step2firefox'),
+            t('step3firefox'),
+            t('step4firefox')
           ]
         };
       default:
         return {
           name: 'Browser',
-          label: 'Extension herunterladen',
+          label: t('download'),
           color: 'bg-indigo-600 hover:bg-indigo-700',
           steps: [
-            'Entpacke die heruntergeladene ZIP-Datei.',
-            'Öffne die Erweiterungs-Verwaltung deines Browsers.',
-            'Aktiviere den Entwicklermodus.',
-            'Lade die Erweiterung als "Unpacked" oder "Temporär".'
+            t('step1default'),
+            t('step2default'),
+            t('step3default'),
+            t('step4default')
           ]
         };
     }
@@ -99,12 +101,12 @@ export function ExtensionDownload() {
     <>
       <div className="flex flex-col items-start gap-4">
         <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-          Browser Erweiterung
+          {t('title')}
         </h3>
         <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-4">
-          Kürzen Sie URLs direkt aus Ihrem Browser mit einem Klick.
+          {t('description')}
           <br />
-          <span className="text-sm opacity-70">Erkannt: {config.name}</span>
+          <span className="text-sm opacity-70">{t('detected')}: {config.name}</span>
         </p>
         
         <button 
@@ -123,7 +125,7 @@ export function ExtensionDownload() {
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">
-                  Installation in {config.name}
+                  {t('installTitle')} {config.name}
                 </h3>
                 <button onClick={() => setShowGuide(false)} className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300">
                   <XMarkIcon className="h-6 w-6" />
@@ -132,7 +134,7 @@ export function ExtensionDownload() {
               
               <div className="space-y-4">
                 <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-3 rounded-lg text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ Da Zhort noch nicht im {config.name} Store gelistet ist, müssen Sie den Entwicklermodus nutzen.
+                  ⚠️ {t('installWarning', { browser: config.name })}
                 </div>
 
                 <ol className="list-decimal list-inside space-y-3 text-sm text-gray-600 dark:text-gray-300">
@@ -149,7 +151,7 @@ export function ExtensionDownload() {
                   onClick={() => setShowGuide(false)}
                   className="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 font-medium py-2 px-4 rounded-lg transition-colors"
                 >
-                  Verstanden
+                  {t('understood')}
                 </button>
               </div>
             </div>

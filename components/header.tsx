@@ -6,27 +6,30 @@ import { useSession, signOut } from 'next-auth/react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, UserCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ThemeToggle } from './theme-toggle';
+import { LanguageSelector } from './language-selector';
+import { useTranslations } from 'next-intl';
 
 export function Header() {
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const t = useTranslations('header');
 
   const navigation = [
-    { name: 'Home', href: '/', show: true },
-    { name: 'Paste', href: '/paste/create', show: true },
-    { name: 'API', href: '/api', show: true },
-    { name: 'Dashboard', href: '/dashboard', show: !!session },
+    { name: t('home'), href: '/', show: true },
+    { name: t('paste'), href: '/paste/create', show: true },
+    { name: t('api'), href: '/api', show: true },
+    { name: t('dashboard'), href: '/dashboard', show: !!session },
   ].filter(item => item.show);
 
   return (
     <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Hauptnavigation">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label={t('mainNav')}>
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4 md:space-x-8">
             <Link 
               href="/" 
               className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent hover:scale-105 transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-              aria-label="Zhort Startseite"
+              aria-label="Zhort"
             >
               Zhort
             </Link>
@@ -47,7 +50,7 @@ export function Header() {
                   href="/datenschutz"
                   className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  Datenschutz
+                  {t('privacy')}
                 </Link>
                 <Link
                   href="https://www.michelfritzsch.de/impressum"
@@ -55,13 +58,16 @@ export function Header() {
                   rel="noopener noreferrer"
                   className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  Impressum
+                  {t('imprint')}
                 </Link>
               </div>
             </div>
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">
+            {/* Language Selector */}
+            <LanguageSelector />
+            
             {/* Theme Toggle */}
             <ThemeToggle />
 
@@ -69,7 +75,7 @@ export function Header() {
             <button
               type="button"
               className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              aria-label="Menü öffnen"
+              aria-label={t('openMenu')}
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -83,12 +89,12 @@ export function Header() {
             {/* Desktop User Menu / Auth */}
             <div className="hidden md:flex items-center space-x-4">
               {status === 'loading' ? (
-                <div className="h-8 w-8 rounded-full bg-muted animate-pulse" aria-label="Lädt..." />
+                <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
               ) : session ? (
                 <Menu as="div" className="relative">
                   <MenuButton 
                     className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg p-1"
-                    aria-label="Benutzermenü"
+                    aria-label={t('userMenu')}
                   >
                     <UserCircleIcon className="h-8 w-8 group-hover:scale-110 transition-transform duration-200" aria-hidden="true" />
                     <span className="text-sm font-medium">
@@ -102,7 +108,7 @@ export function Header() {
                           href="/dashboard"
                           className="block px-4 py-2.5 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground transition-colors"
                         >
-                          📊 Dashboard
+                          📊 {t('dashboard')}
                         </Link>
                       </MenuItem>
                       <MenuItem>
@@ -110,7 +116,7 @@ export function Header() {
                           onClick={() => signOut()}
                           className="block w-full text-left px-4 py-2.5 text-sm text-destructive data-[focus]:bg-destructive/10 transition-colors"
                         >
-                          🚪 Logout
+                          🚪 {t('logout')}
                         </button>
                       </MenuItem>
                     </div>
@@ -122,13 +128,13 @@ export function Header() {
                     href="/login"
                     className="text-muted-foreground hover:text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    Login
+                    {t('login')}
                   </Link>
                   <Link
                     href="/register"
                     className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-lg text-sm font-semibold shadow hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                   >
-                    Registrieren
+                    {t('register')}
                   </Link>
                 </div>
               )}
@@ -156,7 +162,7 @@ export function Header() {
                   className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Datenschutz
+                  {t('privacy')}
                 </Link>
                 <Link
                   href="https://www.michelfritzsch.de/impressum"
@@ -165,7 +171,7 @@ export function Header() {
                   className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Impressum
+                  {t('imprint')}
                 </Link>
               </div>
               {session ? (
@@ -179,7 +185,7 @@ export function Header() {
                       className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      📊 Dashboard
+                      📊 {t('dashboard')}
                     </Link>
                     <button
                       onClick={() => {
@@ -188,7 +194,7 @@ export function Header() {
                       }}
                       className="block w-full text-left px-3 py-2 rounded-lg text-base font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
                     >
-                      🚪 Logout
+                      🚪 {t('logout')}
                     </button>
                   </div>
                 </>
@@ -199,14 +205,14 @@ export function Header() {
                     className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Login
+                    {t('login')}
                   </Link>
                   <Link
                     href="/register"
                     className="block px-3 py-2 rounded-lg text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Registrieren
+                    {t('register')}
                   </Link>
                 </div>
               )}
