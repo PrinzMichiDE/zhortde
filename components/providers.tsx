@@ -7,10 +7,14 @@ import type { ReactNode } from 'react';
 export function Providers({ children }: { children: ReactNode }) {
   return (
     <SessionProvider>
-      <ThemeProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
         {children}
       </ThemeProvider>
     </SessionProvider>
   );
 }
-

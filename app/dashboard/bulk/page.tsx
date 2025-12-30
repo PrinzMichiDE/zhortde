@@ -130,14 +130,14 @@ export default function BulkShorteningPage() {
             <CardContent>
               <div className="flex gap-4 mb-6">
                 <Button
-                  variant={mode === 'text' ? 'primary' : 'outline'}
+                  variant={mode === 'text' ? 'default' : 'outline'}
                   onClick={() => setMode('text')}
                   fullWidth
                 >
                   Text-Input
                 </Button>
                 <Button
-                  variant={mode === 'csv' ? 'primary' : 'outline'}
+                  variant={mode === 'csv' ? 'default' : 'outline'}
                   onClick={() => setMode('csv')}
                   fullWidth
                 >

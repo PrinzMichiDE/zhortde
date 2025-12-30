@@ -22,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="de" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-gray-50 dark:bg-gray-900 flex flex-col min-h-screen transition-colors duration-300`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground flex flex-col min-h-screen transition-colors duration-300`}>
         <Providers>
           <Header />
           <main className="flex-grow">{children}</main>

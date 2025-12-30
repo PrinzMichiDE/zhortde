@@ -4,9 +4,10 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { TrashIcon, EyeIcon, ClipboardIcon, MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import type { Link as LinkType } from '@/lib/db/schema';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LinkPreviewCard } from '@/components/link-preview-card';
+import { cn } from '@/lib/utils';
 
 interface LinksListEnhancedProps {
   links: LinkType[];
@@ -49,13 +50,6 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
         filterStatus === 'public' ? link.isPublic : !link.isPublic
       );
     }
-
-    // Tag filter (would need tag data)
-    // if (selectedTags.length > 0) {
-    //   filtered = filtered.filter(link => 
-    //     linkTags[link.id]?.some(tag => selectedTags.includes(tag))
-    //   );
-    // }
 
     // Sort
     filtered.sort((a, b) => {
@@ -116,11 +110,11 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
 
   if (links.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+      <div className="text-center py-12 text-muted-foreground">
         <p>Sie haben noch keine Links erstellt.</p>
         <Link
           href="/"
-          className="mt-4 inline-block text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
+          className="mt-4 inline-block text-primary hover:text-primary/90 font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
         >
           Erstellen Sie Ihren ersten Link
         </Link>
@@ -131,12 +125,12 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
   return (
     <div className="space-y-4">
       {/* Search and Filter Bar */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-col md:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
                 type="text"
                 placeholder="Nach Short Code oder URL suchen..."
@@ -150,21 +144,21 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
           {/* Status Filter */}
           <div className="flex gap-2">
             <Button
-              variant={filterStatus === 'all' ? 'primary' : 'outline'}
+              variant={filterStatus === 'all' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilterStatus('all')}
             >
               Alle
             </Button>
             <Button
-              variant={filterStatus === 'public' ? 'primary' : 'outline'}
+              variant={filterStatus === 'public' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilterStatus('public')}
             >
               Öffentlich
             </Button>
             <Button
-              variant={filterStatus === 'private' ? 'primary' : 'outline'}
+              variant={filterStatus === 'private' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setFilterStatus('private')}
             >
@@ -176,7 +170,7 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 min-h-[44px]"
+            className="px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input min-h-[44px]"
           >
             <option value="newest">Neueste zuerst</option>
             <option value="oldest">Älteste zuerst</option>
@@ -189,7 +183,7 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
           {/* View Mode Toggle */}
           <div className="flex gap-2">
             <Button
-              variant={viewMode === 'table' ? 'primary' : 'outline'}
+              variant={viewMode === 'table' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('table')}
               aria-label="Tabellenansicht"
@@ -197,7 +191,7 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
               📊
             </Button>
             <Button
-              variant={viewMode === 'cards' ? 'primary' : 'outline'}
+              variant={viewMode === 'cards' ? 'default' : 'outline'}
               size="sm"
               onClick={() => setViewMode('cards')}
               aria-label="Kartenansicht"
@@ -210,19 +204,19 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
         {/* Active Filters */}
         {(searchQuery || filterStatus !== 'all' || selectedTags.length > 0) && (
           <div className="mt-4 flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-gray-600 dark:text-gray-400">Aktive Filter:</span>
+            <span className="text-sm text-muted-foreground">Aktive Filter:</span>
             {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded text-sm">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent text-accent-foreground rounded text-sm">
                 Suche: {searchQuery}
-                <button onClick={() => setSearchQuery('')} className="hover:text-indigo-900">
+                <button onClick={() => setSearchQuery('')} className="hover:text-foreground">
                   <XMarkIcon className="h-4 w-4" />
                 </button>
               </span>
             )}
             {filterStatus !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded text-sm">
+              <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent text-accent-foreground rounded text-sm">
                 Status: {filterStatus === 'public' ? 'Öffentlich' : 'Privat'}
-                <button onClick={() => setFilterStatus('all')} className="hover:text-indigo-900">
+                <button onClick={() => setFilterStatus('all')} className="hover:text-foreground">
                   <XMarkIcon className="h-4 w-4" />
                 </button>
               </span>
@@ -234,97 +228,101 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
         )}
 
         {/* Results Count */}
-        <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+        <div className="mt-2 text-sm text-muted-foreground">
           {filteredLinks.length} von {links.length} Links angezeigt
         </div>
       </div>
 
       {/* Links Display */}
       {filteredLinks.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-12 text-muted-foreground">
           <p>Keine Links gefunden, die den Filtern entsprechen.</p>
           <Button variant="outline" onClick={clearFilters} className="mt-4">
             Filter zurücksetzen
           </Button>
         </div>
       ) : viewMode === 'table' ? (
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
+        <div className="overflow-x-auto rounded-lg border border-border">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Short Code
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Ziel-URL
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Klicks
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Aktionen
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-card divide-y divide-border">
               {filteredLinks.map((link) => (
-                <tr key={link.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                <tr key={link.id} className="hover:bg-muted/50 transition-colors">
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center space-x-2">
-                      <code className="text-sm font-mono text-indigo-600 dark:text-indigo-400">
+                      <code className="text-sm font-mono text-primary">
                         {link.shortCode}
                       </code>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => copyShortUrl(link.shortCode)}
-                        className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
                         title="Kopieren"
                         aria-label={`Short Code ${link.shortCode} kopieren`}
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
                       >
-                        <ClipboardIcon className="h-5 w-5" aria-hidden="true" />
-                      </button>
+                        <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
+                      </Button>
                     </div>
                   </td>
                   <td className="px-4 sm:px-6 py-4">
-                    <div className="text-sm text-gray-900 dark:text-gray-100 max-w-md truncate">
+                    <div className="text-sm text-foreground max-w-md truncate">
                       {link.longUrl}
                     </div>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{link.hits}</div>
+                    <div className="text-sm text-foreground">{link.hits}</div>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       link.isPublic
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                        : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
+                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                     }`}>
                       {link.isPublic ? 'Öffentlich' : 'Privat'}
                     </span>
                   </td>
                   <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
                       <a
                         href={`/s/${link.shortCode}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
                         title="Ansehen"
                         aria-label={`Link ${link.shortCode} öffnen`}
+                        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), "h-8 w-8 text-primary hover:text-primary/80")}
                       >
-                        <EyeIcon className="h-5 w-5" aria-hidden="true" />
+                        <EyeIcon className="h-4 w-4" aria-hidden="true" />
                       </a>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleDelete(link.id)}
                         disabled={deleting === link.id}
-                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded"
+                        className="h-8 w-8 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
                         title="Löschen"
                         aria-label={`Link ${link.shortCode} löschen`}
                       >
-                        <TrashIcon className="h-5 w-5" aria-hidden="true" />
-                      </button>
+                        <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
