@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { isUrlBlocked } from '@/lib/blocklist';
 import { incrementStat } from '@/lib/db/init-stats';
+import { monetizeUrl } from '@/lib/monetization';
 
 /**
  * Öffentliche API zum Kürzen von URLs
@@ -25,7 +26,7 @@ import { incrementStat } from '@/lib/db/init-stats';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { url, customCode, hp } = body; // hp = honeypot field
+    const { url: rawUrl, customCode, hp } = body; // hp = honeypot field
 
     // 🍯 Honeypot Check
     // Wenn das Feld 'hp' ausgefüllt ist, ist es ein Bot.
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validierung
-    if (!url || typeof url !== 'string') {
+    if (!rawUrl || typeof rawUrl !== 'string') {
       return NextResponse.json(
         {
           success: false,
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     // URL-Format validieren
     let urlObj;
     try {
-      urlObj = new URL(url);
+      urlObj = new URL(rawUrl);
     } catch {
       return NextResponse.json(
         {
@@ -81,8 +82,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Monetize URL (Amazon Affiliate)
+    const url = monetizeUrl(rawUrl);
+
     // Prüfe gegen Blocklist
-    const blocked = await isUrlBlocked(url);
+    const blocked = await isUrlBlocked(rawUrl); // Check original URL just in case
     if (blocked) {
       return NextResponse.json(
         {
@@ -168,7 +172,7 @@ export async function POST(request: NextRequest) {
         success: true,
         shortUrl,
         shortCode,
-        originalUrl: url,
+        originalUrl: url, // Return the actually stored (monetized) URL
       },
       { status: 201 }
     );

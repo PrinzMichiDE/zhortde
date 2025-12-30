@@ -4,6 +4,7 @@ import { links } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { validateApiKey } from '@/lib/api-keys';
 import { nanoid } from 'nanoid';
+import { monetizeUrl } from '@/lib/monetization';
 
 /**
  * API v1 - Create Link
@@ -33,14 +34,17 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { longUrl, customCode, password, expiresIn } = body;
+    const { longUrl: rawLongUrl, customCode, password, expiresIn } = body;
 
-    if (!longUrl) {
+    if (!rawLongUrl) {
       return NextResponse.json(
         { error: 'longUrl is required' },
         { status: 400 }
       );
     }
+
+    // Monetize URL
+    const longUrl = monetizeUrl(rawLongUrl);
 
     // Generate or validate custom code
     const shortCode = customCode || nanoid(8);
@@ -80,7 +84,7 @@ export async function POST(request: NextRequest) {
     // Create link
     const [link] = await db.insert(links).values({
       shortCode,
-      longUrl,
+      longUrl, // Store monetized URL
       userId,
       isPublic: true,
       expiresAt,
@@ -159,4 +163,3 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-

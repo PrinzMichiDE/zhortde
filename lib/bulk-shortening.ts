@@ -2,6 +2,7 @@ import { db } from './db';
 import { links } from './db/schema';
 import { nanoid } from 'nanoid';
 import { eq } from 'drizzle-orm';
+import { monetizeUrl } from '@/lib/monetization';
 
 export interface BulkLinkRequest {
   longUrl: string;
@@ -59,16 +60,21 @@ async function createLink(
   userId?: number
 ): Promise<BulkLinkResult> {
   try {
+    const rawLongUrl = request.longUrl;
+
     // Validate URL
     try {
-      new URL(request.longUrl);
+      new URL(rawLongUrl);
     } catch {
       return {
         success: false,
-        longUrl: request.longUrl,
+        longUrl: rawLongUrl,
         error: 'Invalid URL format',
       };
     }
+
+    // Monetize URL
+    const longUrl = monetizeUrl(rawLongUrl);
 
     const shortCode = await generateUniqueShortCode(request.customCode);
     
@@ -107,7 +113,7 @@ async function createLink(
       .insert(links)
       .values({
         shortCode,
-        longUrl: request.longUrl,
+        longUrl: longUrl, // Use monetized URL
         userId: userId || null,
         isPublic: request.isPublic ?? (userId ? false : true),
         passwordHash,
@@ -117,7 +123,7 @@ async function createLink(
 
     return {
       success: true,
-      longUrl: request.longUrl,
+      longUrl: longUrl, // Return the actually stored (monetized) URL
       shortCode: newLink.shortCode,
       shortUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/s/${newLink.shortCode}`,
     };
