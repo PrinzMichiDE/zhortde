@@ -58,8 +58,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(teamsList);
   } catch (error) {
     console.error('Error fetching teams:', error);
-    // Return the actual error message in dev mode or generic in prod
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Check if the error is about missing teams table
+    if (errorMessage.includes('relation "teams" does not exist') || 
+        errorMessage.includes('relation "team_members" does not exist')) {
+      return NextResponse.json({ 
+        error: 'Database migration required', 
+        details: 'The teams tables do not exist. Please run the migration: npm run db:migrate-teams',
+        migrationRequired: true
+      }, { status: 500 });
+    }
+    
     return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
   }
 }
@@ -112,6 +122,17 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error creating team:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    
+    // Check if the error is about missing teams table
+    if (errorMessage.includes('relation "teams" does not exist') || 
+        errorMessage.includes('relation "teams" does not exist')) {
+      return NextResponse.json({ 
+        error: 'Database migration required', 
+        details: 'The teams table does not exist. Please run the migration: npm run db:migrate-teams',
+        migrationRequired: true
+      }, { status: 500 });
+    }
+    
     return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
   }
 }

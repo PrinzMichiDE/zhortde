@@ -12,9 +12,11 @@
     "db:studio": "drizzle-kit studio",
     "db:push": "node scripts/push-schema.js",
     "db:create-teams": "node scripts/create-teams-tables.js",
+    "db:migrate-teams": "node scripts/migrate-teams.js",
     "db:seed": "node scripts/seed-stats.js",
     "setup": "node scripts/setup-env.js",
-    "quickfix": "node scripts/quick-fix-env.js"
+    "quickfix": "node scripts/quick-fix-env.js",
+    "upgrade": "node scripts/upgrade.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
