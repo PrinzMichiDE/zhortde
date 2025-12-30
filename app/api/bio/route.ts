@@ -1,77 +1,108 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { bioProfiles, bioLinks } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import {
+  requireAuth,
+  validateBody,
+  secureResponse,
+  secureErrorResponse,
+  ApiErrors,
+  handleApiError,
+} from '@/lib/api-security';
 
+// Validation schema with security constraints
 const updateProfileSchema = z.object({
-  username: z.string().min(3).max(30).regex(/^[a-z0-9-_]+$/),
-  displayName: z.string().optional(),
-  bio: z.string().optional(),
+  username: z
+    .string()
+    .min(3, 'Benutzername muss mindestens 3 Zeichen lang sein')
+    .max(30, 'Benutzername darf maximal 30 Zeichen lang sein')
+    .regex(/^[a-z0-9-_]+$/, 'Benutzername darf nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche enthalten')
+    .transform((s) => s.toLowerCase().trim()),
+  displayName: z
+    .string()
+    .max(100, 'Anzeigename ist zu lang')
+    .optional(),
+  bio: z
+    .string()
+    .max(500, 'Bio ist zu lang')
+    .optional(),
   links: z.array(z.object({
-    title: z.string().min(1),
-    url: z.string().url(),
-  })),
+    title: z
+      .string()
+      .min(1, 'Titel ist erforderlich')
+      .max(100, 'Titel ist zu lang'),
+    url: z
+      .string()
+      .url('Ungültige URL')
+      .max(500, 'URL ist zu lang'),
+  })).max(20, 'Maximal 20 Links erlaubt'),
 });
 
-export async function GET(request: NextRequest) {
+// Maximum links per profile
+const MAX_LINKS = 20;
+
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Require authentication
+    const auth = await requireAuth();
+    if (!auth) {
+      return secureErrorResponse(ApiErrors.UNAUTHORIZED);
     }
 
-    const userId = parseInt(session.user.id);
-
+    // 2. Fetch profile with links
     const profile = await db.query.bioProfiles.findFirst({
-      where: eq(bioProfiles.userId, userId),
+      where: eq(bioProfiles.userId, auth.userId),
       with: {
-        links: true, // Auto-fetch links
+        links: true,
       }
     });
 
-    return NextResponse.json(profile || null);
+    return secureResponse(profile || null);
   } catch (error) {
-    console.error('Error fetching bio profile:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return handleApiError(error, 'bio/GET');
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Require authentication
+    const auth = await requireAuth();
+    if (!auth) {
+      return secureErrorResponse(ApiErrors.UNAUTHORIZED);
     }
 
-    const userId = parseInt(session.user.id);
-    const body = await request.json();
-
-    const validation = updateProfileSchema.safeParse(body);
+    // 2. Validate request body
+    const validation = await validateBody(request, updateProfileSchema);
     if (!validation.success) {
-      return NextResponse.json({ error: validation.error.issues[0].message }, { status: 400 });
+      return secureErrorResponse(ApiErrors.VALIDATION_ERROR(validation.error));
     }
 
     const { username, displayName, bio, links } = validation.data;
 
-    // Check if username is taken (by another user)
+    // 3. Check if username is taken (by another user)
     const existing = await db.query.bioProfiles.findFirst({
       where: eq(bioProfiles.username, username),
     });
 
-    if (existing && existing.userId !== userId) {
-      return NextResponse.json({ error: 'Username bereits vergeben' }, { status: 409 });
+    if (existing && existing.userId !== auth.userId) {
+      return secureErrorResponse(ApiErrors.VALIDATION_ERROR('Benutzername bereits vergeben'));
     }
 
-    // Upsert Profile & Replace Links
+    // 4. Validate link count
+    if (links.length > MAX_LINKS) {
+      return secureErrorResponse(
+        ApiErrors.VALIDATION_ERROR(`Maximal ${MAX_LINKS} Links erlaubt`)
+      );
+    }
+
+    // 5. Upsert Profile & Replace Links (atomic transaction)
     const result = await db.transaction(async (tx) => {
-      // 1. Upsert Profile
       let profileId: number;
       
       const currentProfile = await tx.query.bioProfiles.findFirst({
-        where: eq(bioProfiles.userId, userId),
+        where: eq(bioProfiles.userId, auth.userId),
       });
 
       if (currentProfile) {
@@ -81,12 +112,12 @@ export async function POST(request: NextRequest) {
         profileId = currentProfile.id;
       } else {
         const [newProfile] = await tx.insert(bioProfiles)
-          .values({ userId, username, displayName, bio })
+          .values({ userId: auth.userId, username, displayName, bio })
           .returning();
         profileId = newProfile.id;
       }
 
-      // 2. Replace Links (Delete all, insert new)
+      // Replace links (delete all, insert new)
       await tx.delete(bioLinks).where(eq(bioLinks.profileId, profileId));
 
       if (links.length > 0) {
@@ -103,10 +134,9 @@ export async function POST(request: NextRequest) {
       return profileId;
     });
 
-    return NextResponse.json({ success: true, profileId: result });
+    return secureResponse({ success: true, profileId: result });
 
   } catch (error) {
-    console.error('Error saving bio profile:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return handleApiError(error, 'bio/POST');
   }
 }

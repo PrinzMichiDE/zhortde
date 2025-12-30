@@ -1,40 +1,52 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { webhooks } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { generateWebhookSecret } from '@/lib/webhooks';
+import {
+  requireAuth,
+  validateBody,
+  webhookSchema,
+  secureResponse,
+  secureErrorResponse,
+  ApiErrors,
+  handleApiError,
+} from '@/lib/api-security';
 
 /**
  * GET /api/user/webhooks - List user's webhooks
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Require authentication
+    const auth = await requireAuth();
+    if (!auth) {
+      return secureErrorResponse(ApiErrors.UNAUTHORIZED);
     }
 
+    // 2. Fetch user's webhooks
     const userWebhooks = await db
-      .select()
+      .select({
+        id: webhooks.id,
+        url: webhooks.url,
+        events: webhooks.events,
+        isActive: webhooks.isActive,
+        lastTriggeredAt: webhooks.lastTriggeredAt,
+        createdAt: webhooks.createdAt,
+        // Note: Don't expose 'secret' in list response
+      })
       .from(webhooks)
-      .where(eq(webhooks.userId, parseInt(session.user.id)));
+      .where(eq(webhooks.userId, auth.userId));
 
-    // Parse events JSON for each webhook
+    // 3. Parse events JSON for each webhook
     const formattedWebhooks = userWebhooks.map((webhook) => ({
       ...webhook,
       events: JSON.parse(webhook.events),
     }));
 
-    return NextResponse.json({ webhooks: formattedWebhooks });
+    return secureResponse({ webhooks: formattedWebhooks });
   } catch (error) {
-    console.error('Webhooks GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch webhooks' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'webhooks/GET');
   }
 }
 
@@ -43,35 +55,40 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Require authentication
+    const auth = await requireAuth();
+    if (!auth) {
+      return secureErrorResponse(ApiErrors.UNAUTHORIZED);
     }
 
-    const body = await request.json();
-    const { url, events } = body;
+    // 2. Validate request body
+    const validation = await validateBody(request, webhookSchema);
+    if (!validation.success) {
+      return secureErrorResponse(ApiErrors.VALIDATION_ERROR(validation.error));
+    }
 
-    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
-      return NextResponse.json(
-        { error: 'Valid URL is required' },
-        { status: 400 }
+    const { url, events } = validation.data;
+
+    // 3. Check webhook limit (max 10 per user)
+    const existingCount = await db
+      .select({ id: webhooks.id })
+      .from(webhooks)
+      .where(eq(webhooks.userId, auth.userId));
+    
+    if (existingCount.length >= 10) {
+      return secureErrorResponse(
+        ApiErrors.VALIDATION_ERROR('Maximum 10 webhooks allowed per user')
       );
     }
 
-    if (!Array.isArray(events) || events.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one event is required' },
-        { status: 400 }
-      );
-    }
-
+    // 4. Generate secure webhook secret
     const secret = generateWebhookSecret();
 
+    // 5. Create webhook
     const [newWebhook] = await db
       .insert(webhooks)
       .values({
-        userId: parseInt(session.user.id),
+        userId: auth.userId,
         url: url.trim(),
         secret,
         events: JSON.stringify(events),
@@ -79,21 +96,21 @@ export async function POST(request: NextRequest) {
       })
       .returning();
 
-    return NextResponse.json(
+    return secureResponse(
       {
         webhook: {
-          ...newWebhook,
+          id: newWebhook.id,
+          url: newWebhook.url,
           events: JSON.parse(newWebhook.events),
+          secret: newWebhook.secret, // Only show secret on creation
+          isActive: newWebhook.isActive,
+          createdAt: newWebhook.createdAt,
         },
       },
-      { status: 201 }
+      201
     );
   } catch (error) {
-    console.error('Webhooks POST error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create webhook' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'webhooks/POST');
   }
 }
 

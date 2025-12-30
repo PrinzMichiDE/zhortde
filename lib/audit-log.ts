@@ -1,11 +1,19 @@
 import { db } from '@/lib/db';
 import { linkHistory } from '@/lib/db/schema';
 
+/**
+ * Type for audit log changes
+ */
+export type AuditLogChanges = Record<string, string | number | boolean | null | undefined | Record<string, unknown>>;
+
+/**
+ * Log a link action for audit trail
+ */
 export async function logLinkAction(
   linkId: number,
   userId: number | null,
   action: string,
-  changes?: Record<string, any>
+  changes?: AuditLogChanges
 ) {
   try {
     await db.insert(linkHistory).values({
@@ -19,3 +27,18 @@ export async function logLinkAction(
     // Audit logging should not block the main action, so we swallow the error
   }
 }
+
+/**
+ * Audit log action types
+ */
+export const AuditActions = {
+  CREATED: 'created',
+  UPDATED: 'updated',
+  DELETED: 'deleted',
+  TAGGED: 'tagged',
+  PASSWORD_ADDED: 'password_added',
+  PASSWORD_REMOVED: 'password_removed',
+  EXPIRED: 'expired',
+} as const;
+
+export type AuditAction = typeof AuditActions[keyof typeof AuditActions];

@@ -1,22 +1,33 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth/config';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { apiKeys } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { createApiKey } from '@/lib/api-keys';
+import {
+  requireAuth,
+  validateBody,
+  apiKeySchema,
+  secureResponse,
+  secureErrorResponse,
+  ApiErrors,
+  handleApiError,
+} from '@/lib/api-security';
+
+// Maximum API keys per user
+const MAX_API_KEYS = 10;
 
 /**
  * GET /api/user/api-keys - List user's API keys
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Require authentication
+    const auth = await requireAuth();
+    if (!auth) {
+      return secureErrorResponse(ApiErrors.UNAUTHORIZED);
     }
 
+    // 2. Fetch user's API keys (never expose the hash)
     const userApiKeys = await db
       .select({
         id: apiKeys.id,
@@ -27,15 +38,11 @@ export async function GET(request: NextRequest) {
         createdAt: apiKeys.createdAt,
       })
       .from(apiKeys)
-      .where(eq(apiKeys.userId, parseInt(session.user.id)));
+      .where(eq(apiKeys.userId, auth.userId));
 
-    return NextResponse.json({ apiKeys: userApiKeys });
+    return secureResponse({ apiKeys: userApiKeys });
   } catch (error) {
-    console.error('API Keys GET error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch API keys' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'api-keys/GET');
   }
 }
 
@@ -44,35 +51,39 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // 1. Require authentication
+    const auth = await requireAuth();
+    if (!auth) {
+      return secureErrorResponse(ApiErrors.UNAUTHORIZED);
     }
 
-    const body = await request.json();
-    const { name } = body;
+    // 2. Validate request body
+    const validation = await validateBody(request, apiKeySchema);
+    if (!validation.success) {
+      return secureErrorResponse(ApiErrors.VALIDATION_ERROR(validation.error));
+    }
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Name is required' },
-        { status: 400 }
+    const { name } = validation.data;
+
+    // 3. Check API key limit
+    const existingKeys = await db
+      .select({ id: apiKeys.id })
+      .from(apiKeys)
+      .where(eq(apiKeys.userId, auth.userId));
+    
+    if (existingKeys.length >= MAX_API_KEYS) {
+      return secureErrorResponse(
+        ApiErrors.VALIDATION_ERROR(`Maximum ${MAX_API_KEYS} API keys allowed`)
       );
     }
 
-    // Create API key
-    const apiKey = await createApiKey(parseInt(session.user.id), name.trim());
+    // 4. Create API key
+    const apiKey = await createApiKey(auth.userId, name.trim());
 
-    return NextResponse.json(
-      { apiKey },
-      { status: 201 }
-    );
+    // Note: The full key is only returned on creation
+    return secureResponse({ apiKey }, 201);
   } catch (error) {
-    console.error('API Keys POST error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create API key' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'api-keys/POST');
   }
 }
 
