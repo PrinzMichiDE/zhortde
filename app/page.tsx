@@ -7,10 +7,20 @@ import {
   ShieldCheckIcon,
   BoltIcon,
   GlobeAltIcon,
-  SparklesIcon
+  SparklesIcon,
+  UserGroupIcon,
+  LinkIcon
 } from '@heroicons/react/24/outline';
+import { getStat } from '@/lib/db/init-stats';
 
-export default function Home() {
+// Ensure dynamic rendering to fetch fresh stats
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  // Fetch real statistics
+  const visitorCount = await getStat('visitors');
+  const linkCount = await getStat('links');
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300 relative overflow-hidden">
       {/* Animated Background Elements */}
@@ -51,17 +61,17 @@ export default function Home() {
 
             {/* Stats */}
             <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
-              <div className="flex items-center gap-2">
-                <BoltIcon className="h-5 w-5 text-yellow-500" />
-                <span className="font-semibold">Sofort verfügbar</span>
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+                <LinkIcon className="h-5 w-5 text-indigo-500" />
+                <span className="font-semibold">{linkCount.toLocaleString('de-DE')} Links erstellt</span>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
+                <UserGroupIcon className="h-5 w-5 text-purple-500" />
+                <span className="font-semibold">{visitorCount.toLocaleString('de-DE')} Besucher</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <ShieldCheckIcon className="h-5 w-5 text-green-500" />
-                <span className="font-semibold">100% sicher</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <GlobeAltIcon className="h-5 w-5 text-blue-500" />
-                <span className="font-semibold">Weltweit verfügbar</span>
+                <span className="font-semibold">100% Sicher</span>
               </div>
             </div>
           </div>
