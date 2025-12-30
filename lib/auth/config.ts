@@ -4,6 +4,11 @@ import { db } from '@/lib/db';
 import { users } from '@/lib/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
+import { emailSchema, logSecurityEvent } from '@/lib/security';
+
+// Session configuration for security
+const SESSION_MAX_AGE = 24 * 60 * 60; // 24 hours
+const JWT_MAX_AGE = 24 * 60 * 60; // 24 hours
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -14,29 +19,60 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         sso_token: { label: 'SSO Token', type: 'text' },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        const clientIp = req?.headers?.['x-forwarded-for'] || 
+                         req?.headers?.['x-real-ip'] || 
+                         'unknown';
+        
         // 1. SSO Token Login
         if (credentials?.sso_token && credentials?.email) {
+          // Validate email format
+          const emailResult = emailSchema.safeParse(credentials.email);
+          if (!emailResult.success) {
+            logSecurityEvent({
+              type: 'auth_failure',
+              ip: clientIp as string,
+              details: { reason: 'invalid_email_format', method: 'sso' },
+              timestamp: new Date(),
+            });
+            return null;
+          }
+          
           const user = await db.query.users.findFirst({
             where: and(
-              eq(users.email, credentials.email),
+              eq(users.email, emailResult.data),
               eq(users.ssoLoginToken, credentials.sso_token),
               gt(users.ssoLoginExpiresAt, new Date())
             ),
           });
 
           if (user) {
-            // Invalidate token
+            // Invalidate token immediately (single use)
             await db.update(users)
               .set({ ssoLoginToken: null, ssoLoginExpiresAt: null })
               .where(eq(users.id, user.id));
+            
+            logSecurityEvent({
+              type: 'auth_success',
+              userId: user.id,
+              ip: clientIp as string,
+              details: { method: 'sso' },
+              timestamp: new Date(),
+            });
               
             return {
               id: user.id.toString(),
               email: user.email,
-              role: user.role, // Pass role to session
+              role: user.role,
             };
           }
+          
+          logSecurityEvent({
+            type: 'auth_failure',
+            ip: clientIp as string,
+            details: { reason: 'invalid_sso_token', email: credentials.email },
+            timestamp: new Date(),
+          });
           return null;
         }
 
@@ -44,12 +80,33 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
+        
+        // Validate email format
+        const emailResult = emailSchema.safeParse(credentials.email);
+        if (!emailResult.success) {
+          logSecurityEvent({
+            type: 'auth_failure',
+            ip: clientIp as string,
+            details: { reason: 'invalid_email_format', method: 'password' },
+            timestamp: new Date(),
+          });
+          return null;
+        }
 
         const user = await db.query.users.findFirst({
-          where: eq(users.email, credentials.email),
+          where: eq(users.email, emailResult.data),
         });
 
         if (!user) {
+          // Timing-safe: Still do a password comparison to prevent timing attacks
+          await bcrypt.compare(credentials.password, '$2b$12$invalidhashfortiminginvalidhashforti');
+          
+          logSecurityEvent({
+            type: 'auth_failure',
+            ip: clientIp as string,
+            details: { reason: 'user_not_found', email: emailResult.data },
+            timestamp: new Date(),
+          });
           return null;
         }
 
@@ -59,8 +116,23 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isPasswordValid) {
+          logSecurityEvent({
+            type: 'auth_failure',
+            userId: user.id,
+            ip: clientIp as string,
+            details: { reason: 'invalid_password' },
+            timestamp: new Date(),
+          });
           return null;
         }
+
+        logSecurityEvent({
+          type: 'auth_success',
+          userId: user.id,
+          ip: clientIp as string,
+          details: { method: 'password' },
+          timestamp: new Date(),
+        });
 
         return {
           id: user.id.toString(),
@@ -72,15 +144,22 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: 'jwt',
+    maxAge: SESSION_MAX_AGE,
+    updateAge: 60 * 60, // Update session every hour
+  },
+  jwt: {
+    maxAge: JWT_MAX_AGE,
   },
   pages: {
     signIn: '/login',
+    error: '/login', // Redirect errors to login page
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.iat = Math.floor(Date.now() / 1000);
       }
       return token;
     },
@@ -92,4 +171,18 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  // Security options
+  cookies: {
+    sessionToken: {
+      name: `__Secure-next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+      },
+    },
+  },
+  // Debug only in development
+  debug: process.env.NODE_ENV === 'development',
 };

@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, links } from '@/lib/db/schema';
 import { isSuperAdmin } from '@/lib/admin';
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, count } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -14,19 +14,31 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Get all users
     const allUsers = await db.query.users.findMany({
       orderBy: [desc(users.createdAt)],
-      with: {
-        links: true, // simplified count usually better but let's just get length
-      }
     });
+
+    // Get link counts per user
+    const linkCounts = await db
+      .select({
+        userId: links.userId,
+        count: count(links.id),
+      })
+      .from(links)
+      .groupBy(links.userId);
+    
+    // Create a map for quick lookup
+    const linkCountMap = new Map(
+      linkCounts.map(lc => [lc.userId, lc.count])
+    );
 
     const sanitizedUsers = allUsers.map(u => ({
       id: u.id,
       email: u.email,
       role: u.role,
       createdAt: u.createdAt,
-      linksCount: u.links.length
+      linksCount: linkCountMap.get(u.id) || 0
     }));
 
     return NextResponse.json(sanitizedUsers);

@@ -12,27 +12,78 @@ import { hashPassword, calculateExpiration } from '@/lib/password-protection';
 import { triggerWebhooks } from '@/lib/webhooks';
 import { logLinkAction } from '@/lib/audit-log';
 import { monetizeUrl } from '@/lib/monetization';
+import { 
+  createLinkSchema, 
+  shortCodeSchema,
+  logSecurityEvent,
+  isSecureInput,
+} from '@/lib/security';
+
+// Maximum request body size (2KB for link creation)
+const MAX_BODY_SIZE = 2048;
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    const body = await request.json();
-    const { longUrl: rawLongUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, hp } = body;
+    
+    // 1. 🔒 Validate Content-Type
+    const contentType = request.headers.get('content-type');
+    if (!contentType?.includes('application/json')) {
+      return NextResponse.json(
+        { error: 'Content-Type must be application/json' },
+        { status: 415 }
+      );
+    }
+    
+    // 2. 🔒 Parse and validate request body size
+    let body: unknown;
+    try {
+      const text = await request.text();
+      if (text.length > MAX_BODY_SIZE) {
+        return NextResponse.json(
+          { error: 'Request body too large' },
+          { status: 413 }
+        );
+      }
+      body = JSON.parse(text);
+    } catch {
+      return NextResponse.json(
+        { error: 'Invalid JSON body' },
+        { status: 400 }
+      );
+    }
+    
+    const { longUrl: rawLongUrl, isPublic, customCode, password, expiresIn, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, hp } = body as Record<string, unknown>;
 
-    // 🍯 Honeypot Check
+    // 3. 🍯 Honeypot Check (anti-bot)
     if (hp) {
-       return NextResponse.json(
+      logSecurityEvent({
+        type: 'suspicious_request',
+        ip: getClientIp(request),
+        userAgent: request.headers.get('user-agent') || undefined,
+        details: { reason: 'honeypot_triggered' },
+        timestamp: new Date(),
+      });
+      return NextResponse.json(
         { error: 'Bot detected' },
         { status: 400 }
       );
     }
 
-    // Rate limiting
+    // 4. 🔒 Rate limiting
     const identifier = session?.user?.id || getClientIp(request);
     const action = session?.user?.id ? 'create_link_authenticated' : 'create_link_anonymous';
     const rateLimitResult = await checkRateLimit(identifier, action);
 
     if (!rateLimitResult.success) {
+      logSecurityEvent({
+        type: 'rate_limit',
+        ip: getClientIp(request),
+        userId: session?.user?.id ? parseInt(session.user.id) : undefined,
+        details: { action, limit: rateLimitResult.limit },
+        timestamp: new Date(),
+      });
+      
       return NextResponse.json(
         { 
           error: 'Zu viele Anfragen',
@@ -46,66 +97,86 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!rawLongUrl) {
+    // 5. 🔒 Validate URL with Zod schema
+    if (!rawLongUrl || typeof rawLongUrl !== 'string') {
       return NextResponse.json(
         { error: 'URL ist erforderlich' },
         { status: 400 }
       );
     }
-
-    // Validiere URL (Before Monetization to check basic validity)
-    try {
-      new URL(rawLongUrl);
-    } catch {
+    
+    // Check for injection patterns
+    if (!isSecureInput(rawLongUrl)) {
+      logSecurityEvent({
+        type: 'suspicious_request',
+        ip: getClientIp(request),
+        details: { reason: 'injection_attempt', field: 'longUrl' },
+        timestamp: new Date(),
+      });
       return NextResponse.json(
-        { error: 'Ungültige URL' },
+        { error: 'Ungültige Eingabe erkannt' },
         { status: 400 }
       );
     }
 
-    // Monetization (Amazon Affiliate)
-    const longUrl = monetizeUrl(rawLongUrl);
+    // Parse and validate the full input
+    const validationResult = createLinkSchema.safeParse({
+      longUrl: rawLongUrl,
+      customCode,
+      password,
+      expiresIn,
+      isPublic: isPublic ?? true,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmTerm,
+      utmContent,
+    });
 
-    // Prüfe gegen Blocklist (Check Monetized URL just in case, but usually original check is safer for domain blocking)
-    // We check rawLongUrl to prevent bypassing blocklist by monetization modifications (though unlikely for amazon)
-    // And we can check longUrl too if needed, but blocklist usually targets domains.
-    const blocked = await isUrlBlocked(rawLongUrl);
+    if (!validationResult.success) {
+      const firstIssue = validationResult.error.issues[0];
+      return NextResponse.json(
+        { error: firstIssue?.message || 'Ungültige Eingabe' },
+        { status: 400 }
+      );
+    }
+
+    const validatedInput = validationResult.data;
+
+    // 6. Monetization (Amazon Affiliate)
+    const longUrl = monetizeUrl(validatedInput.longUrl);
+
+    // 7. 🔒 Check against blocklist (malware, phishing)
+    const blocked = await isUrlBlocked(validatedInput.longUrl);
     if (blocked) {
+      logSecurityEvent({
+        type: 'suspicious_request',
+        ip: getClientIp(request),
+        details: { reason: 'blocked_url', url: validatedInput.longUrl },
+        timestamp: new Date(),
+      });
       return NextResponse.json(
         { error: 'Diese Domain ist auf der Blocklist und kann nicht gekürzt werden' },
         { status: 403 }
       );
     }
 
-    // Generiere Short Code (Custom oder Random)
+    // 8. Generate or validate Short Code
     let shortCode: string;
     
-    if (customCode) {
-      // Validiere Custom Code
-      const trimmedCode = customCode.trim().toLowerCase();
-      
-      if (!/^[a-z0-9-_]+$/.test(trimmedCode)) {
+    if (validatedInput.customCode) {
+      // Validate custom code with schema
+      const codeResult = shortCodeSchema.safeParse(validatedInput.customCode);
+      if (!codeResult.success) {
         return NextResponse.json(
-          { error: 'Short Code darf nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche enthalten' },
+          { error: codeResult.error.issues[0]?.message || 'Ungültiger Short Code' },
           { status: 400 }
         );
       }
 
-      if (trimmedCode.length < 3) {
-        return NextResponse.json(
-          { error: 'Short Code muss mindestens 3 Zeichen lang sein' },
-          { status: 400 }
-        );
-      }
+      const trimmedCode = codeResult.data;
 
-      if (trimmedCode.length > 50) {
-        return NextResponse.json(
-          { error: 'Short Code darf maximal 50 Zeichen lang sein' },
-          { status: 400 }
-        );
-      }
-
-      // Prüfe ob Code bereits existiert
+      // Check if code already exists
       const existing = await db.query.links.findFirst({
         where: eq(links.shortCode, trimmedCode),
       });
@@ -119,35 +190,39 @@ export async function POST(request: NextRequest) {
 
       shortCode = trimmedCode;
     } else {
-      // Generiere zufälligen Short Code
+      // Generate random short code
       shortCode = nanoid(8);
     }
 
-    // Hash password if provided
-    const passwordHash = password ? await hashPassword(password) : null;
+    // 9. Hash password if provided
+    const passwordHash = validatedInput.password 
+      ? await hashPassword(validatedInput.password) 
+      : null;
 
-    // Calculate expiration if provided
-    const expiresAt = expiresIn ? calculateExpiration(expiresIn) : null;
+    // 10. Calculate expiration if provided
+    const expiresAt = validatedInput.expiresIn 
+      ? calculateExpiration(validatedInput.expiresIn) 
+      : null;
 
-    // Erstelle Link
+    // 11. Create link with validated & sanitized data
     const newLink = await db.insert(links).values({
       shortCode,
       longUrl,
       userId: session?.user?.id ? parseInt(session.user.id) : null,
-      isPublic: session ? isPublic : true,
+      isPublic: session ? validatedInput.isPublic : true,
       passwordHash,
       expiresAt,
-      utmSource,
-      utmMedium,
-      utmCampaign,
-      utmTerm,
-      utmContent,
+      utmSource: validatedInput.utmSource,
+      utmMedium: validatedInput.utmMedium,
+      utmCampaign: validatedInput.utmCampaign,
+      utmTerm: validatedInput.utmTerm,
+      utmContent: validatedInput.utmContent,
     }).returning();
 
     // Inkrementiere Links Counter
     await incrementStat('links');
 
-    // 📜 Audit Log & Webhooks
+    // 12. 📜 Audit Log & Webhooks
     if (session?.user?.id) {
       const userId = parseInt(session.user.id);
       
@@ -155,11 +230,15 @@ export async function POST(request: NextRequest) {
       await logLinkAction(newLink[0].id, userId, 'created', {
         longUrl,
         shortCode,
-        isPublic,
-        hasPassword: !!password,
+        isPublic: validatedInput.isPublic,
+        hasPassword: !!validatedInput.password,
         hasExpiration: !!expiresAt,
-        utm: { utmSource, utmMedium, utmCampaign },
-        isMonetized: longUrl !== rawLongUrl // Log if URL was changed for monetization
+        utm: { 
+          utmSource: validatedInput.utmSource, 
+          utmMedium: validatedInput.utmMedium, 
+          utmCampaign: validatedInput.utmCampaign 
+        },
+        isMonetized: longUrl !== validatedInput.longUrl // Log if URL was changed for monetization
       });
 
       // Trigger webhooks

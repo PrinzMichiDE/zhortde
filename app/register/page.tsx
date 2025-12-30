@@ -1,13 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { registerUser } from '@/lib/auth/actions';
+import { registerUser, checkPasswordStrength } from '@/lib/auth/actions';
 import { signIn } from 'next-auth/react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
+
+// Password strength requirements
+const PASSWORD_REQUIREMENTS = [
+  { regex: /.{8,}/, label: 'Mindestens 8 Zeichen' },
+  { regex: /[A-Z]/, label: 'Mindestens ein Großbuchstabe' },
+  { regex: /[a-z]/, label: 'Mindestens ein Kleinbuchstabe' },
+  { regex: /[0-9]/, label: 'Mindestens eine Zahl' },
+  { regex: /[^A-Za-z0-9]/, label: 'Mindestens ein Sonderzeichen' },
+];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +27,31 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [showPasswordStrength, setShowPasswordStrength] = useState(false);
+  const [honeypot, setHoneypot] = useState(''); // Anti-bot honeypot field
+
+  // Calculate password strength in real-time
+  const passwordStrength = useMemo(() => {
+    const met = PASSWORD_REQUIREMENTS.filter(req => req.regex.test(password));
+    const score = met.length;
+    const percentage = (score / PASSWORD_REQUIREMENTS.length) * 100;
+    
+    let level: 'weak' | 'fair' | 'good' | 'strong' = 'weak';
+    let color = 'bg-red-500';
+    
+    if (score >= 5) {
+      level = 'strong';
+      color = 'bg-green-500';
+    } else if (score >= 4) {
+      level = 'good';
+      color = 'bg-blue-500';
+    } else if (score >= 3) {
+      level = 'fair';
+      color = 'bg-yellow-500';
+    }
+    
+    return { score, percentage, level, color, met };
+  }, [password]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,15 +59,29 @@ export default function RegisterPage() {
     setPasswordError('');
     setConfirmPasswordError('');
 
+    // Anti-bot: Check honeypot field
+    if (honeypot) {
+      // Silently fail for bots
+      return;
+    }
+
     let hasError = false;
 
-    if (password.length < 8) {
-      setPasswordError('Passwort muss mindestens 8 Zeichen lang sein');
+    // Validate password strength (all requirements must be met)
+    if (passwordStrength.score < PASSWORD_REQUIREMENTS.length) {
+      setPasswordError('Passwort erfüllt nicht alle Sicherheitsanforderungen');
       hasError = true;
     }
 
     if (password !== confirmPassword) {
       setConfirmPasswordError('Passwörter stimmen nicht überein');
+      hasError = true;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Bitte geben Sie eine gültige E-Mail-Adresse ein');
       hasError = true;
     }
 
@@ -77,6 +125,20 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            {/* Honeypot field - hidden from humans, visible to bots */}
+            <div className="absolute left-[-9999px] opacity-0 pointer-events-none" aria-hidden="true">
+              <label htmlFor="website_url">Website URL</label>
+              <input
+                type="text"
+                id="website_url"
+                name="website_url"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+            
             <Input
               id="email"
               type="email"
@@ -85,24 +147,72 @@ export default function RegisterPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ihre.email@beispiel.de"
               required
+              autoComplete="email"
             />
 
-            <Input
-              id="password"
-              type="password"
-              label="Passwort"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setPasswordError('');
-              }}
-              placeholder="••••••••"
-              required
-              minLength={8}
-              error={!!passwordError}
-              errorText={passwordError}
-              helperText="Mindestens 8 Zeichen"
-            />
+            <div className="space-y-2">
+              <Input
+                id="password"
+                type="password"
+                label="Passwort"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError('');
+                  setShowPasswordStrength(true);
+                }}
+                onFocus={() => setShowPasswordStrength(true)}
+                placeholder="••••••••"
+                required
+                minLength={8}
+                error={!!passwordError}
+                errorText={passwordError}
+                autoComplete="new-password"
+              />
+              
+              {/* Password Strength Indicator */}
+              {showPasswordStrength && password.length > 0 && (
+                <div className="space-y-2 animate-fade-in">
+                  {/* Strength Bar */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${passwordStrength.color}`}
+                        style={{ width: `${passwordStrength.percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 dark:text-gray-400 capitalize min-w-[50px]">
+                      {passwordStrength.level === 'weak' && 'Schwach'}
+                      {passwordStrength.level === 'fair' && 'Mäßig'}
+                      {passwordStrength.level === 'good' && 'Gut'}
+                      {passwordStrength.level === 'strong' && 'Stark'}
+                    </span>
+                  </div>
+                  
+                  {/* Requirements Checklist */}
+                  <ul className="text-xs space-y-1">
+                    {PASSWORD_REQUIREMENTS.map((req, index) => {
+                      const isMet = req.regex.test(password);
+                      return (
+                        <li 
+                          key={index} 
+                          className={`flex items-center gap-1.5 transition-colors ${
+                            isMet 
+                              ? 'text-green-600 dark:text-green-400' 
+                              : 'text-gray-500 dark:text-gray-400'
+                          }`}
+                        >
+                          <span className="w-4 h-4 flex items-center justify-center">
+                            {isMet ? '✓' : '○'}
+                          </span>
+                          {req.label}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             <Input
               id="confirmPassword"
@@ -117,6 +227,7 @@ export default function RegisterPage() {
               required
               error={!!confirmPasswordError}
               errorText={confirmPasswordError}
+              autoComplete="new-password"
             />
 
             {error && (
