@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { TrashIcon, EyeIcon, ClipboardIcon, MagnifyingGlassIcon, FunnelIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, EyeIcon, ClipboardIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, QrCodeIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { links } from '@/lib/db/schema';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,18 +26,26 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Get unique tags from all links (would need to fetch from API in real implementation)
-  const allTags = useMemo(() => {
-    // In production, fetch tags from API
-    return [] as string[];
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   // Filter and sort links
   const filteredLinks = useMemo(() => {
     let filtered = [...links];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(link =>
@@ -46,47 +54,32 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
       );
     }
 
-    // Status filter
     if (filterStatus !== 'all') {
       filtered = filtered.filter(link =>
         filterStatus === 'public' ? link.isPublic : !link.isPublic
       );
     }
 
-    // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
-        case 'newest':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'oldest':
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-        case 'clicks-desc':
-          return b.hits - a.hits;
-        case 'clicks-asc':
-          return a.hits - b.hits;
-        case 'url-asc':
-          return a.longUrl.localeCompare(b.longUrl);
-        case 'url-desc':
-          return b.longUrl.localeCompare(a.longUrl);
-        default:
-          return 0;
+        case 'newest': return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest': return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'clicks-desc': return b.hits - a.hits;
+        case 'clicks-asc': return a.hits - b.hits;
+        case 'url-asc': return a.longUrl.localeCompare(b.longUrl);
+        case 'url-desc': return b.longUrl.localeCompare(a.longUrl);
+        default: return 0;
       }
     });
 
     return filtered;
-  }, [links, searchQuery, sortBy, filterStatus, selectedTags]);
+  }, [links, searchQuery, sortBy, filterStatus]);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Möchten Sie diesen Link wirklich löschen?')) {
-      return;
-    }
-
+    if (!confirm('Möchten Sie diesen Link wirklich löschen?')) return;
     setDeleting(id);
     try {
-      const response = await fetch(`/api/links/${id}`, {
-        method: 'DELETE',
-      });
-
+      const response = await fetch(`/api/links/${id}`, { method: 'DELETE' });
       if (response.ok) {
         setLinks(links.filter(link => link.id !== id));
       } else {
@@ -102,12 +95,18 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
   const copyShortUrl = (shortCode: string) => {
     const baseUrl = window.location.origin;
     navigator.clipboard.writeText(`${baseUrl}/s/${shortCode}`);
+    // Optional: Toast notification here
   };
 
   const clearFilters = () => {
     setSearchQuery('');
     setFilterStatus('all');
     setSelectedTags([]);
+  };
+
+  const toggleMenu = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === id ? null : id);
   };
 
   if (links.length === 0) {
@@ -129,211 +128,118 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
       {/* Search and Filter Bar */}
       <div className="bg-card rounded-lg border border-border p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Search */}
-          <div className="flex-1">
-            <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Nach Short Code oder URL suchen..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
+          <div className="flex-1 relative">
+             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+             <Input
+               type="text"
+               placeholder="Suchen..."
+               value={searchQuery}
+               onChange={(e) => setSearchQuery(e.target.value)}
+               className="pl-10"
+             />
           </div>
-
-          {/* Status Filter */}
           <div className="flex gap-2">
-            <Button
-              variant={filterStatus === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('all')}
-            >
-              Alle
-            </Button>
-            <Button
-              variant={filterStatus === 'public' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('public')}
-            >
-              Öffentlich
-            </Button>
-            <Button
-              variant={filterStatus === 'private' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterStatus('private')}
-            >
-              Privat
-            </Button>
+            <Button variant={filterStatus === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus('all')}>Alle</Button>
+            <Button variant={filterStatus === 'public' ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus('public')}>Öffentlich</Button>
+            <Button variant={filterStatus === 'private' ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus('private')}>Privat</Button>
           </div>
-
-          {/* Sort */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-ring focus:border-input min-h-[44px]"
+            className="px-4 py-2 border border-input rounded-lg bg-background text-foreground text-sm min-h-[40px]"
           >
-            <option value="newest">Neueste zuerst</option>
-            <option value="oldest">Älteste zuerst</option>
-            <option value="clicks-desc">Meiste Klicks</option>
-            <option value="clicks-asc">Wenigste Klicks</option>
-            <option value="url-asc">URL A-Z</option>
-            <option value="url-desc">URL Z-A</option>
+            <option value="newest">Neueste</option>
+            <option value="oldest">Älteste</option>
+            <option value="clicks-desc">Klicks ↓</option>
+            <option value="clicks-asc">Klicks ↑</option>
+            <option value="url-asc">A-Z</option>
           </select>
-
-          {/* View Mode Toggle */}
           <div className="flex gap-2">
-            <Button
-              variant={viewMode === 'table' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('table')}
-              aria-label="Tabellenansicht"
-            >
-              📊
-            </Button>
-            <Button
-              variant={viewMode === 'cards' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('cards')}
-              aria-label="Kartenansicht"
-            >
-              🎴
-            </Button>
+            <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')}>📊</Button>
+            <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')}>🎴</Button>
           </div>
         </div>
-
-        {/* Active Filters */}
-        {(searchQuery || filterStatus !== 'all' || selectedTags.length > 0) && (
-          <div className="mt-4 flex items-center gap-2 flex-wrap">
-            <span className="text-sm text-muted-foreground">Aktive Filter:</span>
-            {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent text-accent-foreground rounded text-sm">
-                Suche: {searchQuery}
-                <button onClick={() => setSearchQuery('')} className="hover:text-foreground">
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </span>
-            )}
-            {filterStatus !== 'all' && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-accent text-accent-foreground rounded text-sm">
-                Status: {filterStatus === 'public' ? 'Öffentlich' : 'Privat'}
-                <button onClick={() => setFilterStatus('all')} className="hover:text-foreground">
-                  <XMarkIcon className="h-4 w-4" />
-                </button>
-              </span>
-            )}
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
-              Alle zurücksetzen
-            </Button>
+        {(searchQuery || filterStatus !== 'all') && (
+          <div className="mt-4 flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={clearFilters}>Filter zurücksetzen</Button>
           </div>
         )}
-
-        {/* Results Count */}
-        <div className="mt-2 text-sm text-muted-foreground">
-          {filteredLinks.length} von {links.length} Links angezeigt
-        </div>
       </div>
 
-      {/* Links Display */}
       {filteredLinks.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <p>Keine Links gefunden, die den Filtern entsprechen.</p>
-          <Button variant="outline" onClick={clearFilters} className="mt-4">
-            Filter zurücksetzen
-          </Button>
-        </div>
+        <div className="text-center py-12 text-muted-foreground">Keine Links gefunden.</div>
       ) : viewMode === 'table' ? (
-        <div className="overflow-x-auto rounded-lg border border-border">
+        <div className="overflow-visible rounded-lg border border-border bg-card">
           <table className="min-w-full divide-y divide-border">
             <thead className="bg-muted/50">
               <tr>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Short Code
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Ziel-URL
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Klicks
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Aktionen
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Link</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Ziel</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Klicks</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Aktionen</th>
               </tr>
             </thead>
-            <tbody className="bg-card divide-y divide-border">
+            <tbody className="divide-y divide-border">
               {filteredLinks.map((link) => (
                 <tr key={link.id} className="hover:bg-muted/50 transition-colors">
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center space-x-2">
-                      <code className="text-sm font-mono text-primary">
-                        {link.shortCode}
-                      </code>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => copyShortUrl(link.shortCode)}
-                        title="Kopieren"
-                        aria-label={`Short Code ${link.shortCode} kopieren`}
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                      >
-                        <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
-                      </Button>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <code className="text-sm font-mono text-primary font-bold">{link.shortCode}</code>
+                      <button onClick={() => copyShortUrl(link.shortCode)} className="text-muted-foreground hover:text-foreground">
+                        <ClipboardIcon className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
-                  <td className="px-4 sm:px-6 py-4">
-                    <div className="text-sm text-foreground max-w-md truncate">
-                      {link.longUrl}
-                    </div>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-foreground max-w-xs truncate" title={link.longUrl}>{link.longUrl}</div>
                   </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-foreground">{link.hits}</div>
-                  </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      link.isPublic
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-                    }`}>
+                  <td className="px-6 py-4 text-sm font-medium">{link.hits}</td>
+                  <td className="px-6 py-4">
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${link.isPublic ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'}`}>
                       {link.isPublic ? 'Öffentlich' : 'Privat'}
                     </span>
                   </td>
-                  <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <a
-                        href={`/s/${link.shortCode}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title="Ansehen"
-                        aria-label={`Link ${link.shortCode} öffnen`}
-                        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), "h-8 w-8 text-primary hover:text-primary/80")}
-                      >
-                        <EyeIcon className="h-4 w-4" aria-hidden="true" />
+                  <td className="px-6 py-4 text-right relative">
+                    <div className="flex justify-end gap-2 items-center">
+                      <a href={`/s/${link.shortCode}`} target="_blank" className="text-primary hover:text-primary/80 p-1">
+                        <EyeIcon className="h-5 w-5" />
                       </a>
-                      <a
-                        href={`/dashboard/links/${link.id}/history`}
-                        title="Verlauf"
-                        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), "h-8 w-8 text-muted-foreground hover:text-foreground")}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                      </a>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleDelete(link.id)}
-                        disabled={deleting === link.id}
-                        className="h-8 w-8 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                        title="Löschen"
-                        aria-label={`Link ${link.shortCode} löschen`}
-                      >
-                        <TrashIcon className="h-4 w-4" aria-hidden="true" />
-                      </Button>
+                      <div className="relative" ref={openMenuId === link.id ? menuRef : null}>
+                        <button 
+                          onClick={(e) => toggleMenu(link.id, e)} 
+                          className="p-1 rounded-md hover:bg-muted transition-colors"
+                        >
+                          <EllipsisVerticalIcon className="h-5 w-5 text-muted-foreground" />
+                        </button>
+                        
+                        {/* Dropdown Menu */}
+                        {openMenuId === link.id && (
+                          <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 z-50 animate-in fade-in zoom-in-95 duration-100">
+                            <div className="py-1">
+                              <Link href={`/dashboard/analytics/${link.id}`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <ChartBarIcon className="h-4 w-4" /> Analytics
+                              </Link>
+                              <Link href={`/dashboard/links/${link.id}/history`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <ClockIcon className="h-4 w-4" /> Verlauf
+                              </Link>
+                              <Link href={`/dashboard/links/${link.id}/schedule`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <CalendarIcon className="h-4 w-4" /> Zeitplan
+                              </Link>
+                              <Link href={`/dashboard/links/${link.id}/masking`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <ShieldCheckIcon className="h-4 w-4" /> Masking / Splash
+                              </Link>
+                              <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                              <button 
+                                onClick={() => handleDelete(link.id)}
+                                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              >
+                                <TrashIcon className="h-4 w-4" /> Löschen
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -343,17 +249,9 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredLinks.map((link) => {
-            const shortUrl = `${window.location.origin}/s/${link.shortCode}`;
-            return (
-              <LinkPreviewCard
-                key={link.id}
-                linkId={link.id}
-                longUrl={link.longUrl}
-                shortUrl={shortUrl}
-              />
-            );
-          })}
+          {filteredLinks.map((link) => (
+            <LinkPreviewCard key={link.id} linkId={link.id} longUrl={link.longUrl} shortUrl={`${window.location.origin}/s/${link.shortCode}`} />
+          ))}
         </div>
       )}
     </div>
