@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zhort URL Shortener</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Zhort</h1>
+      <p>Professional URL Shortener</p>
+    </header>
+    
+    <main>
+      <div id="loading" class="hidden">
+        <div class="spinner"></div>
+        <p>Kürze URL...</p>
+      </div>
+
+      <div id="initial-state">
+        <button id="shorten-btn" class="btn-primary">Aktuellen Tab kürzen</button>
+      </div>
+
+      <div id="result-state" class="hidden">
+        <label for="short-url">Dein kurzer Link:</label>
+        <div class="input-group">
+          <input type="text" id="short-url" readonly>
+          <button id="copy-btn" class="btn-icon" title="Kopieren">📋</button>
+        </div>
+        <div id="success-msg" class="hidden">Kopiert!</div>
+        <button id="reset-btn" class="btn-secondary">Weiteren Link kürzen</button>
+      </div>
+
+      <div id="error-state" class="hidden">
+        <p id="error-msg" class="error">Ein Fehler ist aufgetreten.</p>
+        <button id="retry-btn" class="btn-secondary">Nochmal versuchen</button>
+      </div>
+    </main>
+
+    <footer>
+      <a href="https://zhort.de" target="_blank">zhort.de</a>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

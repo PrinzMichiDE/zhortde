@@ -189,6 +189,43 @@ export default async function Home() {
                 </p>
               </div>
             </div>
+
+            {/* Feature 7 - Browser Extension */}
+            <div className="group relative bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-2xl p-8 border border-gray-200/50 dark:border-gray-700/50 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 md:col-span-2 lg:col-span-3">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-blue-500/5 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex flex-col md:flex-row items-center gap-8">
+                <div className="flex-1">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl mb-6 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 shadow-lg shadow-indigo-500/25">
+                    <GlobeAltIcon className="h-7 w-7 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    Browser Erweiterung
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 leading-relaxed mb-6">
+                    Kürzen Sie URLs direkt aus Ihrem Browser mit einem Klick. Verfügbar für Chrome, Firefox und Edge.
+                  </p>
+                  <a 
+                    href="/extensions/zhort-extension.zip" 
+                    download
+                    className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-3 md:text-lg md:px-8 transition-colors shadow-lg shadow-indigo-500/25"
+                  >
+                    Extension herunterladen (ZIP)
+                  </a>
+                </div>
+                <div className="flex-1 w-full max-w-sm bg-gray-900 rounded-lg p-4 shadow-xl border border-gray-800">
+                  <div className="flex items-center gap-2 mb-4 border-b border-gray-800 pb-2">
+                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <div className="flex-1 bg-gray-800 h-6 rounded px-2 text-xs flex items-center text-gray-400 ml-2">zhort.de</div>
+                  </div>
+                  <div className="bg-white rounded p-4 text-center">
+                    <div className="font-bold text-gray-900 mb-2">Zhort Extension</div>
+                    <button className="bg-indigo-600 text-white text-sm py-1 px-3 rounded w-full">Kürzen</button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
