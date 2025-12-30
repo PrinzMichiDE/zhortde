@@ -2,20 +2,60 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
+import { ArrowRight, Lock, Mail } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paramError = searchParams.get('error');
+
+  const [step, setStep] = useState<'email' | 'password'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(paramError ? 'Authentication failed. Please try again.' : '');
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const checkEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes('@')) {
+      setError('Please enter a valid email');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await fetch('/api/auth/sso/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await res.json();
+      
+      if (data.isSso && data.authUrl) {
+        // Redirect to SSO Provider
+        window.location.href = data.authUrl;
+        return;
+      }
+
+      // Not SSO -> Show Password
+      setStep('password');
+    } catch (err) {
+      console.error(err);
+      setStep('password'); // Fallback to password on error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -51,49 +91,80 @@ export default function LoginPage() {
             <p className="text-gray-600 dark:text-gray-400 text-sm">Willkommen zurück! 👋</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            <Input
-              id="email"
-              type="email"
-              label="E-Mail"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="123@123.de"
-              required
-            />
+          {step === 'email' ? (
+            <form onSubmit={checkEmail} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium mb-1">E-Mail Adresse</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@company.com"
+                    className="pl-10"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
 
-            <Input
-              id="password"
-              type="password"
-              label="Passwort"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+              {error && (
+                <Alert variant="error" icon="⚠️">
+                  {error}
+                </Alert>
+              )}
 
-            {error && (
-              <Alert variant="error" icon="⚠️">
-                {error}
-              </Alert>
-            )}
+              <Button type="submit" loading={loading} fullWidth size="lg">
+                Weiter <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handlePasswordLogin} className="space-y-6">
+               <div className="mb-4 flex items-center justify-between text-sm">
+                 <span className="font-medium">{email}</span>
+                 <button 
+                    type="button" 
+                    onClick={() => { setStep('email'); setPassword(''); setError(''); }}
+                    className="text-indigo-600 hover:text-indigo-500"
+                  >
+                    Ändern
+                  </button>
+               </div>
 
-            <Button
-              type="submit"
-              loading={loading}
-              fullWidth
-              size="lg"
-            >
-              {loading ? 'Wird angemeldet...' : 'Anmelden'}
-            </Button>
-          </form>
+               <div>
+                <label className="block text-sm font-medium mb-1">Passwort</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="pl-10"
+                    required
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              {error && (
+                <Alert variant="error" icon="⚠️">
+                  {error}
+                </Alert>
+              )}
+
+              <Button type="submit" loading={loading} fullWidth size="lg">
+                Anmelden
+              </Button>
+            </form>
+          )}
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Noch kein Account?{' '}
-              <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200 relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded">
+              <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200">
                 Jetzt registrieren
-                <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </Link>
             </p>
           </div>
@@ -102,4 +173,3 @@ export default function LoginPage() {
     </div>
   );
 }
-

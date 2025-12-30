@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Trash2, Shield, User } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert } from '@/components/ui/alert';
 
 interface UserData {
   id: number;
@@ -56,9 +56,8 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6">
       {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
+        <Alert variant="error" icon={<AlertCircle className="h-4 w-4" />}>
+          {error}
         </Alert>
       )}
 
