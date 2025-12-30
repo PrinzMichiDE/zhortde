@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { HeartIcon } from '@heroicons/react/24/solid';
+import { CookieSettingsButton } from './cookie-settings-button';
 
 export function Footer() {
   const [visitorCount, setVisitorCount] = useState<number>(0);
@@ -228,6 +229,8 @@ export function Footer() {
                 <span className="relative z-10">Impressum</span>
                 <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-primary to-primary/60 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
               </a>
+              <span className="mx-1 animate-pulse">•</span>
+              <CookieSettingsButton />
             </div>
             <div className="flex items-center gap-2 group">
               <span>Made with</span>

@@ -275,6 +275,41 @@ export default function DatenschutzPage() {
                 Einwilligung (Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TTDSG); die Einwilligung ist jederzeit widerrufbar.
               </p>
 
+              <h4 className="text-lg font-semibold mt-6 mb-3 text-foreground">Cookie-Kategorien</h4>
+              <p className="text-muted-foreground leading-relaxed">
+                Wir verwenden verschiedene Arten von Cookies auf unserer Website:
+              </p>
+              <ul className="list-disc pl-6 mt-4 space-y-3 text-muted-foreground">
+                <li>
+                  <strong>Notwendige Cookies:</strong> Diese Cookies sind für die Grundfunktionen der Website erforderlich 
+                  und können nicht deaktiviert werden. Sie werden normalerweise nur als Reaktion auf Ihre Aktionen gesetzt, 
+                  die einer Anfrage nach Diensten entsprechen, wie z. B. das Festlegen Ihrer Datenschutzeinstellungen, 
+                  das Anmelden oder das Ausfüllen von Formularen. Diese Cookies speichern keine personenbezogenen Daten.
+                </li>
+                <li>
+                  <strong>Analyse-Cookies:</strong> Diese Cookies ermöglichen es uns, die Anzahl der Besucher zu zählen und 
+                  zu verstehen, wie Besucher mit unserer Website interagieren. Alle Informationen, die diese Cookies sammeln, 
+                  sind aggregiert und daher anonym. Wenn Sie diese Cookies nicht zulassen, wissen wir nicht, wann Sie unsere 
+                  Website besucht haben.
+                </li>
+                <li>
+                  <strong>Marketing-Cookies:</strong> Diese Cookies werden verwendet, um Besuchern auf Websites relevante 
+                  Anzeigen und Marketingkampagnen bereitzustellen. Aktuell verwenden wir keine Marketing-Cookies auf unserer Website.
+                </li>
+              </ul>
+
+              <h4 className="text-lg font-semibold mt-6 mb-3 text-foreground">Cookie-Verwaltung</h4>
+              <p className="text-muted-foreground leading-relaxed">
+                Sie können Ihre Cookie-Präferenzen jederzeit über das Cookie-Banner oder die Cookie-Einstellungen anpassen. 
+                Ihre Präferenzen werden lokal in Ihrem Browser gespeichert und bleiben erhalten, bis Sie sie ändern oder Ihre 
+                Browserdaten löschen. Sie können Ihre Einwilligung jederzeit widerrufen, indem Sie die Cookie-Einstellungen 
+                erneut aufrufen und Ihre Präferenzen ändern.
+              </p>
+              <p className="text-muted-foreground leading-relaxed mt-4">
+                Bitte beachten Sie, dass das Deaktivieren bestimmter Cookies die Funktionalität der Website beeinträchtigen kann. 
+                Notwendige Cookies können nicht deaktiviert werden, da sie für die Grundfunktionen der Website erforderlich sind.
+              </p>
+
               <h3 className="text-xl font-semibold mt-6 mb-3 text-foreground">Server-Log-Dateien</h3>
               <p className="text-muted-foreground leading-relaxed">
                 Der Provider der Seiten erhebt und speichert automatisch Informationen in so genannten Server-Log-Dateien, 
