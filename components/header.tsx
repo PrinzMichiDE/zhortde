@@ -42,6 +42,22 @@ export function Header() {
                   {item.name}
                 </Link>
               ))}
+              <div className="ml-2 pl-2 border-l border-border flex items-center gap-1">
+                <Link
+                  href="/datenschutz"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  Datenschutz
+                </Link>
+                <Link
+                  href="https://www.michelfritzsch.de/impressum"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  Impressum
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -134,6 +150,24 @@ export function Header() {
                   {item.name}
                 </Link>
               ))}
+              <div className="border-t border-border my-2 pt-2 space-y-1">
+                <Link
+                  href="/datenschutz"
+                  className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Datenschutz
+                </Link>
+                <Link
+                  href="https://www.michelfritzsch.de/impressum"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Impressum
+                </Link>
+              </div>
               {session ? (
                 <>
                   <div className="border-t border-border my-2 pt-2">
