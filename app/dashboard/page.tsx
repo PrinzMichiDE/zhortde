@@ -6,6 +6,7 @@ import { links, pastes } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { LinksList } from '@/components/dashboard/links-list';
 import { PastesList } from '@/components/dashboard/pastes-list';
+import Link from 'next/link';
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -28,6 +29,14 @@ export default async function DashboardPage() {
     orderBy: [desc(pastes.createdAt)],
   });
 
+  const features = [
+    { name: 'Bulk Shorten', href: '/dashboard/bulk', icon: '📦', description: 'Viele Links auf einmal kürzen', color: 'from-blue-500 to-cyan-500' },
+    { name: 'API Keys', href: '/dashboard/api-keys', icon: '🔑', description: 'Zugriffsschlüssel verwalten', color: 'from-amber-500 to-orange-500' },
+    { name: 'Webhooks', href: '/dashboard/webhooks', icon: '🔔', description: 'Event-Benachrichtigungen', color: 'from-pink-500 to-rose-500' },
+    { name: 'Domains', href: '/dashboard/domains', icon: '🌐', description: 'Eigene Domains verwalten', color: 'from-purple-500 to-indigo-500' },
+    { name: 'Integrations (MCP)', href: '/dashboard/integrations', icon: '🤖', description: 'AI Agenten verbinden', color: 'from-emerald-500 to-teal-500' },
+  ];
+
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
@@ -40,6 +49,25 @@ export default async function DashboardPage() {
             <span className="font-semibold text-indigo-600 dark:text-indigo-400">{session.user.email}</span>
             <span className="inline-block animate-wave">👋</span>
           </p>
+        </div>
+
+        {/* Feature Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12 animate-slide-up">
+          {features.map((feature, idx) => (
+            <Link 
+              key={feature.name} 
+              href={feature.href}
+              className="group relative overflow-hidden bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1 block"
+              style={{ animationDelay: `${idx * 50}ms` }}
+            >
+              <div className={`absolute inset-0 bg-gradient-to-r ${feature.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+              <div className="relative z-10">
+                <span className="text-3xl mb-3 block">{feature.icon}</span>
+                <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-1">{feature.name}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{feature.description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
 
         <div className="space-y-8">
@@ -77,4 +105,3 @@ export default async function DashboardPage() {
     </div>
   );
 }
-
