@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { bioProfiles, bioLinks } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, asc } from 'drizzle-orm';
 import { Metadata } from 'next';
 
 type Props = {
@@ -12,25 +12,27 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { username } = await params;
   
-  // In real app: fetch from DB. Mocking for build safety if DB fails.
-  // const profile = await db.query.bioProfiles.findFirst({ ... });
+  const profile = await db.query.bioProfiles.findFirst({
+    where: eq(bioProfiles.username, username),
+  });
   
+  if (!profile) return { title: 'Zhort Bio' };
+
   return {
-    title: `${username} | Zhort Bio`,
-    description: `Check out ${username}'s links on Zhort.`,
+    title: `${profile.displayName || username} | Zhort Bio`,
+    description: profile.bio || `Check out ${username}'s links on Zhort.`,
   };
 }
 
 export default async function BioPage({ params }: Props) {
   const { username } = await params;
 
-  // Fetch data (Simulated for now as DB might be empty/unreachable in this env)
-  /*
+  // Fetch real data
   const profile = await db.query.bioProfiles.findFirst({
     where: eq(bioProfiles.username, username),
     with: {
       links: {
-        orderBy: [desc(bioLinks.position)],
+        orderBy: [asc(bioLinks.position)],
       }
     }
   });
@@ -38,18 +40,6 @@ export default async function BioPage({ params }: Props) {
   if (!profile) {
     notFound();
   }
-  */
-
-  // Mock Data for Visualization
-  const profile = {
-    displayName: username,
-    bio: 'This is a preview profile. Connect database to see real data.',
-    links: [
-      { id: 1, title: 'My Website', url: 'https://example.com' },
-      { id: 2, title: 'Twitter', url: 'https://twitter.com' },
-      { id: 3, title: 'Instagram', url: 'https://instagram.com' },
-    ]
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex flex-col items-center py-16 px-4">
@@ -57,16 +47,22 @@ export default async function BioPage({ params }: Props) {
         
         {/* Profile Header */}
         <div className="text-center space-y-4">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-xl border-4 border-white dark:border-gray-800">
-            {profile.displayName.charAt(0).toUpperCase()}
+          <div className="w-32 h-32 mx-auto bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-xl border-4 border-white dark:border-gray-800 overflow-hidden">
+            {profile.avatarUrl ? (
+              <img src={profile.avatarUrl} alt={profile.displayName || username} className="w-full h-full object-cover" />
+            ) : (
+              (profile.displayName || username).charAt(0).toUpperCase()
+            )}
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {profile.displayName}
+              {profile.displayName || username}
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
-              {profile.bio}
-            </p>
+            {profile.bio && (
+              <p className="text-gray-600 dark:text-gray-300">
+                {profile.bio}
+              </p>
+            )}
           </div>
         </div>
 

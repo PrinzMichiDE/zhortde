@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,11 +14,36 @@ export default function BioDashboardPage() {
   const [bio, setBio] = useState('');
   const [links, setLinks] = useState<{ title: string; url: string }[]>([{ title: '', url: '' }]);
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Mock checking if profile exists
-  const hasProfile = false; // TODO: Fetch from API
+  useEffect(() => {
+    if (session) {
+      fetchProfile();
+    }
+  }, [session]);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch('/api/bio');
+      if (response.ok) {
+        const data = await response.json();
+        if (data) {
+          setUsername(data.username || '');
+          setDisplayName(data.displayName || '');
+          setBio(data.bio || '');
+          if (data.links && data.links.length > 0) {
+            setLinks(data.links);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setFetching(false);
+    }
+  };
 
   const addLink = () => {
     setLinks([...links, { title: '', url: '' }]);
@@ -32,6 +57,7 @@ export default function BioDashboardPage() {
 
   const updateLink = (index: number, field: 'title' | 'url', value: string) => {
     const newLinks = [...links];
+    // @ts-ignore
     newLinks[index][field] = value;
     setLinks(newLinks);
   };
@@ -42,16 +68,26 @@ export default function BioDashboardPage() {
     setError('');
     setSuccess(false);
 
-    // Mock Save
     try {
-      if (!username) throw new Error('Username ist erforderlich');
-      // Validate username format (a-z0-9-_)
-      if (!/^[a-z0-9-_]+$/.test(username)) {
-        throw new Error('Username darf nur Kleinbuchstaben, Zahlen, - und _ enthalten');
+      const response = await fetch('/api/bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          displayName,
+          bio,
+          links: links.filter(l => l.title && l.url) // Only save valid links
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Fehler beim Speichern');
       }
 
-      await new Promise(resolve => setTimeout(resolve, 1000));
       setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -66,6 +102,10 @@ export default function BioDashboardPage() {
         <Link href="/login" className="text-indigo-600 hover:underline">Zum Login</Link>
       </div>
     );
+  }
+
+  if (fetching) {
+    return <div className="p-12 text-center text-gray-500">Lade Profil...</div>;
   }
 
   return (
@@ -113,7 +153,7 @@ export default function BioDashboardPage() {
                     <textarea
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[100px] p-3"
+                      className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[100px] p-3 text-gray-900 dark:text-gray-100"
                       placeholder="Erzählen Sie etwas über sich..."
                     />
                   </div>
@@ -163,6 +203,18 @@ export default function BioDashboardPage() {
                 </Button>
               </div>
 
+              {username && (
+                <div className="mt-4 text-center">
+                  <Link 
+                    href={`/bio/${username}`} 
+                    target="_blank"
+                    className="text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 font-medium"
+                  >
+                    Öffentliche Profilseite ansehen &rarr;
+                  </Link>
+                </div>
+              )}
+
             </form>
           </div>
 
@@ -176,7 +228,7 @@ export default function BioDashboardPage() {
                 
                 {/* Preview Content */}
                 <div className="h-full overflow-y-auto bg-white text-gray-900 p-6 pt-12 flex flex-col items-center">
-                  <div className="w-24 h-24 bg-gray-200 rounded-full mb-4 flex items-center justify-center text-3xl">
+                  <div className="w-24 h-24 bg-gray-200 rounded-full mb-4 flex items-center justify-center text-3xl font-bold text-gray-600">
                     {displayName ? displayName.charAt(0).toUpperCase() : '?'}
                   </div>
                   <h3 className="font-bold text-xl mb-1 text-center">{displayName || 'Ihr Name'}</h3>
@@ -184,7 +236,7 @@ export default function BioDashboardPage() {
                   
                   <div className="w-full space-y-3">
                     {links.map((link, idx) => (
-                      <div key={idx} className="w-full p-3 bg-gray-100 rounded-lg text-center font-medium border border-gray-200">
+                      <div key={idx} className="w-full p-3 bg-gray-100 rounded-lg text-center font-medium border border-gray-200 truncate">
                         {link.title || 'Link Titel'}
                       </div>
                     ))}
