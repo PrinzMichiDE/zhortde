@@ -10,6 +10,7 @@ import { incrementStat } from '@/lib/db/init-stats';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rate-limit';
 import { hashPassword, calculateExpiration } from '@/lib/password-protection';
 import { triggerWebhooks } from '@/lib/webhooks';
+import { logLinkAction } from '@/lib/audit-log';
 
 export async function POST(request: NextRequest) {
   try {
@@ -140,9 +141,22 @@ export async function POST(request: NextRequest) {
     // Inkrementiere Links Counter
     await incrementStat('links');
 
-    // 🔔 Trigger webhooks (fire and forget)
+    // 📜 Audit Log & Webhooks
     if (session?.user?.id) {
-      triggerWebhooks(parseInt(session.user.id), 'link.created', {
+      const userId = parseInt(session.user.id);
+      
+      // Log Action
+      await logLinkAction(newLink[0].id, userId, 'created', {
+        longUrl,
+        shortCode,
+        isPublic,
+        hasPassword: !!password,
+        hasExpiration: !!expiresAt,
+        utm: { utmSource, utmMedium, utmCampaign }
+      });
+
+      // Trigger webhooks
+      triggerWebhooks(userId, 'link.created', {
         linkId: newLink[0].id,
         shortCode: newLink[0].shortCode,
         longUrl: newLink[0].longUrl,
