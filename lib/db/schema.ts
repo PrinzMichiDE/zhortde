@@ -169,6 +169,155 @@ export type NewApiKey = typeof apiKeys.$inferInsert;
 export type Webhook = typeof webhooks.$inferSelect;
 export type NewWebhook = typeof webhooks.$inferInsert;
 
+// 🏷️ Link Tags & Categories
+export const linkTags = pgTable('link_tags', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  tag: text('tag').notNull(),
+  color: text('color').default('#6366f1'), // Hex color
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🌐 Custom Domains
+export const customDomains = pgTable('custom_domains', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  domain: text('domain').notNull().unique(), // e.g., "links.example.com"
+  verified: boolean('verified').notNull().default(false),
+  dnsRecords: text('dns_records'), // JSON array of DNS records
+  sslEnabled: boolean('ssl_enabled').notNull().default(false),
+  verifiedAt: timestamp('verified_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 📅 Link Scheduling
+export const linkSchedules = pgTable('link_schedules', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  activeFrom: timestamp('active_from'),
+  activeUntil: timestamp('active_until'),
+  timezone: text('timezone').default('UTC'),
+  fallbackUrl: text('fallback_url'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🧪 A/B Testing Variants
+export const linkVariants = pgTable('link_variants', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  variantUrl: text('variant_url').notNull(),
+  trafficPercentage: integer('traffic_percentage').notNull().default(50), // 0-100
+  conversions: integer('conversions').notNull().default(0),
+  clicks: integer('clicks').notNull().default(0),
+  isWinner: boolean('is_winner').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 📊 Link Preview/Thumbnail Cache
+export const linkPreviews = pgTable('link_previews', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().unique().references(() => links.id, { onDelete: 'cascade' }),
+  title: text('title'),
+  description: text('description'),
+  imageUrl: text('image_url'),
+  thumbnailUrl: text('thumbnail_url'),
+  siteName: text('site_name'),
+  faviconUrl: text('favicon_url'),
+  ogData: text('og_data'), // JSON with all Open Graph data
+  lastFetched: timestamp('last_fetched').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🎯 Tracking Pixels
+export const trackingPixels = pgTable('tracking_pixels', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  pixelType: text('pixel_type').notNull(), // 'facebook', 'google', 'custom'
+  pixelId: text('pixel_id').notNull(),
+  events: text('events'), // JSON array: ['pageview', 'conversion']
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 👥 Teams & Collaboration
+export const teams = pgTable('teams', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  ownerId: integer('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const teamMembers = pgTable('team_members', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  role: text('role').notNull().default('member'), // 'owner', 'admin', 'member'
+  permissions: text('permissions'), // JSON object with permissions
+  joinedAt: timestamp('joined_at').notNull().defaultNow(),
+});
+
+export const teamLinks = pgTable('team_links', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  addedAt: timestamp('added_at').notNull().defaultNow(),
+});
+
+// 💬 Link Comments & Notes
+export const linkComments = pgTable('link_comments', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  content: text('content').notNull(),
+  isInternal: boolean('is_internal').notNull().default(true), // Internal note vs public comment
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 📝 Link History/Changelog
+export const linkHistory = pgTable('link_history', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(), // 'created', 'updated', 'deleted', 'tagged', etc.
+  changes: text('changes'), // JSON object with before/after
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export type LinkTag = typeof linkTags.$inferSelect;
+export type NewLinkTag = typeof linkTags.$inferInsert;
+
+export type CustomDomain = typeof customDomains.$inferSelect;
+export type NewCustomDomain = typeof customDomains.$inferInsert;
+
+export type LinkSchedule = typeof linkSchedules.$inferSelect;
+export type NewLinkSchedule = typeof linkSchedules.$inferInsert;
+
+export type LinkVariant = typeof linkVariants.$inferSelect;
+export type NewLinkVariant = typeof linkVariants.$inferInsert;
+
+export type LinkPreview = typeof linkPreviews.$inferSelect;
+export type NewLinkPreview = typeof linkPreviews.$inferInsert;
+
+export type TrackingPixel = typeof trackingPixels.$inferSelect;
+export type NewTrackingPixel = typeof trackingPixels.$inferInsert;
+
+export type Team = typeof teams.$inferSelect;
+export type NewTeam = typeof teams.$inferInsert;
+
+export type TeamMember = typeof teamMembers.$inferSelect;
+export type NewTeamMember = typeof teamMembers.$inferInsert;
+
+export type TeamLink = typeof teamLinks.$inferSelect;
+export type NewTeamLink = typeof teamLinks.$inferInsert;
+
+export type LinkComment = typeof linkComments.$inferSelect;
+export type NewLinkComment = typeof linkComments.$inferInsert;
+
+export type LinkHistory = typeof linkHistory.$inferSelect;
+export type NewLinkHistory = typeof linkHistory.$inferInsert;
+
 // Relations
 export const linksRelations = relations(links, ({ one, many }) => ({
   user: one(users, {
@@ -178,6 +327,14 @@ export const linksRelations = relations(links, ({ one, many }) => ({
   linkClicks: many(linkClicks),
   smartRedirects: many(smartRedirects),
   linkMasking: one(linkMasking),
+  linkTags: many(linkTags),
+  linkSchedules: many(linkSchedules),
+  linkVariants: many(linkVariants),
+  linkPreview: one(linkPreviews),
+  trackingPixels: many(trackingPixels),
+  linkComments: many(linkComments),
+  linkHistory: many(linkHistory),
+  teamLinks: many(teamLinks),
 }));
 
 export const linkClicksRelations = relations(linkClicks, ({ one }) => ({
@@ -198,6 +355,105 @@ export const linkMaskingRelations = relations(linkMasking, ({ one }) => ({
   link: one(links, {
     fields: [linkMasking.linkId],
     references: [links.id],
+  }),
+}));
+
+export const linkTagsRelations = relations(linkTags, ({ one }) => ({
+  link: one(links, {
+    fields: [linkTags.linkId],
+    references: [links.id],
+  }),
+}));
+
+export const customDomainsRelations = relations(customDomains, ({ one }) => ({
+  user: one(users, {
+    fields: [customDomains.userId],
+    references: [users.id],
+  }),
+}));
+
+export const linkSchedulesRelations = relations(linkSchedules, ({ one }) => ({
+  link: one(links, {
+    fields: [linkSchedules.linkId],
+    references: [links.id],
+  }),
+}));
+
+export const linkVariantsRelations = relations(linkVariants, ({ one }) => ({
+  link: one(links, {
+    fields: [linkVariants.linkId],
+    references: [links.id],
+  }),
+}));
+
+export const linkPreviewsRelations = relations(linkPreviews, ({ one }) => ({
+  link: one(links, {
+    fields: [linkPreviews.linkId],
+    references: [links.id],
+  }),
+}));
+
+export const trackingPixelsRelations = relations(trackingPixels, ({ one }) => ({
+  link: one(links, {
+    fields: [trackingPixels.linkId],
+    references: [links.id],
+  }),
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [teams.ownerId],
+    references: [users.id],
+  }),
+  members: many(teamMembers),
+  teamLinks: many(teamLinks),
+}));
+
+export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamMembers.teamId],
+    references: [teams.id],
+  }),
+  user: one(users, {
+    fields: [teamMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const teamLinksRelations = relations(teamLinks, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamLinks.teamId],
+    references: [teams.id],
+  }),
+  link: one(links, {
+    fields: [teamLinks.linkId],
+    references: [links.id],
+  }),
+}));
+
+export const linkCommentsRelations = relations(linkComments, ({ one }) => ({
+  link: one(links, {
+    fields: [linkComments.linkId],
+    references: [links.id],
+  }),
+  user: one(users, {
+    fields: [linkComments.userId],
+    references: [users.id],
+  }),
+  team: one(teams, {
+    fields: [linkComments.teamId],
+    references: [teams.id],
+  }),
+}));
+
+export const linkHistoryRelations = relations(linkHistory, ({ one }) => ({
+  link: one(links, {
+    fields: [linkHistory.linkId],
+    references: [links.id],
+  }),
+  user: one(users, {
+    fields: [linkHistory.userId],
+    references: [users.id],
   }),
 }));
 

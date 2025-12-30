@@ -15,6 +15,13 @@
       "when": 1762421531572,
       "tag": "0001_goofy_marvel_boy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767097923928,
+      "tag": "0002_zippy_microchip",
+      "breakpoints": true
     }
   ]
 }
