@@ -13,6 +13,7 @@ import {
   LinkIcon
 } from '@heroicons/react/24/outline';
 import { getStat } from '@/lib/db/init-stats';
+import { getTranslations, getLocale } from 'next-intl/server';
 
 // Ensure dynamic rendering to fetch fresh stats
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,9 @@ export default async function Home() {
   // Fetch real statistics
   const visitorCount = await getStat('visitors');
   const linkCount = await getStat('links');
+  const t = await getTranslations('home');
+  const tf = await getTranslations('features');
+  const locale = await getLocale();
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300 relative overflow-hidden">
@@ -39,40 +43,40 @@ export default async function Home() {
             <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-indigo-200/50 dark:border-indigo-800/50 rounded-full shadow-sm">
               <SparklesIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
               <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                Professioneller URL Shortener
+                {t('badge')}
               </span>
             </div>
 
             {/* Main Heading */}
             <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-extrabold mb-6 leading-tight">
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 animate-gradient bg-[length:200%_auto]">
-                Verkürzen Sie
+                {t('title1')}
               </span>
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400 animate-gradient bg-[length:200%_auto] animation-delay-1000">
-                Ihre URLs
+                {t('title2')}
               </span>
             </h1>
 
             {/* Subtitle */}
             <p className="text-xl sm:text-2xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8 font-light">
-              Schnell, sicher und kostenlos. Mit{' '}
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">fortgeschrittenen Features</span>{' '}
-              für professionelle Nutzer.
+              {t('subtitle')}{' '}
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400">{t('subtitleHighlight')}</span>{' '}
+              {t('subtitleEnd')}
             </p>
 
             {/* Stats */}
             <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-gray-600 dark:text-gray-400">
               <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <LinkIcon className="h-5 w-5 text-indigo-500" />
-                <span className="font-semibold">{linkCount.toLocaleString('de-DE')} Links erstellt</span>
+                <span className="font-semibold">{linkCount.toLocaleString(locale)} {t('linksCreated')}</span>
               </div>
               <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <UserGroupIcon className="h-5 w-5 text-purple-500" />
-                <span className="font-semibold">{visitorCount.toLocaleString('de-DE')} Besucher</span>
+                <span className="font-semibold">{visitorCount.toLocaleString(locale)} {t('whyZhortSubtitle').includes('Visitor') ? 'Visitors' : 'Besucher'}</span>
               </div>
               <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <ShieldCheckIcon className="h-5 w-5 text-green-500" />
-                <span className="font-semibold">100% Sicher</span>
+                <span className="font-semibold">{t('secure')}</span>
               </div>
             </div>
           </div>
@@ -87,10 +91,10 @@ export default async function Home() {
         <div className="pb-20">
           <div className="text-center mb-12">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Warum Zhort?
+              {t('whyZhort')}
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-              Alles was Sie für professionelles Link-Management benötigen
+              {t('whyZhortSubtitle')}
             </p>
           </div>
 
@@ -103,10 +107,10 @@ export default async function Home() {
                   <LockClosedIcon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                  Passwortschutz
+                  {tf('passwordProtection.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Schützen Sie sensible Links mit individuellen Passwörtern für maximale Sicherheit.
+                  {tf('passwordProtection.description')}
                 </p>
               </div>
             </div>
@@ -119,10 +123,10 @@ export default async function Home() {
                   <ClockIcon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                  Ablaufdatum
+                  {tf('expiration.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Automatisches Löschen nach definierter Zeit für temporäre Links und Kampagnen.
+                  {tf('expiration.description')}
                 </p>
               </div>
             </div>
@@ -135,10 +139,10 @@ export default async function Home() {
                   <QrCodeIcon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                  QR-Codes
+                  {tf('qrCodes.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Automatische QR-Code-Generierung für jeden Link - perfekt für Print und Mobile.
+                  {tf('qrCodes.description')}
                 </p>
               </div>
             </div>
@@ -151,10 +155,10 @@ export default async function Home() {
                   <ChartBarIcon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
-                  Detaillierte Analytics
+                  {tf('analytics.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Umfassende Statistiken zu Klicks, Geräten, Ländern und Browsern für jedes Link.
+                  {tf('analytics.description')}
                 </p>
               </div>
             </div>
@@ -167,10 +171,10 @@ export default async function Home() {
                   <BoltIcon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
-                  Bulk Processing
+                  {tf('bulkProcessing.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Mehrere URLs gleichzeitig kürzen - perfekt für Marketing-Kampagnen und Newsletter.
+                  {tf('bulkProcessing.description')}
                 </p>
               </div>
             </div>
@@ -183,10 +187,10 @@ export default async function Home() {
                   <ShieldCheckIcon className="h-7 w-7 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
-                  Enterprise Features
+                  {tf('enterprise.title')}
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                  API-Keys, Webhooks, Custom Domains, A/B Testing und mehr für professionelle Nutzer.
+                  {tf('enterprise.description')}
                 </p>
               </div>
             </div>
@@ -213,7 +217,7 @@ export default async function Home() {
                   </div>
                   <div className="bg-white rounded p-4 text-center">
                     <div className="font-bold text-gray-900 mb-2">Zhort Extension</div>
-                    <button className="bg-indigo-600 text-white text-sm py-1 px-3 rounded w-full hover:bg-indigo-700 transition-colors">Kürzen</button>
+                    <button className="bg-indigo-600 text-white text-sm py-1 px-3 rounded w-full hover:bg-indigo-700 transition-colors">Shorten</button>
                   </div>
                 </div>
               </div>

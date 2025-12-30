@@ -8,22 +8,25 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paramError = searchParams.get('error');
+  const t = useTranslations('auth');
+  const tc = useTranslations('common');
 
   const [step, setStep] = useState<'email' | 'password'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(paramError ? 'Authentication failed. Please try again.' : '');
+  const [error, setError] = useState(paramError ? t('authFailed') : '');
 
   const checkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !email.includes('@')) {
-      setError('Please enter a valid email');
+      setError(t('invalidEmail'));
       return;
     }
 
@@ -68,13 +71,13 @@ function LoginContent() {
       });
 
       if (result?.error) {
-        setError('Ungültige E-Mail oder Passwort');
+        setError(t('invalidCredentials'));
       } else {
         router.push('/dashboard');
         router.refresh();
       }
     } catch (err) {
-      setError('Ein Fehler ist aufgetreten');
+      setError(tc('error'));
     } finally {
       setLoading(false);
     }
@@ -86,15 +89,15 @@ function LoginContent() {
         <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-lg rounded-2xl shadow-2xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 animate-fade-in hover:shadow-3xl transition-shadow duration-500">
           <div className="text-center mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
-              Login
+              {t('login')}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Willkommen zurück! 👋</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">{t('welcomeBack')}</p>
           </div>
 
           {step === 'email' ? (
             <form onSubmit={checkEmail} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-1">E-Mail Adresse</label>
+                <label className="block text-sm font-medium mb-1">{t('email')}</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
@@ -116,7 +119,7 @@ function LoginContent() {
               )}
 
               <Button type="submit" loading={loading} fullWidth size="lg">
-                Weiter <ArrowRight className="ml-2 h-4 w-4" />
+                {t('continue')} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
           ) : (
@@ -128,12 +131,12 @@ function LoginContent() {
                     onClick={() => { setStep('email'); setPassword(''); setError(''); }}
                     className="text-indigo-600 hover:text-indigo-500"
                   >
-                    Ändern
+                    {t('change')}
                   </button>
                </div>
 
                <div>
-                <label className="block text-sm font-medium mb-1">Passwort</label>
+                <label className="block text-sm font-medium mb-1">{t('password')}</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
                   <Input
@@ -155,16 +158,16 @@ function LoginContent() {
               )}
 
               <Button type="submit" loading={loading} fullWidth size="lg">
-                Anmelden
+                {t('signIn')}
               </Button>
             </form>
           )}
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Noch kein Account?{' '}
+              {t('noAccount')}{' '}
               <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200">
-                Jetzt registrieren
+                {t('registerNow')}
               </Link>
             </p>
           </div>
