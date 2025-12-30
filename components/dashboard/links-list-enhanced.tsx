@@ -314,6 +314,15 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
                       >
                         <EyeIcon className="h-4 w-4" aria-hidden="true" />
                       </a>
+                      <a
+                        href={`/dashboard/links/${link.id}/history`}
+                        title="Verlauf"
+                        className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), "h-8 w-8 text-muted-foreground hover:text-foreground")}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </a>
                       <Button
                         variant="ghost"
                         size="icon"
