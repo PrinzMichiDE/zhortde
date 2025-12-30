@@ -321,7 +321,39 @@ export type NewBioProfile = typeof bioProfiles.$inferInsert;
 export type BioLink = typeof bioLinks.$inferSelect;
 export type NewBioLink = typeof bioLinks.$inferInsert;
 
+// 🔑 Enterprise SSO
+export const ssoDomains = pgTable('sso_domains', {
+  id: serial('id').primaryKey(),
+  domain: text('domain').notNull().unique(), // e.g., "acme.com"
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }), // Admin who claimed it
+  verificationToken: text('verification_token').notNull(),
+  isVerified: boolean('is_verified').notNull().default(false),
+  
+  // Identity Provider Config
+  providerType: text('provider_type').notNull(), // 'oidc', 'azure-ad', 'keycloak'
+  clientId: text('client_id'),
+  clientSecret: text('client_secret'),
+  issuerUrl: text('issuer_url'), // For OIDC/Keycloak discovery
+  authorizationUrl: text('authorization_url'),
+  tokenUrl: text('token_url'),
+  userInfoUrl: text('user_info_url'),
+  tenantId: text('tenant_id'), // Specifically for Azure AD
+  
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export type SsoDomain = typeof ssoDomains.$inferSelect;
+export type NewSsoDomain = typeof ssoDomains.$inferInsert;
+
 // Relations
+export const ssoDomainsRelations = relations(ssoDomains, ({ one }) => ({
+  user: one(users, {
+    fields: [ssoDomains.userId],
+    references: [users.id],
+  }),
+}));
+
 export const linksRelations = relations(links, ({ one, many }) => ({
   user: one(users, {
     fields: [links.userId],
