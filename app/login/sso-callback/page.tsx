@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function SSOCallbackPage() {
+function SSOCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get('token');
@@ -30,5 +30,13 @@ export default function SSOCallbackPage() {
         <p className="text-muted-foreground">Completing secure sign-in...</p>
       </div>
     </div>
+  );
+}
+
+export default function SSOCallbackPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SSOCallbackContent />
+    </Suspense>
   );
 }
