@@ -87,11 +87,16 @@ export default function BioDashboardPage() {
     setSuccess(false);
 
     try {
+      const normalizedUsername = username.trim().toLowerCase();
+      if (normalizedUsername !== username) {
+        setUsername(normalizedUsername);
+      }
+
       const response = await fetch('/api/bio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          username,
+          username: normalizedUsername,
           displayName,
           bio,
           links: links.filter(l => l.title && l.url) // Only save valid links

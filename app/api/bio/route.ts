@@ -14,12 +14,17 @@ import {
 
 // Validation schema with security constraints
 const updateProfileSchema = z.object({
-  username: z
-    .string()
-    .min(3, 'Benutzername muss mindestens 3 Zeichen lang sein')
-    .max(30, 'Benutzername darf maximal 30 Zeichen lang sein')
-    .regex(/^[a-z0-9-_]+$/, 'Benutzername darf nur Kleinbuchstaben, Zahlen, Bindestriche und Unterstriche enthalten')
-    .transform((s) => s.toLowerCase().trim()),
+  username: z.preprocess(
+    (value) => (typeof value === 'string' ? value.trim().toLowerCase() : value),
+    z
+      .string()
+      .min(3, 'Benutzername muss mindestens 3 Zeichen lang sein')
+      .max(30, 'Benutzername darf maximal 30 Zeichen lang sein')
+      .regex(
+        /^[a-z0-9._-]+$/,
+        'Benutzername darf nur Buchstaben, Zahlen, Punkte, Bindestriche und Unterstriche enthalten'
+      )
+  ),
   displayName: z
     .string()
     .max(100, 'Anzeigename ist zu lang')
