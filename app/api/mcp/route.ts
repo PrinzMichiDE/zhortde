@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { links, users } from '@/lib/db/schema';
+import { links } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { isUrlBlocked } from '@/lib/blocklist';
@@ -55,18 +55,14 @@ const TOOLS = [
   },
 ];
 
-export async function GET(request: NextRequest) {
-  // 1. Authenticate via API Key (optional for public tools, required for private)
-  // For MCP, we usually pass the key in headers.
-  const authHeader = request.headers.get('Authorization');
-  let userId: number | null = null;
-  
-  if (authHeader?.startsWith('Bearer ')) {
-    const key = authHeader.split(' ')[1];
-    userId = await validateApiKey(key);
-  }
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
-  // 2. Setup SSE Stream
+type JsonRpcId = string | number | null;
+
+export async function GET(_request: NextRequest) {
+  // Setup SSE Stream
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     start(controller) {
@@ -102,9 +98,6 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const url = new URL(request.url);
-  const sessionId = url.searchParams.get('sessionId');
-  
   // Basic Auth Check
   const authHeader = request.headers.get('Authorization');
   let userId: number | null = null;
@@ -114,18 +107,25 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json();
+    const body: unknown = await request.json();
     
     // JSON-RPC 2.0 Handling
-    if (body.jsonrpc !== '2.0') {
-      return NextResponse.json({ jsonrpc: '2.0', error: { code: -32600, message: 'Invalid Request' }, id: body.id });
-    }
-
-    // Handle 'initialize'
-    if (body.method === 'initialize') {
+    if (!isRecord(body) || body.jsonrpc !== '2.0') {
       return NextResponse.json({
         jsonrpc: '2.0',
-        id: body.id,
+        error: { code: -32600, message: 'Invalid Request' },
+        id: isRecord(body) && ('id' in body ? (body.id as JsonRpcId) : null),
+      });
+    }
+
+    const method = typeof body.method === 'string' ? body.method : '';
+    const id = ('id' in body ? (body.id as JsonRpcId) : null);
+
+    // Handle 'initialize'
+    if (method === 'initialize') {
+      return NextResponse.json({
+        jsonrpc: '2.0',
+        id,
         result: {
           protocolVersion: '2024-11-05',
           capabilities: {
@@ -140,15 +140,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle 'notifications/initialized'
-    if (body.method === 'notifications/initialized') {
+    if (method === 'notifications/initialized') {
       return new NextResponse(null, { status: 200 });
     }
 
     // Handle 'tools/list'
-    if (body.method === 'tools/list') {
+    if (method === 'tools/list') {
       return NextResponse.json({
         jsonrpc: '2.0',
-        id: body.id,
+        id,
         result: {
           tools: TOOLS,
         },
@@ -156,11 +156,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Handle 'tools/call'
-    if (body.method === 'tools/call') {
-      const { name, arguments: args } = body.params;
+    if (method === 'tools/call') {
+      const params = isRecord(body.params) ? body.params : null;
+      const name = params && typeof params.name === 'string' ? params.name : '';
+      const args = params ? params.arguments : undefined;
       
       try {
-        let result;
+        let result: unknown;
         
         switch (name) {
           case 'shorten_link':
@@ -178,19 +180,20 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           jsonrpc: '2.0',
-          id: body.id,
+          id,
           result: {
             content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
           },
         });
 
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Internal error';
         return NextResponse.json({
           jsonrpc: '2.0',
-          id: body.id,
+          id,
           error: {
             code: -32603,
-            message: err.message || 'Internal error',
+            message,
           },
         });
       }
@@ -198,7 +201,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       jsonrpc: '2.0',
-      id: body.id,
+      id,
       error: { code: -32601, message: 'Method not found' },
     });
 
@@ -210,8 +213,10 @@ export async function POST(request: NextRequest) {
 
 // Helper Functions
 
-async function handleShortenLink(args: any, userId: number | null) {
-  const { url, customCode } = args;
+async function handleShortenLink(args: unknown, userId: number | null) {
+  if (!isRecord(args)) throw new Error('Invalid arguments');
+  const url = typeof args.url === 'string' ? args.url : '';
+  const customCode = typeof args.customCode === 'string' ? args.customCode : undefined;
   
   if (!url) throw new Error('URL is required');
 
@@ -247,8 +252,9 @@ async function handleShortenLink(args: any, userId: number | null) {
   };
 }
 
-async function handleGetLinkStats(args: any, userId: number | null) {
-  const { shortCode } = args;
+async function handleGetLinkStats(args: unknown, userId: number | null) {
+  if (!isRecord(args)) throw new Error('Invalid arguments');
+  const shortCode = typeof args.shortCode === 'string' ? args.shortCode : '';
   if (!shortCode) throw new Error('Short code is required');
 
   const link = await db.query.links.findFirst({
@@ -274,10 +280,13 @@ async function handleGetLinkStats(args: any, userId: number | null) {
   };
 }
 
-async function handleListLatestLinks(args: any, userId: number | null) {
+async function handleListLatestLinks(args: unknown, userId: number | null) {
   if (!userId) throw new Error('Authentication required for listing links');
   
-  const limit = args.limit || 10;
+  const limit =
+    isRecord(args) && typeof args.limit === 'number' && Number.isFinite(args.limit)
+      ? Math.max(1, Math.min(100, Math.floor(args.limit)))
+      : 10;
   
   const userLinks = await db.query.links.findMany({
     where: eq(links.userId, userId),

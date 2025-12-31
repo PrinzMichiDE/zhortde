@@ -41,7 +41,8 @@
     "logout": "लॉगआउट",
     "openMenu": "मेनू खोलें",
     "userMenu": "उपयोगकर्ता मेनू",
-    "mainNav": "मुख्य नेविगेशन"
+    "mainNav": "मुख्य नेविगेशन",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "आंकड़े",

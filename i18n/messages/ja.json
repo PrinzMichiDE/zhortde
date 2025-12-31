@@ -41,7 +41,8 @@
     "logout": "ログアウト",
     "openMenu": "メニューを開く",
     "userMenu": "ユーザーメニュー",
-    "mainNav": "メインナビゲーション"
+    "mainNav": "メインナビゲーション",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "統計",

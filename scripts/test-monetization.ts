@@ -42,7 +42,7 @@ async function testMonetization() {
             failures++;
          }
     } else if (tc.expectedContains) {
-        let missing = [];
+        const missing: string[] = [];
         for (const str of tc.expectedContains) {
             if (!result.includes(str)) missing.push(str);
         }

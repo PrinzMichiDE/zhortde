@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { XMarkIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { 
   getCookiePreferences, 
   saveCookiePreferences, 
@@ -12,25 +12,12 @@ import {
 import { CookiePreferencesModal } from './cookie-preferences-modal';
 
 export function CookieConsentBanner() {
-  const [showBanner, setShowBanner] = useState(false);
-  const [showPreferences, setShowPreferences] = useState(false);
-  const [preferences, setPreferences] = useState<CookiePreferences>({
-    necessary: true,
-    analytics: false,
-    marketing: false,
-    consentGiven: false,
+  const [showBanner, setShowBanner] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !hasConsentBeenGiven();
   });
-
-  useEffect(() => {
-    // Check if consent has been given
-    if (!hasConsentBeenGiven()) {
-      setShowBanner(true);
-    }
-    
-    // Load existing preferences
-    const existingPreferences = getCookiePreferences();
-    setPreferences(existingPreferences);
-  }, []);
+  const [showPreferences, setShowPreferences] = useState(false);
+  const [preferences, setPreferences] = useState<CookiePreferences>(() => getCookiePreferences());
 
   const handleAcceptAll = () => {
     const newPreferences: CookiePreferences = {
@@ -129,6 +116,7 @@ export function CookieConsentBanner() {
       </div>
 
       <CookiePreferencesModal
+        key={showPreferences ? 'open' : 'closed'}
         isOpen={showPreferences}
         onClose={() => setShowPreferences(false)}
         onSave={handleSavePreferences}

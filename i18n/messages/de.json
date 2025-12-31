@@ -41,7 +41,8 @@
     "logout": "Logout",
     "openMenu": "Menü öffnen",
     "userMenu": "Benutzermenü",
-    "mainNav": "Hauptnavigation"
+    "mainNav": "Hauptnavigation",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "Statistiken",

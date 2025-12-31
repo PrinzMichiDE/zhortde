@@ -17,6 +17,7 @@ export function Header() {
   const navigation = [
     { name: t('home'), href: '/', show: true },
     { name: t('paste'), href: '/paste/create', show: true },
+    { name: t('bio'), href: '/dashboard/bio', show: !!session },
     { name: t('api'), href: '/api', show: true },
     { name: t('dashboard'), href: '/dashboard', show: !!session },
   ].filter(item => item.show);

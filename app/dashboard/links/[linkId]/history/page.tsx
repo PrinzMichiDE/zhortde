@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { Clock, User, FileDiff } from 'lucide-react';
 
 type LinkHistoryItem = {
@@ -30,29 +31,40 @@ export default function LinkHistoryPage() {
       if (!res.ok) throw new Error('Failed to fetch history');
       const data = await res.json();
       setHistory(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch history');
     } finally {
       setLoading(false);
     }
   };
 
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+
   const formatChanges = (changesJson: string | null) => {
     if (!changesJson) return null;
     try {
-      const changes = JSON.parse(changesJson);
+      const changes: unknown = JSON.parse(changesJson);
+      if (!isRecord(changes)) return <span className="text-gray-500">Invalid data</span>;
+
       return (
         <div className="mt-2 text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded-md border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto">
-          {Object.entries(changes).map(([key, value]: [string, any]) => (
-            <div key={key} className="flex flex-col sm:flex-row gap-1 sm:gap-4 mb-1 last:mb-0">
-              <span className="font-semibold text-gray-600 dark:text-gray-400 min-w-[100px]">{key}:</span>
-              <div className="flex items-center gap-2">
-                 <span className="text-red-500 line-through opacity-70">{String(value.from)}</span>
-                 <span className="text-gray-400">→</span>
-                 <span className="text-green-600 dark:text-green-400 font-medium">{String(value.to)}</span>
+          {Object.entries(changes).map(([key, value]) => {
+            const from =
+              isRecord(value) && 'from' in value ? (value.from as unknown) : undefined;
+            const to = isRecord(value) && 'to' in value ? (value.to as unknown) : undefined;
+
+            return (
+              <div key={key} className="flex flex-col sm:flex-row gap-1 sm:gap-4 mb-1 last:mb-0">
+                <span className="font-semibold text-gray-600 dark:text-gray-400 min-w-[100px]">{key}:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-red-500 line-through opacity-70">{String(from ?? '')}</span>
+                  <span className="text-gray-400">→</span>
+                  <span className="text-green-600 dark:text-green-400 font-medium">{String(to ?? value)}</span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       );
     } catch {
@@ -90,9 +102,9 @@ export default function LinkHistoryPage() {
               Verfolgen Sie alle Änderungen an diesem Link.
             </p>
           </div>
-          <a href="/dashboard" className="text-indigo-600 hover:underline text-sm font-medium">
+          <Link href="/dashboard" className="text-indigo-600 hover:underline text-sm font-medium">
             &larr; Zurück zum Dashboard
-          </a>
+          </Link>
         </div>
 
         {error ? (

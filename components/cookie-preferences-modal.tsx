@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import type { CookiePreferences } from '@/lib/cookie-consent';
@@ -19,10 +19,6 @@ export function CookiePreferencesModal({
   initialPreferences,
 }: CookiePreferencesModalProps) {
   const [preferences, setPreferences] = useState<CookiePreferences>(initialPreferences);
-
-  useEffect(() => {
-    setPreferences(initialPreferences);
-  }, [initialPreferences, isOpen]);
 
   const handleSave = () => {
     onSave({

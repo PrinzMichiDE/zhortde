@@ -1,32 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GlobeAltIcon, ArrowDownTrayIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 
 type Browser = 'chrome' | 'firefox' | 'edge' | 'safari' | 'opera' | 'unknown';
 
 export function ExtensionDownload() {
-  const [browser, setBrowser] = useState<Browser>('unknown');
+  const [browser] = useState<Browser>(() => {
+    if (typeof window === 'undefined') return 'unknown';
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (userAgent.includes('edg/')) return 'edge';
+    if (userAgent.includes('chrome') && !userAgent.includes('chromium')) return 'chrome';
+    if (userAgent.includes('firefox')) return 'firefox';
+    if (userAgent.includes('safari') && !userAgent.includes('chrome')) return 'safari';
+    if (userAgent.includes('opr/') || userAgent.includes('opera')) return 'opera';
+    return 'unknown';
+  });
   const [showGuide, setShowGuide] = useState(false);
   const t = useTranslations('extension');
-
-  useEffect(() => {
-    // Einfache Browser-Erkennung
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    
-    if (userAgent.includes('edg/')) {
-      setBrowser('edge');
-    } else if (userAgent.includes('chrome') && !userAgent.includes('chromium')) {
-      setBrowser('chrome');
-    } else if (userAgent.includes('firefox')) {
-      setBrowser('firefox');
-    } else if (userAgent.includes('safari') && !userAgent.includes('chrome')) {
-      setBrowser('safari');
-    } else if (userAgent.includes('opr/') || userAgent.includes('opera')) {
-      setBrowser('opera');
-    }
-  }, []);
 
   const handleDownload = () => {
     // Download starten

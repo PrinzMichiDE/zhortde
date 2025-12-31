@@ -59,8 +59,8 @@ export default function TeamDetailsPage() {
       const membersData = await membersRes.json();
       setMembers(membersData);
 
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to load team');
     } finally {
       setLoading(false);
     }
@@ -92,8 +92,8 @@ export default function TeamDetailsPage() {
       // Refresh members list
       fetchTeamData();
 
-    } catch (err: any) {
-      setInviteError(err.message);
+    } catch (err: unknown) {
+      setInviteError(err instanceof Error ? err.message : 'Failed to invite user');
     } finally {
       setInviteLoading(false);
     }

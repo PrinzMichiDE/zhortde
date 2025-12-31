@@ -41,7 +41,8 @@
     "logout": "Đăng xuất",
     "openMenu": "Mở menu",
     "userMenu": "Menu người dùng",
-    "mainNav": "Điều hướng chính"
+    "mainNav": "Điều hướng chính",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "Thống kê",

@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { links } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { isUrlBlocked } from '@/lib/blocklist';
-import { logLinkAction } from '@/lib/audit-log';
+import { logLinkAction, type AuditLogChanges } from '@/lib/audit-log';
 import { monetizeUrl } from '@/lib/monetization';
 
 export async function PATCH(
@@ -42,7 +42,7 @@ export async function PATCH(
     const { longUrl: rawLongUrl, isPublic, shortCode } = body; // Allow basic updates
 
     const updateData: Partial<typeof links.$inferInsert> = {};
-    const changes: Record<string, any> = {};
+    const changes: AuditLogChanges = {};
 
     // Validate and check longUrl
     if (rawLongUrl && rawLongUrl !== currentLink.longUrl) {

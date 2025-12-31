@@ -46,8 +46,9 @@ export default function AdminUsersPage() {
         throw new Error(data.error || 'Failed to delete');
       }
       setUsers(users.filter(u => u.id !== id));
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to delete user';
+      alert(message);
     }
   };
 

@@ -9,8 +9,8 @@ export async function POST(request: NextRequest) {
     const session = await getServerSession(authOptions);
     const userId = session?.user?.id ? parseInt(session.user.id) : undefined;
 
-    const body = await request.json();
-    const { urls, format } = body;
+    const body: unknown = await request.json();
+    const urls = (body && typeof body === 'object' ? (body as Record<string, unknown>).urls : undefined);
 
     if (!urls || !Array.isArray(urls)) {
       return NextResponse.json(
@@ -28,13 +28,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Process requests
-    const requests: BulkLinkRequest[] = urls.map((item: any) => ({
-      longUrl: typeof item === 'string' ? item : item.url || item.longUrl,
-      customCode: item.customCode || item.shortCode,
-      password: item.password,
-      expiresIn: item.expiresIn,
-      isPublic: item.isPublic ?? (userId ? false : true),
-    }));
+    const requests: BulkLinkRequest[] = urls.map((item: unknown) => {
+      if (typeof item === 'string') {
+        return {
+          longUrl: item,
+          isPublic: userId ? false : true,
+        };
+      }
+
+      if (!item || typeof item !== 'object') {
+        return {
+          longUrl: '',
+          isPublic: userId ? false : true,
+        };
+      }
+
+      const obj = item as Record<string, unknown>;
+      const longUrl =
+        (typeof obj.url === 'string' && obj.url) ||
+        (typeof obj.longUrl === 'string' && obj.longUrl) ||
+        '';
+
+      return {
+        longUrl,
+        customCode:
+          (typeof obj.customCode === 'string' && obj.customCode) ||
+          (typeof obj.shortCode === 'string' && obj.shortCode) ||
+          undefined,
+        password: typeof obj.password === 'string' ? obj.password : undefined,
+        expiresIn: typeof obj.expiresIn === 'string' ? obj.expiresIn : undefined,
+        isPublic: typeof obj.isPublic === 'boolean' ? obj.isPublic : userId ? false : true,
+      };
+    });
 
     const results = await processBulkLinks(requests, userId);
 

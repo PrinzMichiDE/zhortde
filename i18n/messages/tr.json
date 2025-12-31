@@ -41,7 +41,8 @@
     "logout": "Çıkış",
     "openMenu": "Menüyü aç",
     "userMenu": "Kullanıcı menüsü",
-    "mainNav": "Ana navigasyon"
+    "mainNav": "Ana navigasyon",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "İstatistikler",

@@ -16,7 +16,7 @@ interface SsoDomain {
   verificationToken: string;
   providerType: string;
   role: 'owner' | 'admin';
-  admins?: { user: { email: string } }[];
+  admins?: Array<{ id: number; userId: number; user: { email: string } }>;
   clientId?: string;
   clientSecret?: string;
   tenantId?: string;
@@ -349,7 +349,7 @@ export default function SSOPage() {
                               </div>
 
                               <div className="space-y-2">
-                                  {d.admins?.map((admin: any) => (
+                                  {d.admins?.map((admin) => (
                                       <div key={admin.id} className="flex justify-between items-center bg-muted p-2 rounded max-w-md">
                                           <span className="text-sm">{admin.user.email}</span>
                                           <Button variant="ghost" size="sm" className="text-red-500 h-6" onClick={() => handleRemoveAdmin(d.id, admin.userId)}>

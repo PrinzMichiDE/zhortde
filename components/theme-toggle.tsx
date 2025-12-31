@@ -6,11 +6,12 @@ import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react"
 import { useEffect, useState } from "react"
 
 export function ThemeToggle() {
-  const { setTheme, theme, resolvedTheme } = useTheme()
+  const { setTheme, theme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
   // Avoid hydration mismatch
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
   }, [])
 

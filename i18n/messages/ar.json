@@ -41,7 +41,8 @@
     "logout": "تسجيل الخروج",
     "openMenu": "فتح القائمة",
     "userMenu": "قائمة المستخدم",
-    "mainNav": "التنقل الرئيسي"
+    "mainNav": "التنقل الرئيسي",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "الإحصائيات",
