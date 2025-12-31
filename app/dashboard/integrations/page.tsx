@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon } from '@heroicons/react/24/outline';
@@ -8,13 +8,9 @@ import { ClipboardDocumentCheckIcon, ClipboardDocumentIcon } from '@heroicons/re
 export default function IntegrationsPage() {
   const { data: session } = useSession();
   const [copied, setCopied] = useState(false);
-  const [endpoint, setEndpoint] = useState('');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setEndpoint(`${window.location.origin}/api/mcp`);
-    }
-  }, []);
+  const [endpoint] = useState(() =>
+    typeof window !== 'undefined' ? `${window.location.origin}/api/mcp` : ''
+  );
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(endpoint);
@@ -90,7 +86,7 @@ export default function IntegrationsPage() {
                 <li>Navigieren Sie zu <strong>Features &gt; MCP</strong>.</li>
                 <li>Klicken Sie auf <strong>Add New MCP Server</strong>.</li>
                 <li>Wählen Sie <strong>SSE</strong> als Typ.</li>
-                <li>Geben Sie einen Namen ein (z.B. "Zhort").</li>
+                <li>Geben Sie einen Namen ein (z.B. &quot;Zhort&quot;).</li>
                 <li>Fügen Sie die oben stehende URL ein.</li>
               </ol>
             </div>

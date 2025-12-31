@@ -129,8 +129,9 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
       // Update local state
       setLinks(links.map(l => l.id === updatedLink.id ? updatedLink : l));
       setEditingLink(null);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Fehler beim Aktualisieren';
+      alert(message);
     } finally {
       setSaving(false);
     }

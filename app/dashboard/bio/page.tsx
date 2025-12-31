@@ -60,10 +60,12 @@ export default function BioDashboardPage() {
   };
 
   const updateLink = (index: number, field: 'title' | 'url', value: string) => {
-    const newLinks = [...links];
-    // @ts-ignore
-    newLinks[index][field] = value;
-    setLinks(newLinks);
+    setLinks((prev) =>
+      prev.map((link, i) => {
+        if (i !== index) return link;
+        return field === 'title' ? { ...link, title: value } : { ...link, url: value };
+      })
+    );
   };
 
   const moveLink = (index: number, direction: 'up' | 'down') => {
@@ -104,8 +106,9 @@ export default function BioDashboardPage() {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Fehler beim Speichern';
+      setError(message);
     } finally {
       setLoading(false);
     }

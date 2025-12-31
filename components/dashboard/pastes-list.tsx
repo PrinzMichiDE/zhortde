@@ -80,8 +80,9 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
       // Update local state
       setPastes(pastes.map(p => p.id === updatedPaste.id ? updatedPaste : p));
       setEditingPaste(null);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Fehler beim Aktualisieren';
+      alert(message);
     } finally {
       setSaving(false);
     }

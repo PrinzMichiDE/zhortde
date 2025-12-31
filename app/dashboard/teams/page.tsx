@@ -71,8 +71,8 @@ export default function TeamsPage() {
       setTeams([...teams, newTeam]);
       setIsCreating(false);
       setNewTeamName('');
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Fehler beim Erstellen des Teams');
     } finally {
       setLoading(false);
     }

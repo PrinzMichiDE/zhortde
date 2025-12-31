@@ -34,7 +34,7 @@ export default function DatenschutzPage() {
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Die Datenverarbeitung auf dieser Website erfolgt durch den Websitebetreiber. Dessen Kontaktdaten 
-                können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle" in dieser Datenschutzerklärung entnehmen.
+                können Sie dem Abschnitt „Hinweis zur Verantwortlichen Stelle“ in dieser Datenschutzerklärung entnehmen.
               </p>
 
               <p className="text-muted-foreground leading-relaxed mt-4">
@@ -202,7 +202,7 @@ export default function DatenschutzPage() {
               <p className="text-muted-foreground leading-relaxed">
                 Diese Seite nutzt aus Sicherheitsgründen und zum Schutz der Übertragung vertraulicher Inhalte, wie zum 
                 Beispiel Bestellungen oder Anfragen, die Sie an uns als Seitenbetreiber senden, eine SSL- bzw. TLS-Verschlüsselung. 
-                Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von „http://" auf „https://" 
+                Eine verschlüsselte Verbindung erkennen Sie daran, dass die Adresszeile des Browsers von „http://“ auf „https://“ 
                 wechselt und an dem Schloss-Symbol in Ihrer Browserzeile.
               </p>
               <p className="text-muted-foreground leading-relaxed mt-4">
@@ -254,7 +254,7 @@ export default function DatenschutzPage() {
                 machen. Cookies sind kleine Textdateien, die auf Ihrem Rechner abgelegt werden und die Ihr Browser speichert.
               </p>
               <p className="text-muted-foreground leading-relaxed mt-4">
-                Die meisten der von uns verwendeten Cookies sind so genannte „Session-Cookies". Sie werden nach Ende Ihres 
+                Die meisten der von uns verwendeten Cookies sind so genannte „Session-Cookies“. Sie werden nach Ende Ihres 
                 Besuchs automatisch gelöscht. Andere Cookies bleiben auf Ihrem Endgerät gespeichert, bis Sie diese löschen. 
                 Diese Cookies ermöglichen es uns, Ihren Browser beim nächsten Besuch wiederzuerkennen.
               </p>

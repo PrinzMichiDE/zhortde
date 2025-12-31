@@ -45,12 +45,51 @@ const nextConfig: NextConfig = {
           key: 'Permissions-Policy',
           value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()',
         },
-        // Prevent browser from caching sensitive pages
-        {
-          key: 'Cache-Control',
-          value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
-        },
       ],
+    },
+    // Prevent caching for sensitive/authenticated areas
+    {
+      source: '/dashboard/:path*',
+      headers: [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+    {
+      source: '/admin/:path*',
+      headers: [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+    {
+      source: '/protected/:path*',
+      headers: [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+    {
+      source: '/login',
+      headers: [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+    {
+      source: '/register',
+      headers: [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+    // API route handlers should not be cached by browsers
+    {
+      source: '/api/:path*',
+      headers: [{ key: 'Cache-Control', value: 'no-store' }],
+    },
+    // Exception: machine-readable docs can be cached briefly
+    {
+      source: '/api/openapi.json',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }],
+    },
+    // Cache AEO/SEO helper files (they're safe + small)
+    {
+      source: '/robots.txt',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }],
+    },
+    {
+      source: '/sitemap.xml',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }],
+    },
+    {
+      source: '/llms.txt',
+      headers: [{ key: 'Cache-Control', value: 'public, max-age=3600' }],
     },
     {
       // Cache static assets aggressively

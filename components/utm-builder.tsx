@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Tag, Copy, Check, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { buildUtmUrl, parseUtmUrl, validateUtmParameters, UTM_TEMPLATES, UTM_MEDIUMS, UTM_SOURCES, UtmParameters } from '@/lib/utm-builder';
 
@@ -12,20 +12,15 @@ type UtmBuilderProps = {
 
 export function UtmBuilder({ baseUrl, onChange, initialParams }: UtmBuilderProps) {
   const [params, setParams] = useState<UtmParameters>(initialParams || {});
-  const [finalUrl, setFinalUrl] = useState(baseUrl);
   const [copied, setCopied] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
+  const finalUrl = useMemo(() => buildUtmUrl(baseUrl, params), [baseUrl, params]);
+  const validation = useMemo(() => validateUtmParameters(params), [params]);
+  const errors = validation.errors;
 
   useEffect(() => {
-    const newUrl = buildUtmUrl(baseUrl, params);
-    setFinalUrl(newUrl);
-    
-    const validation = validateUtmParameters(params);
-    setErrors(validation.errors);
-    
-    onChange(params, newUrl);
-  }, [params, baseUrl, onChange]);
+    onChange(params, finalUrl);
+  }, [params, finalUrl, onChange]);
 
   const handleParamChange = (key: keyof UtmParameters, value: string) => {
     setParams({

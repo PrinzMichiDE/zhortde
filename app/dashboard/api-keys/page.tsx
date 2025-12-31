@@ -131,7 +131,7 @@ export default function ApiKeysPage() {
               ✅ API Key Created Successfully!
             </h3>
             <p className="text-sm text-green-700 mb-4">
-              <strong>Important:</strong> Copy this key now. You won't be able to see it again!
+              <strong>Important:</strong> Copy this key now. You won&apos;t be able to see it again!
             </p>
             <div className="bg-white border border-green-300 rounded-lg p-4 font-mono text-sm break-all flex items-center justify-between">
               <span className={showFullKey ? '' : 'blur-sm select-none'}>
@@ -158,7 +158,7 @@ export default function ApiKeysPage() {
               onClick={() => setNewlyCreatedKey(null)}
               className="mt-4 text-sm text-green-700 hover:underline"
             >
-              I've saved this key securely
+              I&apos;ve saved this key securely
             </button>
           </div>
         )}

@@ -10,7 +10,7 @@ interface LinkPreviewData {
   thumbnailUrl?: string;
   siteName?: string;
   faviconUrl?: string;
-  ogData?: any;
+  ogData?: unknown;
 }
 
 interface LinkPreviewCardProps {

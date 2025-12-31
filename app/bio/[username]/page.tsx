@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/db';
 import { bioProfiles, bioLinks } from '@/lib/db/schema';
-import { eq, desc, asc } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { Metadata } from 'next';
+import Link from 'next/link';
 
 type Props = {
   params: Promise<{ username: string }>;
@@ -84,13 +85,13 @@ export default async function BioPage({ params }: Props) {
 
         {/* Footer */}
         <div className="pt-12 text-center">
-          <a 
+          <Link
             href="/"
             className="inline-flex items-center gap-2 text-xs font-semibold text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors uppercase tracking-widest"
           >
             <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
             Powered by Zhort
-          </a>
+          </Link>
         </div>
 
       </div>
