@@ -170,6 +170,34 @@ export const createTeamSchema = z.object({
 });
 
 /**
+ * Campaign creation schema
+ */
+export const createCampaignSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Kampagnenname ist erforderlich')
+    .max(120, 'Kampagnenname ist zu lang')
+    .transform((name) => name.trim()),
+  description: z
+    .string()
+    .max(500, 'Beschreibung ist zu lang')
+    .optional()
+    .transform((v) => (typeof v === 'string' ? v.trim() : v)),
+  utmSource: z.string().max(100).optional(),
+  utmMedium: z.string().max(100).optional(),
+  utmCampaign: z.string().max(100).optional(),
+  utmTerm: z.string().max(100).optional(),
+  utmContent: z.string().max(100).optional(),
+});
+
+/**
+ * Campaign attachment schema (for links)
+ */
+export const updateLinkCampaignSchema = z.object({
+  campaignId: z.union([z.number().int().positive(), z.null()]),
+});
+
+/**
  * Webhook URL schema
  */
 export const webhookUrlSchema = z
@@ -450,3 +478,5 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type CreateTeamInput = z.infer<typeof createTeamSchema>;
 export type PaginationInput = z.infer<typeof paginationSchema>;
+export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
+export type UpdateLinkCampaignInput = z.infer<typeof updateLinkCampaignSchema>;

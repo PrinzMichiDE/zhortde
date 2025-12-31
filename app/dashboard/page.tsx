@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { links, pastes } from '@/lib/db/schema';
+import { campaigns, links, pastes } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { LinksList } from '@/components/dashboard/links-list';
 import { PastesList } from '@/components/dashboard/pastes-list';
@@ -23,6 +23,12 @@ export default async function DashboardPage() {
   const userLinks = await db.query.links.findMany({
     where: eq(links.userId, userId),
     orderBy: [desc(links.createdAt)],
+  });
+
+  // Load user's campaigns
+  const userCampaigns = await db.query.campaigns.findMany({
+    where: eq(campaigns.userId, userId),
+    orderBy: [desc(campaigns.createdAt)],
   });
 
   // Load user's pastes
@@ -85,7 +91,7 @@ export default async function DashboardPage() {
                 </span>
               </div>
             </div>
-            <LinksList links={userLinks} />
+            <LinksList links={userLinks} campaigns={userCampaigns} />
           </div>
 
           <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-6 sm:p-8 border border-gray-100 dark:border-gray-700 transition-all duration-300 hover:shadow-2xl animate-slide-up" style={{ animationDelay: '100ms' }}>

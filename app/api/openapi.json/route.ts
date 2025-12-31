@@ -139,6 +139,90 @@ export async function GET() {
           },
         },
       },
+      '/api/campaigns': {
+        get: {
+          operationId: 'listCampaigns',
+          summary: 'List campaigns (session required)',
+          responses: {
+            '200': { description: 'OK' },
+            '401': { description: 'Unauthorized' },
+          },
+        },
+        post: {
+          operationId: 'createCampaign',
+          summary: 'Create campaign (session required)',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    name: { type: 'string', maxLength: 120 },
+                    description: { type: 'string', maxLength: 500 },
+                    utmSource: { type: 'string', maxLength: 100 },
+                    utmMedium: { type: 'string', maxLength: 100 },
+                    utmCampaign: { type: 'string', maxLength: 100 },
+                    utmTerm: { type: 'string', maxLength: 100 },
+                    utmContent: { type: 'string', maxLength: 100 },
+                  },
+                  required: ['name'],
+                },
+              },
+            },
+          },
+          responses: {
+            '201': { description: 'Created' },
+            '400': { description: 'Bad Request' },
+            '401': { description: 'Unauthorized' },
+            '429': {
+              description: 'Rate Limited',
+              headers: {
+                'X-RateLimit-Limit': { schema: { type: 'string' } },
+                'X-RateLimit-Remaining': { schema: { type: 'string' } },
+                'X-RateLimit-Reset': { schema: { type: 'string' } },
+              },
+            },
+          },
+        },
+      },
+      '/api/links/{linkId}': {
+        patch: {
+          operationId: 'updateLink',
+          summary: 'Update link (session required)',
+          parameters: [
+            {
+              name: 'linkId',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    longUrl: { type: 'string', format: 'uri' },
+                    isPublic: { type: 'boolean' },
+                    shortCode: { type: 'string' },
+                    campaignId: { oneOf: [{ type: 'integer' }, { type: 'null' }] },
+                  },
+                },
+              },
+            },
+          },
+          responses: {
+            '200': { description: 'OK' },
+            '400': { description: 'Bad Request' },
+            '401': { description: 'Unauthorized' },
+            '404': { description: 'Not Found' },
+          },
+        },
+      },
     },
     components: {
       securitySchemes: {

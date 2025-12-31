@@ -17,11 +17,31 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// 📣 Campaigns (attachable to links for grouping/analytics)
+export const campaigns = pgTable('campaigns', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+
+  // Optional default UTM parameters (pure metadata; does not auto-modify URLs)
+  utmSource: text('utm_source'),
+  utmMedium: text('utm_medium'),
+  utmCampaign: text('utm_campaign'),
+  utmTerm: text('utm_term'),
+  utmContent: text('utm_content'),
+
+  archivedAt: timestamp('archived_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export const links = pgTable('links', {
   id: serial('id').primaryKey(),
   shortCode: text('short_code').notNull().unique(),
   longUrl: text('long_url').notNull(),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  campaignId: integer('campaign_id').references(() => campaigns.id, { onDelete: 'set null' }),
   isPublic: boolean('is_public').notNull().default(true),
   hits: integer('hits').notNull().default(0),
   passwordHash: text('password_hash'), // Optional password protection
@@ -317,6 +337,9 @@ export type NewLinkComment = typeof linkComments.$inferInsert;
 export type LinkHistory = typeof linkHistory.$inferSelect;
 export type NewLinkHistory = typeof linkHistory.$inferInsert;
 
+export type Campaign = typeof campaigns.$inferSelect;
+export type NewCampaign = typeof campaigns.$inferInsert;
+
 export type BioProfile = typeof bioProfiles.$inferSelect;
 export type NewBioProfile = typeof bioProfiles.$inferInsert;
 
@@ -361,10 +384,19 @@ export type NewSsoDomainAdmin = typeof ssoDomainAdmins.$inferInsert;
 export const usersRelations = relations(users, ({ many }) => ({
   links: many(links),
   pastes: many(pastes),
+  campaigns: many(campaigns),
   ownedTeams: many(teams),
   teamMemberships: many(teamMembers),
   ssoDomains: many(ssoDomains),
   ssoAdminDomains: many(ssoDomainAdmins),
+}));
+
+export const campaignsRelations = relations(campaigns, ({ one, many }) => ({
+  user: one(users, {
+    fields: [campaigns.userId],
+    references: [users.id],
+  }),
+  links: many(links),
 }));
 
 export const ssoDomainsRelations = relations(ssoDomains, ({ one, many }) => ({
@@ -390,6 +422,10 @@ export const linksRelations = relations(links, ({ one, many }) => ({
   user: one(users, {
     fields: [links.userId],
     references: [users.id],
+  }),
+  campaign: one(campaigns, {
+    fields: [links.campaignId],
+    references: [campaigns.id],
   }),
   linkClicks: many(linkClicks),
   smartRedirects: many(smartRedirects),

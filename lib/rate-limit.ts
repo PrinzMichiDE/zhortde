@@ -27,6 +27,11 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 20,
   },
+  // Campaigns (authenticated)
+  create_campaign_authenticated: {
+    windowMs: 60 * 60 * 1000, // 1 hour
+    maxRequests: 60,
+  },
   // Link access attempts (for password-protected links)
   access_protected_link: {
     windowMs: 15 * 60 * 1000, // 15 minutes

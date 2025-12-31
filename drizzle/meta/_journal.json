@@ -29,6 +29,13 @@
       "when": 1767112714444,
       "tag": "0003_easy_franklin_storm",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1767178130860,
+      "tag": "0004_smiling_dragon_man",
+      "breakpoints": true
     }
   ]
 }

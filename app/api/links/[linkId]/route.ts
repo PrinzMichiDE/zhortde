@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { links } from '@/lib/db/schema';
+import { campaigns, links } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { isUrlBlocked } from '@/lib/blocklist';
 import { logLinkAction, type AuditLogChanges } from '@/lib/audit-log';
@@ -39,13 +39,17 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { longUrl: rawLongUrl, isPublic, shortCode } = body; // Allow basic updates
+    const { longUrl: rawLongUrl, isPublic, shortCode, campaignId } = body as Record<string, unknown>; // Allow basic updates
 
     const updateData: Partial<typeof links.$inferInsert> = {};
     const changes: AuditLogChanges = {};
 
     // Validate and check longUrl
-    if (rawLongUrl && rawLongUrl !== currentLink.longUrl) {
+    if (rawLongUrl !== undefined && typeof rawLongUrl !== 'string') {
+      return NextResponse.json({ error: 'Ungültige URL' }, { status: 400 });
+    }
+
+    if (typeof rawLongUrl === 'string' && rawLongUrl && rawLongUrl !== currentLink.longUrl) {
       // Basic validation
       try {
         new URL(rawLongUrl);
@@ -71,13 +75,21 @@ export async function PATCH(
     }
 
     // Update public status
-    if (isPublic !== undefined && isPublic !== currentLink.isPublic) {
+    if (isPublic !== undefined && typeof isPublic !== 'boolean') {
+      return NextResponse.json({ error: 'Ungültiger isPublic Wert' }, { status: 400 });
+    }
+
+    if (typeof isPublic === 'boolean' && isPublic !== currentLink.isPublic) {
       updateData.isPublic = isPublic;
       changes.isPublic = { from: currentLink.isPublic, to: isPublic };
     }
 
     // Update shortCode (if allowed in your logic - usually restricted, but let's allow it for now)
-    if (shortCode && shortCode !== currentLink.shortCode) {
+    if (shortCode !== undefined && typeof shortCode !== 'string') {
+      return NextResponse.json({ error: 'Ungültiger Short Code' }, { status: 400 });
+    }
+
+    if (typeof shortCode === 'string' && shortCode && shortCode !== currentLink.shortCode) {
         // Basic validation
         if (!/^[a-z0-9-_]+$/.test(shortCode)) {
              return NextResponse.json({ error: 'Ungültiger Short Code' }, { status: 400 });
@@ -89,6 +101,37 @@ export async function PATCH(
         }
         updateData.shortCode = shortCode;
         changes.shortCode = { from: currentLink.shortCode, to: shortCode };
+    }
+
+    // Update campaign attachment (campaignId can be number or null)
+    if (campaignId !== undefined) {
+      const nextCampaignId =
+        campaignId === null
+          ? null
+          : typeof campaignId === 'number' && Number.isInteger(campaignId) && campaignId > 0
+            ? campaignId
+            : undefined;
+
+      if (nextCampaignId === undefined) {
+        return NextResponse.json({ error: 'Ungültige campaignId (number oder null)' }, { status: 400 });
+      }
+
+      if (nextCampaignId === null) {
+        if (currentLink.campaignId !== null) {
+          updateData.campaignId = null;
+          changes.campaignId = { from: currentLink.campaignId, to: null };
+        }
+      } else if (nextCampaignId !== currentLink.campaignId) {
+        // Ownership check
+        const ownedCampaign = await db.query.campaigns.findFirst({
+          where: and(eq(campaigns.id, nextCampaignId), eq(campaigns.userId, userId)),
+        });
+        if (!ownedCampaign) {
+          return NextResponse.json({ error: 'Kampagne nicht gefunden oder keine Berechtigung' }, { status: 404 });
+        }
+        updateData.campaignId = nextCampaignId;
+        changes.campaignId = { from: currentLink.campaignId, to: nextCampaignId };
+      }
     }
 
     if (Object.keys(updateData).length === 0) {
