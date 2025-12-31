@@ -245,7 +245,9 @@
     "integrationsDescription": "连接 AI 代理",
     "integrations": "集成 (MCP)",
     "backToDashboard": "返回控制台",
-    "backToOverview": "返回概览"
+    "backToOverview": "返回概览",
+    "invalidUrl": "Invalid URL",
+    "invalidShortCode": "Invalid short code"
   },
   "errors": {
     "notFound": "页面未找到",

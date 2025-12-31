@@ -245,7 +245,9 @@
     "integrationsDescription": "Conectar agentes AI",
     "integrations": "Integraciones (MCP)",
     "backToDashboard": "Volver al Dashboard",
-    "backToOverview": "Volver a la vista general"
+    "backToOverview": "Volver a la vista general",
+    "invalidUrl": "Invalid URL",
+    "invalidShortCode": "Invalid short code"
   },
   "errors": {
     "notFound": "Página no encontrada",

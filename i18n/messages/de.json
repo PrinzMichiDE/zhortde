@@ -245,7 +245,9 @@
     "integrationsDescription": "AI Agenten verbinden",
     "integrations": "Integrations (MCP)",
     "backToDashboard": "Zurück zum Dashboard",
-    "backToOverview": "Zurück zur Übersicht"
+    "backToOverview": "Zurück zur Übersicht",
+    "invalidUrl": "Ungültige URL",
+    "invalidShortCode": "Ungültiger Short Code"
   },
   "analytics": {
     "title": "Analytics Dashboard",

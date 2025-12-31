@@ -246,7 +246,9 @@
     "integrationsDescription": "Connect AI agents",
     "integrations": "Integrations (MCP)",
     "backToDashboard": "Back to Dashboard",
-    "backToOverview": "Back to Overview"
+    "backToOverview": "Back to Overview",
+    "invalidUrl": "Invalid URL",
+    "invalidShortCode": "Invalid short code"
   },
   "errors": {
     "notFound": "ページが見つかりません",
