@@ -72,7 +72,7 @@ export default async function Home() {
               </div>
               <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <UserGroupIcon className="h-5 w-5 text-purple-500" />
-                <span className="font-semibold">{visitorCount.toLocaleString(locale)} {t('whyZhortSubtitle').includes('Visitor') ? 'Visitors' : 'Besucher'}</span>
+                <span className="font-semibold">{visitorCount.toLocaleString(locale)} {t('visitors')}</span>
               </div>
               <div className="flex items-center gap-2 bg-white/50 dark:bg-gray-800/50 px-4 py-2 rounded-full backdrop-blur-sm border border-gray-200/50 dark:border-gray-700/50">
                 <ShieldCheckIcon className="h-5 w-5 text-green-500" />
