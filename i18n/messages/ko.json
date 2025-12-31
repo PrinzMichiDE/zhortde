@@ -41,7 +41,8 @@
     "logout": "로그아웃",
     "openMenu": "메뉴 열기",
     "userMenu": "사용자 메뉴",
-    "mainNav": "메인 내비게이션"
+    "mainNav": "메인 내비게이션",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "통계",

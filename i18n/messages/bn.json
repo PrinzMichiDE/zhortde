@@ -41,7 +41,8 @@
     "logout": "লগআউট",
     "openMenu": "মেনু খুলুন",
     "userMenu": "ব্যবহারকারী মেনু",
-    "mainNav": "প্রধান নেভিগেশন"
+    "mainNav": "প্রধান নেভিগেশন",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "পরিসংখ্যান",

@@ -41,7 +41,8 @@
     "logout": "退出",
     "openMenu": "打开菜单",
     "userMenu": "用户菜单",
-    "mainNav": "主导航"
+    "mainNav": "主导航",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "统计",

@@ -41,7 +41,8 @@
     "logout": "Sair",
     "openMenu": "Abrir menu",
     "userMenu": "Menu do usuário",
-    "mainNav": "Navegação principal"
+    "mainNav": "Navegação principal",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "Estatísticas",

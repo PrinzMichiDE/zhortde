@@ -41,7 +41,8 @@
     "logout": "Esci",
     "openMenu": "Apri menu",
     "userMenu": "Menu utente",
-    "mainNav": "Navigazione principale"
+    "mainNav": "Navigazione principale",
+    "bio": "Bio"
   },
   "footer": {
     "statistics": "Statistiche",
