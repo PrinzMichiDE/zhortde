@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, UserCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
@@ -10,9 +11,15 @@ import { LanguageSelector } from './language-selector';
 import { useTranslations } from 'next-intl';
 
 export function Header() {
+  const pathname = usePathname();
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = useTranslations('header');
+
+  // Link-in-bio pages should look like Linktree: no global chrome.
+  if (pathname === '/bio' || pathname.startsWith('/bio/')) {
+    return null;
+  }
 
   const navigation = [
     { name: t('home'), href: '/', show: true },

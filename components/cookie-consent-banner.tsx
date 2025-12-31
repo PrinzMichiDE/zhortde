@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import { 
   getCookiePreferences, 
@@ -12,12 +13,18 @@ import {
 import { CookiePreferencesModal } from './cookie-preferences-modal';
 
 export function CookieConsentBanner() {
+  const pathname = usePathname();
   const [showBanner, setShowBanner] = useState(() => {
     if (typeof window === 'undefined') return false;
     return !hasConsentBeenGiven();
   });
   const [showPreferences, setShowPreferences] = useState(false);
   const [preferences, setPreferences] = useState<CookiePreferences>(() => getCookiePreferences());
+
+  // Keep /bio pages clean like Linktree (no cookie banner overlay).
+  if (pathname === '/bio' || pathname.startsWith('/bio/')) {
+    return null;
+  }
 
   const handleAcceptAll = () => {
     const newPreferences: CookiePreferences = {
