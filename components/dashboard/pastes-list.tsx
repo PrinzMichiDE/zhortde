@@ -6,6 +6,7 @@ import { TrashIcon, EyeIcon, DocumentTextIcon, PencilIcon, XMarkIcon } from '@he
 import { pastes } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTranslations } from 'next-intl';
 
 type Paste = typeof pastes.$inferSelect;
 
@@ -16,6 +17,8 @@ interface PastesListProps {
 export function PastesList({ pastes: initialPastes }: PastesListProps) {
   const [pastes, setPastes] = useState(initialPastes);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const t = useTranslations('dashboard');
+  const tc = useTranslations('common');
   
   // Edit state
   const [editingPaste, setEditingPaste] = useState<Paste | null>(null);
@@ -23,7 +26,7 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
   const [saving, setSaving] = useState(false);
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Möchten Sie dieses Paste wirklich löschen?')) {
+    if (!confirm(t('deletePasteConfirm'))) {
       return;
     }
 
@@ -36,10 +39,10 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
       if (response.ok) {
         setPastes(pastes.filter(paste => paste.id !== id));
       } else {
-        alert('Fehler beim Löschen des Paste');
+        alert(t('deletePasteError'));
       }
     } catch (error) {
-      alert('Fehler beim Löschen des Paste');
+      alert(t('deletePasteError'));
     } finally {
       setDeleting(null);
     }
@@ -90,12 +93,12 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
   if (pastes.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-        <p>Sie haben noch keine Pastes erstellt.</p>
+        <p>{t('noPastes')}</p>
         <Link
           href="/paste/create"
           className="mt-4 inline-block text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
         >
-          Erstellen Sie Ihr erstes Paste
+          {t('createFirstPaste')}
         </Link>
       </div>
     );
@@ -107,19 +110,19 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
         <thead className="bg-gray-50 dark:bg-gray-800">
           <tr>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Slug
+              {t('slug')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Vorschau
+              {t('preview')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Sprache
+              {t('language')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Status
+              {t('status')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-              Aktionen
+              {t('actions')}
             </th>
           </tr>
         </thead>
@@ -148,7 +151,7 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
                     ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                     : 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300'
                 }`}>
-                  {paste.isPublic ? 'Öffentlich' : 'Privat'}
+                  {paste.isPublic ? t('public') : t('private')}
                 </span>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -156,16 +159,16 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
                   <button
                     onClick={() => handleEditClick(paste)}
                     className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded"
-                    title="Bearbeiten"
-                    aria-label={`Paste ${paste.slug} bearbeiten`}
+                    title={tc('edit') as string}
+                    aria-label={`${t('paste')} ${paste.slug} ${tc('edit')}`}
                   >
                     <PencilIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
                   <Link
                     href={`/p/${paste.slug}`}
                     className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-300 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
-                    title="Ansehen"
-                    aria-label={`Paste ${paste.slug} ansehen`}
+                    title={t('view') as string}
+                    aria-label={`${t('paste')} ${paste.slug} ${t('view')}`}
                   >
                     <EyeIcon className="h-5 w-5" aria-hidden="true" />
                   </Link>
@@ -174,8 +177,8 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 rounded"
-                    title="Raw anzeigen"
-                    aria-label={`Raw Version von ${paste.slug} anzeigen`}
+                    title={t('rawView') as string}
+                    aria-label={`${t('rawView')} ${paste.slug}`}
                   >
                     <DocumentTextIcon className="h-5 w-5" aria-hidden="true" />
                   </a>
@@ -183,8 +186,8 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
                     onClick={() => handleDelete(paste.id)}
                     disabled={deleting === paste.id}
                     className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-300 disabled:opacity-50 transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded"
-                    title="Löschen"
-                    aria-label={`Paste ${paste.slug} löschen`}
+                    title={tc('delete') as string}
+                    aria-label={`${t('paste')} ${paste.slug} ${tc('delete')}`}
                   >
                     <TrashIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
@@ -200,7 +203,7 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-2xl shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">Paste bearbeiten</h3>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100">{t('editPaste')}</h3>
               <button onClick={() => setEditingPaste(null)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
                 <XMarkIcon className="h-6 w-6" />
               </button>
@@ -209,7 +212,7 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
             <form onSubmit={handleUpdate} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Inhalt
+                  {t('content')}
                 </label>
                 <textarea
                   value={editForm.content}
@@ -221,10 +224,10 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input
-                  label="Sprache (Syntax Highlighting)"
+                  label={t('syntaxLanguage') as string}
                   value={editForm.language}
                   onChange={(e) => setEditForm({...editForm, language: e.target.value})}
-                  placeholder="z.B. javascript, python, css"
+                  placeholder="javascript, python, css"
                 />
                 
                 <div className="flex items-center gap-2 pt-8">
@@ -236,17 +239,17 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
                     className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                   />
                   <label htmlFor="isPublic" className="text-sm text-gray-700 dark:text-gray-300">
-                    Öffentlich sichtbar
+                    {t('publicVisible')}
                   </label>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => setEditingPaste(null)}>
-                  Abbrechen
+                  {tc('cancel')}
                 </Button>
                 <Button type="submit" loading={saving}>
-                  Speichern
+                  {t('saveChanges')}
                 </Button>
               </div>
             </form>

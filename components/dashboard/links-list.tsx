@@ -6,6 +6,7 @@ import { TrashIcon, EyeIcon, ClipboardIcon } from '@heroicons/react/24/outline';
 import { links } from '@/lib/db/schema';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 type LinkType = typeof links.$inferSelect;
 
@@ -16,9 +17,11 @@ interface LinksListProps {
 export function LinksList({ links: initialLinks }: LinksListProps) {
   const [links, setLinks] = useState(initialLinks);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const t = useTranslations('dashboard');
+  const tc = useTranslations('common');
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Möchten Sie diesen Link wirklich löschen?')) {
+    if (!confirm(t('deleteConfirm'))) {
       return;
     }
 
@@ -31,10 +34,10 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
       if (response.ok) {
         setLinks(links.filter(link => link.id !== id));
       } else {
-        alert('Fehler beim Löschen des Links');
+        alert(t('deleteError'));
       }
     } catch (error) {
-      alert('Fehler beim Löschen des Links');
+      alert(t('deleteError'));
     } finally {
       setDeleting(null);
     }
@@ -48,12 +51,12 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
   if (links.length === 0) {
     return (
       <div className="text-center py-12 text-muted-foreground">
-        <p>Sie haben noch keine Links erstellt.</p>
+        <p>{t('noLinks')}</p>
         <Link
           href="/"
           className="mt-4 inline-block text-primary hover:text-primary/90 font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
         >
-          Erstellen Sie Ihren ersten Link
+          {t('createFirstLink')}
         </Link>
       </div>
     );
@@ -65,19 +68,19 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
         <thead className="bg-muted/50">
           <tr>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Short Code
+              {t('shortCode')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Ziel-URL
+              {t('targetUrl')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Klicks
+              {t('clicks')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Status
+              {t('status')}
             </th>
             <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Aktionen
+              {t('actions')}
             </th>
           </tr>
         </thead>
@@ -93,8 +96,8 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                     variant="ghost"
                     size="icon"
                     onClick={() => copyShortUrl(link.shortCode)}
-                    title="Kopieren"
-                    aria-label={`Short Code ${link.shortCode} kopieren`}
+                    title={tc('copy') as string}
+                    aria-label={`${t('shortCode')} ${link.shortCode} ${tc('copy')}`}
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   >
                     <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
@@ -115,7 +118,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                     ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                     : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                 }`}>
-                  {link.isPublic ? 'Öffentlich' : 'Privat'}
+                  {link.isPublic ? t('public') : t('private')}
                 </span>
               </td>
               <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -124,8 +127,8 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                     href={`/s/${link.shortCode}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    title="Ansehen"
-                    aria-label={`Link ${link.shortCode} öffnen`}
+                    title={t('view') as string}
+                    aria-label={`${t('link')} ${link.shortCode} ${t('view')}`}
                     className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), "h-8 w-8 text-primary hover:text-primary/80")}
                   >
                     <EyeIcon className="h-4 w-4" aria-hidden="true" />
@@ -136,8 +139,8 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                     onClick={() => handleDelete(link.id)}
                     disabled={deleting === link.id}
                     className="h-8 w-8 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
-                    title="Löschen"
-                    aria-label={`Link ${link.shortCode} löschen`}
+                    title={tc('delete') as string}
+                    aria-label={`${t('link')} ${link.shortCode} ${tc('delete')}`}
                   >
                     <TrashIcon className="h-4 w-4" aria-hidden="true" />
                   </Button>
