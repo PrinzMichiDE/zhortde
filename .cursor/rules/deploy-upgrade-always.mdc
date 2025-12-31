@@ -1,0 +1,24 @@
+---
+description: "Deployment safety: always run upgrade (DB migrations) before build/deploy"
+globs:
+  - "**/*"
+---
+
+### Deployment rule: always run `npm run upgrade`
+
+When preparing a release / deployment (especially to Vercel/production), **always run**:
+
+- `npm run upgrade`
+
+This must happen **before** the production build and before pushing to `main`, because it:
+- runs required DB migrations / schema sync
+- prevents runtime errors like `relation \"bio_profiles\" does not exist`
+
+### Implementation detail in this repo
+
+`package.json` includes a `prebuild` hook that runs:
+
+- `node scripts/run-upgrade-if-configured.js`
+
+So **every** `npm run build` will execute the upgrade steps automatically on CI/Vercel/production, and will warn (not fail) on local builds without `DATABASE_URL`.
+
