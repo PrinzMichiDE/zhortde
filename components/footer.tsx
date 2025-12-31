@@ -177,16 +177,31 @@ export function Footer() {
               <p className="text-sm text-muted-foreground mb-2 max-w-xs">
                 {t('supportText')}
               </p>
-              <a
-                href="https://www.michelfritzsch.de/unterstuetzen"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg relative overflow-hidden"
-              >
-                <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer"></span>
-                <HeartIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                <span className="font-semibold">{t('supportButton')}</span>
-              </a>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <a
+                  href="https://www.paypal.com/paypalme/michelfritzsch"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center px-5 py-2.5 bg-[#0070BA] hover:bg-[#005ea6] text-white rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg relative overflow-hidden"
+                >
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer"></span>
+                  <svg className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.771.771 0 0 1 .76-.654h6.264c2.09 0 3.792.426 4.885 1.274 1.015.789 1.572 1.953 1.572 3.35 0 .146-.006.297-.02.452-.018.166-.043.337-.075.514-.276 1.544-.963 2.844-1.92 3.655-1.02.861-2.386 1.297-4.062 1.297H9.83a.765.765 0 0 0-.755.654l-.003.016-.85 5.393-.003.017a.64.64 0 0 1-.633.54h-.51z"/>
+                    <path d="M18.429 7.79c-.031.175-.068.354-.11.538-.623 2.956-2.598 4.155-5.165 4.155h-1.307a.635.635 0 0 0-.627.54l-.67 4.245-.19 1.205a.334.334 0 0 0 .33.39h2.319a.559.559 0 0 0 .551-.47l.023-.118.436-2.766.028-.153a.559.559 0 0 1 .55-.469h.348c2.244 0 4.001-1.048 4.514-4.08.214-1.27.103-2.328-.463-3.072z"/>
+                  </svg>
+                  <span className="font-semibold">PayPal</span>
+                </a>
+                <a
+                  href="https://www.michelfritzsch.de/unterstuetzen"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg relative overflow-hidden"
+                >
+                  <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer"></span>
+                  <HeartIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
+                  <span className="font-semibold">{t('moreOptions')}</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
