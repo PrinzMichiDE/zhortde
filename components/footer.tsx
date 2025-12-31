@@ -3,9 +3,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { HeartIcon } from '@heroicons/react/24/solid';
 import { CookieSettingsButton } from './cookie-settings-button';
+import { usePathname } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 
 export function Footer() {
+  const pathname = usePathname();
+  const hideChrome = pathname === '/bio' || pathname.startsWith('/bio/');
   const [visitorCount, setVisitorCount] = useState<number>(0);
   const [linkCount, setLinkCount] = useState<number>(0);
   const [animatedVisitors, setAnimatedVisitors] = useState<number>(0);
@@ -16,6 +19,7 @@ export function Footer() {
   const locale = useLocale();
 
   useEffect(() => {
+    if (hideChrome) return;
     // Lade oder initialisiere Statistiken
     const loadStats = async () => {
       try {
@@ -34,10 +38,11 @@ export function Footer() {
     };
 
     loadStats();
-  }, []);
+  }, [hideChrome]);
 
   // Intersection Observer für Fade-In beim Scrollen
   useEffect(() => {
+    if (hideChrome) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -52,14 +57,16 @@ export function Footer() {
     }
 
     return () => {
-      if (footerRef.current) {
-        observer.unobserve(footerRef.current);
+      const node = footerRef.current;
+      if (node) {
+        observer.unobserve(node);
       }
     };
-  }, []);
+  }, [hideChrome]);
 
   // Animierte Zähler
   useEffect(() => {
+    if (hideChrome) return;
     if (!isVisible || visitorCount === 0) return;
 
     const duration = 2000; // 2 Sekunden
@@ -78,9 +85,10 @@ export function Footer() {
     }, duration / steps);
 
     return () => clearInterval(timer);
-  }, [visitorCount, isVisible]);
+  }, [hideChrome, visitorCount, isVisible]);
 
   useEffect(() => {
+    if (hideChrome) return;
     if (!isVisible || linkCount === 0) return;
 
     const duration = 2000;
@@ -99,11 +107,14 @@ export function Footer() {
     }, duration / steps);
 
     return () => clearInterval(timer);
-  }, [linkCount, isVisible]);
+  }, [hideChrome, linkCount, isVisible]);
 
   const formatNumber = (num: number) => {
     return num.toLocaleString(locale);
   };
+
+  // Link-in-bio pages should look like Linktree: no global chrome.
+  if (hideChrome) return null;
 
   return (
     <footer 
