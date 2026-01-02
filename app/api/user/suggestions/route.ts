@@ -24,11 +24,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
-    // AI-powered suggestions (async)
-    const [shortCodeSuggestions, smartTags] = await Promise.all([
-      generateSmartShortCodeSuggestions(longUrl),
-      generateSmartTags(longUrl),
-    ]);
+    // Smart suggestions using rule-based algorithms
+    const shortCodeSuggestions = generateSmartShortCodeSuggestions(longUrl);
+    const smartTags = generateSmartTags(longUrl);
 
     return NextResponse.json({
       success: true,

@@ -14,6 +14,7 @@ import { eq, desc, sql } from 'drizzle-orm';
 
 /**
  * Generate smart short code suggestions based on URL
+ * Uses rule-based pattern matching (no AI/ML)
  */
 export function generateSmartShortCodeSuggestions(longUrl: string): string[] {
   const suggestions: string[] = [];
@@ -65,10 +66,10 @@ export function generateSmartShortCodeSuggestions(longUrl: string): string[] {
 }
 
 /**
- * AI-powered smart tag generation from URL
- * Uses intelligent pattern recognition and semantic analysis
+ * Smart tag generation from URL
+ * Uses pattern recognition and rule-based analysis
  */
-export async function generateSmartTags(longUrl: string): Promise<string[]> {
+export function generateSmartTags(longUrl: string): string[] {
   const tags: string[] = [];
   
   try {
@@ -77,7 +78,7 @@ export async function generateSmartTags(longUrl: string): Promise<string[]> {
     const pathname = url.pathname.toLowerCase();
     const searchParams = url.searchParams;
     
-    // AI Pattern 1: Domain semantic analysis
+    // Pattern 1: Domain analysis
     const domainParts = hostname.split('.');
     if (domainParts.length > 0) {
       const mainDomain = domainParts[0];
@@ -122,7 +123,7 @@ export async function generateSmartTags(longUrl: string): Promise<string[]> {
       }
     }
     
-    // AI Pattern 2: Path semantic analysis
+    // Pattern 2: Path analysis
     const pathParts = pathname.split('/').filter(p => p.length > 0);
     for (const part of pathParts) {
       // Remove common non-semantic patterns
@@ -150,7 +151,7 @@ export async function generateSmartTags(longUrl: string): Promise<string[]> {
       }
     }
     
-    // AI Pattern 3: Query parameter semantic analysis
+    // Pattern 3: Query parameter analysis
     const semanticParams: Record<string, string[]> = {
       'category': ['category', 'topic', 'subject'],
       'tag': ['tag', 'label', 'keyword'],
@@ -173,7 +174,7 @@ export async function generateSmartTags(longUrl: string): Promise<string[]> {
       }
     }
     
-    // AI Pattern 4: File extension detection
+    // Pattern 4: File extension detection
     const fileExtension = pathname.match(/\.([a-z0-9]+)$/i)?.[1];
     if (fileExtension) {
       const extensionTags: Record<string, string[]> = {
@@ -194,7 +195,7 @@ export async function generateSmartTags(longUrl: string): Promise<string[]> {
       }
     }
     
-    // AI Pattern 5: URL structure analysis
+    // Pattern 5: URL structure analysis
     if (pathname.includes('/api/')) tags.push('api', 'endpoint');
     if (pathname.includes('/admin/')) tags.push('admin', 'management');
     if (pathname.includes('/dashboard/')) tags.push('dashboard', 'control');

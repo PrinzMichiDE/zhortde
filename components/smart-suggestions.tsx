@@ -58,10 +58,11 @@ export function SmartSuggestions({ longUrl, onShortCodeSelect, onTagsSelect }: S
 
   return (
     <div className="space-y-4 p-4 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
-      <div className="flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100">Smart Suggestions</h3>
-      </div>
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100">Smart Suggestions</h3>
+          <span className="text-xs text-gray-500 dark:text-gray-500">(Rule-based)</span>
+        </div>
 
       {suggestions.shortCodes.length > 0 && (
         <div>
