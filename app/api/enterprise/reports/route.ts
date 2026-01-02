@@ -12,7 +12,7 @@ const reportSchema = z.object({
   name: z.string().min(1),
   reportType: z.enum(['analytics', 'usage', 'compliance', 'custom']),
   frequency: z.enum(['daily', 'weekly', 'monthly']),
-  recipients: z.array(z.string().email()),
+  recipients: z.array(z.string()).optional(), // Optional - stored but not used for email sending
   format: z.enum(['pdf', 'csv', 'json', 'html']).optional(),
   filters: z.record(z.string(), z.any()).optional(),
 });
@@ -65,11 +65,13 @@ export async function POST(request: NextRequest) {
     const report = await createScheduledReport({
       ...data,
       userId: parseInt(session.user.id),
+      recipients: data.recipients || [], // Optional recipients - stored but not used for email sending
     });
 
     return NextResponse.json({
       success: true,
       report,
+      note: 'Reports are generated and stored. No emails are sent.',
     });
   } catch (error) {
     if (error instanceof z.ZodError) {

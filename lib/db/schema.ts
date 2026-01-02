@@ -357,6 +357,7 @@ export const ipWhitelist = pgTable('ip_whitelist', {
 });
 
 // 🏢 Enterprise: Scheduled Reports
+// Note: Reports are generated and stored, but NO emails are sent
 export const scheduledReports = pgTable('scheduled_reports', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
@@ -364,12 +365,12 @@ export const scheduledReports = pgTable('scheduled_reports', {
   name: text('name').notNull(),
   reportType: text('report_type').notNull(), // 'analytics', 'usage', 'compliance', 'custom'
   frequency: text('frequency').notNull(), // 'daily', 'weekly', 'monthly'
-  recipients: text('recipients').notNull(), // JSON array of email addresses
+  recipients: text('recipients'), // JSON array - stored for reference only, NOT used for email sending
   format: text('format').notNull().default('pdf'), // 'pdf', 'csv', 'json', 'html'
   filters: text('filters'), // JSON object with filters
   isActive: boolean('is_active').notNull().default(true),
-  lastSentAt: timestamp('last_sent_at'),
-  nextSendAt: timestamp('next_send_at'),
+  lastGeneratedAt: timestamp('last_generated_at'), // Renamed from lastSentAt - no emails sent
+  nextGenerateAt: timestamp('next_generate_at'), // Renamed from nextSendAt - no emails sent
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

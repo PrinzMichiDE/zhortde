@@ -18,6 +18,7 @@ import { eq, and, desc, sql } from 'drizzle-orm';
 
 /**
  * Create a scheduled report
+ * Note: Reports are generated and stored, but NO emails are sent
  */
 export async function createScheduledReport(params: {
   teamId?: number;
@@ -25,13 +26,13 @@ export async function createScheduledReport(params: {
   name: string;
   reportType: 'analytics' | 'usage' | 'compliance' | 'custom';
   frequency: 'daily' | 'weekly' | 'monthly';
-  recipients: string[];
+  recipients: string[]; // Stored but not used for email sending
   format?: 'pdf' | 'csv' | 'json' | 'html';
   filters?: Record<string, any>;
 }) {
   const { teamId, userId, name, reportType, frequency, recipients, format = 'pdf', filters } = params;
 
-  // Calculate next send date
+  // Calculate next send date (for report generation, not email sending)
   const now = new Date();
   let nextSendAt = new Date();
   
@@ -57,13 +58,14 @@ export async function createScheduledReport(params: {
     name,
     reportType,
     frequency,
-    recipients: JSON.stringify(recipients),
+    recipients: recipients.length > 0 ? JSON.stringify(recipients) : null, // Stored for reference only, NOT used for email sending
     format,
     filters: filters ? JSON.stringify(filters) : null,
     isActive: true,
-    nextSendAt,
+    nextGenerateAt: nextSendAt, // Reports are generated, not sent via email
   }).returning();
 
+  // Note: No email sending functionality - reports are only stored
   return report[0];
 }
 
