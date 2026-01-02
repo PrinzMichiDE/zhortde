@@ -1,5 +1,6 @@
 import { LinkForm } from '@/components/link-form';
 import { ExtensionDownload } from '@/components/extension-download';
+import { KofiSupport } from '@/components/kofi-support';
 import { 
   LockClosedIcon, 
   ClockIcon, 
@@ -97,8 +98,13 @@ export default async function Home() {
           </div>
 
           {/* Link Form */}
-          <div className="max-w-3xl mx-auto mb-20">
+          <div className="max-w-3xl mx-auto mb-12">
             <LinkForm />
+          </div>
+
+          {/* Support Banner */}
+          <div className="max-w-5xl mx-auto mb-20">
+            <KofiSupport variant="banner" showMonthly={true} />
           </div>
         </div>
 
@@ -243,6 +249,11 @@ export default async function Home() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Support Section */}
+          <div className="max-w-4xl mx-auto mt-20 mb-12">
+            <KofiSupport variant="full" showMonthly={true} />
           </div>
         </div>
       </div>

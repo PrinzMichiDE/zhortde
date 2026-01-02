@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { HeartIcon } from '@heroicons/react/24/solid';
 import { CookieSettingsButton } from './cookie-settings-button';
+import { KofiSupport } from './kofi-support';
 import { useTranslations, useLocale } from 'next-intl';
 
 export function Footer() {
@@ -184,37 +185,36 @@ export function Footer() {
               isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
             }`}
           >
-            <h3 className="text-lg font-semibold mb-3 text-foreground flex items-center justify-center md:justify-end">
+            <h3 className="text-lg font-semibold mb-4 text-foreground flex items-center justify-center md:justify-end">
               <HeartIcon className="w-5 h-5 mr-2 text-destructive animate-pulse hover:scale-125 transition-transform duration-300" />
               {t('support')}
             </h3>
             <div className="space-y-3 flex flex-col items-center md:items-end">
-              <p className="text-sm text-muted-foreground mb-2 max-w-xs">
+              <p className="text-sm text-muted-foreground mb-3 max-w-xs">
                 {t('supportText')}
               </p>
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col gap-3 w-full max-w-xs">
                 <a
-                  href="https://www.paypal.com/paypalme/michelfritzsch"
+                  href="https://ko-fi.com/michelfritzsch"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-[#0070BA] to-[#005ea6] hover:from-[#005ea6] hover:to-[#004a8c] text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl relative overflow-hidden font-semibold"
+                  className="group relative inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-[#FF5E5B] to-[#FF6B6B] hover:from-[#FF4A47] hover:to-[#FF5E5B] text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold overflow-hidden"
                 >
                   <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer"></span>
-                  <svg className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944 3.72a.771.771 0 0 1 .76-.654h6.264c2.09 0 3.792.426 4.885 1.274 1.015.789 1.572 1.953 1.572 3.35 0 .146-.006.297-.02.452-.018.166-.043.337-.075.514-.276 1.544-.963 2.844-1.92 3.655-1.02.861-2.386 1.297-4.062 1.297H9.83a.765.765 0 0 0-.755.654l-.003.016-.85 5.393-.003.017a.64.64 0 0 1-.633.54h-.51z"/>
-                    <path d="M18.429 7.79c-.031.175-.068.354-.11.538-.623 2.956-2.598 4.155-5.165 4.155h-1.307a.635.635 0 0 0-.627.54l-.67 4.245-.19 1.205a.334.334 0 0 0 .33.39h2.319a.559.559 0 0 0 .551-.47l.023-.118.436-2.766.028-.153a.559.559 0 0 1 .55-.469h.348c2.244 0 4.001-1.048 4.514-4.08.214-1.27.103-2.328-.463-3.072z"/>
+                  <svg className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.881 8.948c-.773-4.085-4.859-6.254-9.1-6.254-.246 0-.494.01-.74.03C9.444 1.5 4.723 1.5 4.723 1.5s-.45 2.84-.54 5.653c-.09 2.813-.18 5.625-.18 5.625s-.09 2.812-.18 5.625c-.09 2.813-.54 5.653-.54 5.653s4.721 0 9.318-1.724c.246-.02.494-.03.74-.03 4.241 0 8.327-2.169 9.1-6.254.773-4.085.773-8.17 0-12.255zm-10.9 9.717V6.325l8.813 5.363-8.813 5.977z"/>
                   </svg>
-                  <span>PayPal</span>
+                  <span>Einmalig unterstützen</span>
                 </a>
                 <a
-                  href="https://www.michelfritzsch.de/unterstuetzen"
+                  href="https://ko-fi.com/michelfritzsch/tiers"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl relative overflow-hidden font-semibold"
+                  className="group relative inline-flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl font-semibold overflow-hidden"
                 >
                   <span className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-shimmer"></span>
                   <HeartIcon className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform duration-300" />
-                  <span>{t('moreOptions')}</span>
+                  <span>Monatlich unterstützen</span>
                 </a>
               </div>
             </div>
