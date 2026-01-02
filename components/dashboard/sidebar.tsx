@@ -20,7 +20,8 @@ import {
   Menu,
   X,
   Fingerprint,
-  Building2
+  Building2,
+  Folder
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -38,6 +39,7 @@ export function DashboardSidebar() {
   const navItems: NavItem[] = [
     { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
     { name: 'Links', href: '/dashboard/links', icon: LinkIcon },
+    { name: 'Collections', href: '/dashboard/collections', icon: Folder },
     { name: 'Pastes', href: '/dashboard/pastes', icon: FileText },
     { name: 'Password Sharing', href: '/passwords/create', icon: Lock },
     { name: 'P2P File Sharing', href: '/p2p/create', icon: Share2 },

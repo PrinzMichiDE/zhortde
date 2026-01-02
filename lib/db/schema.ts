@@ -36,6 +36,20 @@ export const passkeys = pgTable('passkeys', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// ✨ User Features: Link Collections (Folders) - Defined BEFORE links to avoid circular reference
+export const linkCollections = pgTable('link_collections', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  color: text('color'), // Hex color for visual organization
+  icon: text('icon'), // Emoji or icon name
+  isDefault: boolean('is_default').notNull().default(false), // Default collection
+  linkCount: integer('link_count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
 export const links = pgTable('links', {
   id: serial('id').primaryKey(),
   shortCode: text('short_code').notNull().unique(),
@@ -60,7 +74,16 @@ export const links = pgTable('links', {
   priority: integer('priority').default(0), // Higher priority for enterprise links
   isArchived: boolean('is_archived').notNull().default(false), // Archived links
   archivedAt: timestamp('archived_at'), // When link was archived
-  templateId: integer('template_id').references(() => linkTemplates.id, { onDelete: 'set null' }), // Created from template
+  templateId: integer('template_id'), // Created from template - FK added in relations
+  
+  // ✨ User Features
+  collectionId: integer('collection_id'), // Link collection/folder - FK added in relations
+  suggestedShortCode: text('suggested_short_code'), // AI-suggested short code
+  healthStatus: text('health_status').default('unknown'), // 'healthy', 'broken', 'redirecting', 'unknown'
+  lastHealthCheck: timestamp('last_health_check'), // Last time link was checked
+  expirationReminderSent: boolean('expiration_reminder_sent').notNull().default(false), // Reminder sent flag
+  previewImage: text('preview_image'), // Auto-generated preview image URL
+  smartTags: text('smart_tags'), // JSON array of auto-suggested tags
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -458,6 +481,28 @@ export const archivedLinks = pgTable('archived_links', {
   isRestored: boolean('is_restored').notNull().default(false),
 });
 
+
+// ✨ User Features: Link Health Checks
+export const linkHealthChecks = pgTable('link_health_checks', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  status: text('status').notNull(), // 'healthy', 'broken', 'redirecting', 'timeout', 'ssl_error'
+  statusCode: integer('status_code'), // HTTP status code
+  responseTime: integer('response_time'), // Response time in ms
+  errorMessage: text('error_message'),
+  checkedAt: timestamp('checked_at').notNull().defaultNow(),
+});
+
+// ✨ User Features: Quick Actions History
+export const quickActions = pgTable('quick_actions', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  linkId: integer('link_id').references(() => links.id, { onDelete: 'cascade' }),
+  actionType: text('action_type').notNull(), // 'copy', 'share', 'qr', 'analytics', 'edit'
+  metadata: text('metadata'), // JSON with additional info
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const bioLinks = pgTable('bio_links', {
   id: serial('id').primaryKey(),
   profileId: integer('profile_id').notNull().references(() => bioProfiles.id, { onDelete: 'cascade' }),
@@ -526,6 +571,15 @@ export type NewTeamActivity = typeof teamActivityFeed.$inferInsert;
 
 export type ArchivedLink = typeof archivedLinks.$inferSelect;
 export type NewArchivedLink = typeof archivedLinks.$inferInsert;
+
+export type LinkCollection = typeof linkCollections.$inferSelect;
+export type NewLinkCollection = typeof linkCollections.$inferInsert;
+
+export type LinkHealthCheck = typeof linkHealthChecks.$inferSelect;
+export type NewLinkHealthCheck = typeof linkHealthChecks.$inferInsert;
+
+export type QuickAction = typeof quickActions.$inferSelect;
+export type NewQuickAction = typeof quickActions.$inferInsert;
 
 export type LinkComment = typeof linkComments.$inferSelect;
 export type NewLinkComment = typeof linkComments.$inferInsert;
@@ -683,6 +737,10 @@ export const linksRelations = relations(links, ({ one, many }) => ({
   user: one(users, {
     fields: [links.userId],
     references: [users.id],
+  }),
+  collection: one(linkCollections, {
+    fields: [links.collectionId],
+    references: [linkCollections.id],
   }),
   linkClicks: many(linkClicks),
   smartRedirects: many(smartRedirects),
@@ -844,4 +902,12 @@ export const p2pFileSharesRelations = relations(p2pFileShares, ({ one }) => ({
     fields: [p2pFileShares.userId],
     references: [users.id],
   }),
+}));
+
+export const linkCollectionsRelations = relations(linkCollections, ({ one, many }) => ({
+  user: one(users, {
+    fields: [linkCollections.userId],
+    references: [users.id],
+  }),
+  links: many(links),
 }));

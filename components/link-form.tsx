@@ -14,6 +14,7 @@ import { EXPIRATION_OPTIONS } from '@/lib/password-protection';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Alert } from './ui/alert';
+import { SmartSuggestions } from './smart-suggestions';
 import { useTranslations } from 'next-intl';
 
 export function LinkForm() {
@@ -152,6 +153,21 @@ export function LinkForm() {
           error={!!urlError}
           errorText={urlError}
         />
+
+        {/* Smart Suggestions */}
+        {session && longUrl && longUrl.length > 10 && validateUrl(longUrl) && (
+          <SmartSuggestions
+            longUrl={longUrl}
+            onShortCodeSelect={(code) => {
+              setCustomCode(code);
+              setCustomCodeError('');
+            }}
+            onTagsSelect={(tags) => {
+              // Tags können später verwendet werden
+              console.log('Selected tags:', tags);
+            }}
+          />
+        )}
 
         <div>
           <label htmlFor="customCode" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
