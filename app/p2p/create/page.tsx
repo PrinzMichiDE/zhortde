@@ -199,6 +199,7 @@ export default function CreateP2PSharePage() {
             </div>
           </div>
         </Card>
+        </div>
       </div>
     );
   }
@@ -228,17 +229,16 @@ export default function CreateP2PSharePage() {
         </div>
 
         <Card className="p-8 shadow-xl border-2">
-
-        {error && (
+          {error && (
           <Alert className="mb-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl p-4">
             <div className="flex items-center gap-3">
               <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400" />
               <p className="text-red-800 dark:text-red-300 font-medium">{error}</p>
             </div>
           </Alert>
-        )}
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <Label htmlFor="file" className="text-base font-semibold mb-3 block">
               Select File *
@@ -328,9 +328,9 @@ export default function CreateP2PSharePage() {
               </>
             )}
           </Button>
-        </form>
+          </form>
 
-        <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl">
+          <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl">
           <div className="flex items-start gap-4">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/50 rounded-lg">
               <Globe className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -345,8 +345,9 @@ export default function CreateP2PSharePage() {
               </p>
             </div>
           </div>
+          </div>
+        </Card>
         </div>
-      </Card>
-    </div>
-  );
-}
+      </div>
+    );
+  }

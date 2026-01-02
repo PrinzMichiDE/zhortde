@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { startAuthentication, finishAuthentication } from '@simplewebauthn/browser';
+import { startAuthentication } from '@simplewebauthn/browser';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';

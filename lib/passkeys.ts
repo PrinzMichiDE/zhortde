@@ -63,8 +63,8 @@ export async function getRegistrationOptions(userId: number, email: string) {
     timeout: 60000,
     attestationType: 'none',
     excludeCredentials: existingPasskeys.map(passkey => ({
-      id: Buffer.from(passkey.credentialId, 'base64url'),
-      type: 'public-key',
+      id: passkey.credentialId,
+      type: 'public-key' as const,
     })),
     authenticatorSelection: {
       authenticatorAttachment: 'platform', // Prefer platform authenticators (TouchID, FaceID)
@@ -107,7 +107,10 @@ export async function verifyRegistration(
     throw new Error('Passkey verification failed');
   }
 
-  const { credentialID, credentialPublicKey, counter } = verification.registrationInfo;
+  const { credential: credentialInfo } = verification.registrationInfo;
+  const credentialID = credentialInfo.id;
+  const credentialPublicKey = credentialInfo.publicKey;
+  const counter = 0; // Counter starts at 0 for new credentials
 
   // Save Passkey to database
   const [newPasskey] = await db
@@ -118,7 +121,7 @@ export async function verifyRegistration(
       publicKey: Buffer.from(credentialPublicKey).toString('base64url'),
       counter,
       deviceName: deviceName || 'Unknown Device',
-      deviceType: response.response.authenticatorAttachment === 'platform' ? 'platform' : 'cross-platform',
+      deviceType: 'platform', // Default to platform, can be determined from authenticator data if needed
     })
     .returning();
 
@@ -150,9 +153,9 @@ export async function getAuthenticationOptions(email: string) {
   const opts: GenerateAuthenticationOptionsOpts = {
     timeout: 60000,
     allowCredentials: userPasskeys.map(passkey => ({
-      id: Buffer.from(passkey.credentialId, 'base64url'),
-      type: 'public-key',
-      transports: ['internal', 'hybrid'], // Support both internal and external authenticators
+      id: passkey.credentialId,
+      type: 'public-key' as const,
+      transports: ['internal', 'hybrid'] as const, // Support both internal and external authenticators
     })),
     userVerification: 'preferred',
     rpID: RP_ID,
@@ -199,7 +202,7 @@ export async function verifyAuthentication(
     expectedOrigin: ORIGIN,
     expectedRPID: RP_ID,
     credential: {
-      id: Buffer.from(passkey.credentialId, 'base64url'),
+      id: passkey.credentialId,
       publicKey: Buffer.from(passkey.publicKey, 'base64url'),
       counter: passkey.counter,
     },

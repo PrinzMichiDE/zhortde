@@ -361,7 +361,7 @@ export const sharedPasswords = pgTable('shared_passwords', {
   
   // Access control
   accessKey: text('access_key').notNull(), // Hashed access key (password to decrypt)
-  maxAccesses: integer('max_accesses').default(null), // Max number of times password can be accessed
+  maxAccesses: integer('max_accesses'), // Max number of times password can be accessed
   currentAccesses: integer('current_accesses').notNull().default(0),
   
   // Expiration
@@ -391,7 +391,7 @@ export const p2pFileShares = pgTable('p2p_file_shares', {
   
   // Access control
   accessKey: text('access_key'), // Optional password protection
-  maxAccesses: integer('max_accesses').default(null),
+  maxAccesses: integer('max_accesses'),
   currentAccesses: integer('current_accesses').notNull().default(0),
   
   // Expiration
