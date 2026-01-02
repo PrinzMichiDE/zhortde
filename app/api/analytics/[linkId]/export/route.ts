@@ -40,13 +40,41 @@ export async function GET(
     });
 
     if (format === 'json') {
+      // Calculate summary statistics
+      const uniqueIps = new Set(clicks.map(c => c.ipAddress).filter(Boolean)).size;
+      const deviceBreakdown: Record<string, number> = {};
+      const countryBreakdown: Record<string, number> = {};
+      const browserBreakdown: Record<string, number> = {};
+      const osBreakdown: Record<string, number> = {};
+      
+      clicks.forEach(click => {
+        if (click.deviceType) deviceBreakdown[click.deviceType] = (deviceBreakdown[click.deviceType] || 0) + 1;
+        if (click.country) countryBreakdown[click.country] = (countryBreakdown[click.country] || 0) + 1;
+        if (click.browser) browserBreakdown[click.browser] = (browserBreakdown[click.browser] || 0) + 1;
+        if (click.os) osBreakdown[click.os] = (osBreakdown[click.os] || 0) + 1;
+      });
+
       return NextResponse.json({
         success: true,
         link: {
           shortCode: link.shortCode,
           longUrl: link.longUrl,
+          createdAt: link.createdAt,
         },
-        totalClicks: clicks.length,
+        summary: {
+          totalClicks: clicks.length,
+          uniqueIps,
+          dateRange: {
+            firstClick: clicks.length > 0 ? clicks[clicks.length - 1].clickedAt.toISOString() : null,
+            lastClick: clicks.length > 0 ? clicks[0].clickedAt.toISOString() : null,
+          },
+          breakdowns: {
+            devices: deviceBreakdown,
+            countries: countryBreakdown,
+            browsers: browserBreakdown,
+            operatingSystems: osBreakdown,
+          },
+        },
         clicks: clicks.map(click => ({
           id: click.id,
           ipAddress: click.ipAddress,

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, LineChart, Line } from 'recharts';
-import { TrendingUp, Users, Globe, Smartphone, Clock, Monitor, Link as LinkIcon, MapPin, Download } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, LineChart, Line, ComposedChart } from 'recharts';
+import { TrendingUp, Users, Globe, Smartphone, Clock, Monitor, Link as LinkIcon, MapPin, Download, Calendar, Activity, Zap, TrendingDown } from 'lucide-react';
 
 type AnalyticsData = {
   link: {
@@ -20,6 +20,7 @@ type AnalyticsData = {
     browserBreakdown: Record<string, number>;
     osBreakdown?: Record<string, number>;
     referrerBreakdown?: Record<string, number>;
+    referrerDomains?: Record<string, number>;
     cityBreakdown?: Array<{ city: string | null; country: string | null; count: number }>;
     recentClicks: Array<{
       id: number;
@@ -36,6 +37,21 @@ type AnalyticsData = {
       date: string;
       count: number;
     }>;
+    hourlyBreakdown?: Record<number, number>;
+    dayOfWeekBreakdown?: Record<number, number>;
+    monthlyBreakdown?: Array<{ month: string; count: number }>;
+    metrics?: {
+      averageClicksPerDay: number;
+      peakHour: number;
+      peakHourClicks: number;
+      peakDay: number;
+      peakDayName: string;
+      peakDayClicks: number;
+      growthRate: number;
+      daysSinceCreation: number;
+      recentClicksCount: number;
+      previousClicksCount: number;
+    };
   };
 };
 
@@ -126,6 +142,46 @@ export default function AnalyticsDashboardPage() {
 
   const timeData = analytics.clicksOverTime || [];
 
+  // Hourly data (0-23)
+  const hourlyData = Array.from({ length: 24 }, (_, i) => ({
+    hour: i,
+    count: analytics.hourlyBreakdown?.[i] || 0,
+    label: `${i}:00`,
+  }));
+
+  // Day of week data
+  const dayNames = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'];
+  const dayOfWeekData = Array.from({ length: 7 }, (_, i) => ({
+    day: i,
+    name: dayNames[i],
+    count: analytics.dayOfWeekBreakdown?.[i] || 0,
+  }));
+
+  // Monthly data
+  const monthlyData = (analytics.monthlyBreakdown || []).map((item) => ({
+    month: item.month,
+    count: item.count,
+  }));
+
+  // Referrer domains data
+  const referrerDomainsData = Object.entries(analytics.referrerDomains || {})
+    .map(([domain, count]) => ({ name: domain, value: count }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+
+  const metrics = analytics.metrics || {
+    averageClicksPerDay: 0,
+    peakHour: 0,
+    peakHourClicks: 0,
+    peakDay: 0,
+    peakDayName: 'Unknown',
+    peakDayClicks: 0,
+    growthRate: 0,
+    daysSinceCreation: 0,
+    recentClicksCount: 0,
+    previousClicksCount: 0,
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
@@ -163,24 +219,60 @@ export default function AnalyticsDashboardPage() {
             value={analytics.totalClicks}
             icon={<TrendingUp className="h-6 w-6" />}
             color="indigo"
+            subtitle={`Ø ${metrics.averageClicksPerDay.toFixed(1)} pro Tag`}
           />
           <StatCard
             title="Unique Visitors"
             value={analytics.uniqueIps}
             icon={<Users className="h-6 w-6" />}
             color="purple"
+            subtitle={`${metrics.daysSinceCreation} Tage aktiv`}
           />
           <StatCard
-            title="Top Countries"
+            title="Wachstum (7 Tage)"
+            value={`${metrics.growthRate >= 0 ? '+' : ''}${metrics.growthRate.toFixed(1)}%`}
+            icon={metrics.growthRate >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+            color={metrics.growthRate >= 0 ? "green" : "red"}
+            subtitle={`${metrics.recentClicksCount} vs ${metrics.previousClicksCount}`}
+          />
+          <StatCard
+            title="Peak Stunde"
+            value={`${metrics.peakHour}:00`}
+            icon={<Zap className="h-6 w-6" />}
+            color="orange"
+            subtitle={`${metrics.peakHourClicks} Klicks`}
+          />
+        </div>
+
+        {/* Additional Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-up" style={{ animationDelay: '50ms' }}>
+          <StatCard
+            title="Peak Tag"
+            value={metrics.peakDayName}
+            icon={<Calendar className="h-6 w-6" />}
+            color="pink"
+            subtitle={`${metrics.peakDayClicks} Klicks`}
+          />
+          <StatCard
+            title="Top Länder"
             value={Object.keys(analytics.countryBreakdown).length}
             icon={<Globe className="h-6 w-6" />}
-            color="pink"
+            color="blue"
+            subtitle={`${Object.values(analytics.countryBreakdown).reduce((a, b) => a + b, 0)} Klicks`}
           />
           <StatCard
-            title="Device Types"
+            title="Geräte-Typen"
             value={Object.keys(analytics.deviceBreakdown).length}
             icon={<Smartphone className="h-6 w-6" />}
-            color="blue"
+            color="teal"
+            subtitle={`${Object.values(analytics.deviceBreakdown).reduce((a, b) => a + b, 0)} Klicks`}
+          />
+          <StatCard
+            title="Referrer Domains"
+            value={Object.keys(analytics.referrerDomains || {}).length}
+            icon={<LinkIcon className="h-6 w-6" />}
+            color="indigo"
+            subtitle={`${Object.values(analytics.referrerDomains || {}).reduce((a, b) => a + b, 0)} Klicks`}
           />
         </div>
 
@@ -189,7 +281,7 @@ export default function AnalyticsDashboardPage() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '100ms' }}>
             <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-indigo-500" />
-              Klicks über Zeit
+              Klicks über Zeit (Täglich)
             </h2>
             <div className="h-[350px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -209,6 +301,104 @@ export default function AnalyticsDashboardPage() {
                   />
                   <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#colorClicks)" />
                 </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Hourly and Day of Week Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '150ms' }}>
+          {/* Hourly Breakdown */}
+          {hourlyData.some(d => d.count > 0) && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+                <Clock className="h-5 w-5 text-purple-500" />
+                Klicks nach Stunden
+              </h2>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="hour" 
+                      stroke="#9ca3af" 
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false}
+                      tickFormatter={(value) => `${value}h`}
+                    />
+                    <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      labelFormatter={(value) => `${value}:00 Uhr`}
+                    />
+                    <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Day of Week Breakdown */}
+          {dayOfWeekData.some(d => d.count > 0) && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-pink-500" />
+                Klicks nach Wochentag
+              </h2>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={dayOfWeekData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis 
+                      dataKey="name" 
+                      stroke="#9ca3af" 
+                      fontSize={12} 
+                      tickLine={false} 
+                      axisLine={false}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    />
+                    <Bar dataKey="count" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Monthly Chart */}
+        {monthlyData.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '175ms' }}>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-blue-500" />
+              Klicks nach Monat
+            </h2>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={monthlyData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                  <XAxis 
+                    dataKey="month" 
+                    stroke="#9ca3af" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                  />
+                  <Line type="monotone" dataKey="count" stroke="#3b82f6" strokeWidth={3} dot={{ fill: '#3b82f6', r: 4 }} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
@@ -319,23 +509,22 @@ export default function AnalyticsDashboardPage() {
         {/* Referrer and City Breakdown */}
         {(referrerData.length > 0 || cityData.length > 0) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '300ms' }}>
-            {/* Referrer Breakdown */}
-            {referrerData.length > 0 && (
+            {/* Referrer Domains Breakdown */}
+            {referrerDomainsData.length > 0 && (
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
                   <LinkIcon className="h-5 w-5 text-orange-500" />
-                  Referrer (Quellen)
+                  Top Referrer Domains
                 </h2>
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={referrerData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                    <BarChart data={referrerDomainsData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
                       <XAxis type="number" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={75} />
+                      <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={95} />
                       <Tooltip 
                         cursor={{ fill: 'transparent' }}
                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
-                        formatter={(value: number, name: string, props: any) => [value, props.payload.fullName || name]}
                       />
                       <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
                     </BarChart>
@@ -370,12 +559,57 @@ export default function AnalyticsDashboardPage() {
           </div>
         )}
 
+        {/* Summary Section */}
+        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl shadow-lg p-6 mb-8 border border-indigo-200 dark:border-indigo-800 animate-slide-up" style={{ animationDelay: '250ms' }}>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            Zusammenfassung
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-1">Durchschnitt pro Tag</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.averageClicksPerDay.toFixed(1)}</p>
+            </div>
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-1">Beste Stunde</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.peakHour}:00</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">{metrics.peakHourClicks} Klicks</p>
+            </div>
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-1">Bester Wochentag</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.peakDayName}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">{metrics.peakDayClicks} Klicks</p>
+            </div>
+            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
+              <p className="text-gray-600 dark:text-gray-400 mb-1">Wachstum (7 Tage)</p>
+              <p className={`text-2xl font-bold ${metrics.growthRate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {metrics.growthRate >= 0 ? '+' : ''}{metrics.growthRate.toFixed(1)}%
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500">
+                {metrics.recentClicksCount} vs {metrics.previousClicksCount}
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Recent Clicks */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '300ms' }}>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
-            <Clock className="h-5 w-5 text-indigo-500" />
-            Letzte Klicks
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+              <Clock className="h-5 w-5 text-indigo-500" />
+              Letzte Klicks
+            </h2>
+            <div className="flex gap-2">
+              <a
+                href={`/api/analytics/${params.linkId}/export?format=json`}
+                download
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg text-xs font-medium transition-colors"
+              >
+                <Download className="w-3 h-3" />
+                JSON
+              </a>
+            </div>
+          </div>
           <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
@@ -451,27 +685,38 @@ function StatCard({
   value,
   icon,
   color,
+  subtitle,
 }: {
   title: string;
-  value: number;
+  value: number | string;
   icon: React.ReactNode;
   color: string;
+  subtitle?: string;
 }) {
   const colorClasses = {
     indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400',
     purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400',
     pink: 'bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400',
     blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400',
+    green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400',
+    red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400',
+    orange: 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400',
+    teal: 'bg-teal-100 text-teal-600 dark:bg-teal-900/30 dark:text-teal-400',
   };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 dark:border-gray-700">
       <div className="flex items-center justify-between">
-        <div>
+        <div className="flex-1">
           <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">{value.toLocaleString()}</p>
+          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </p>
+          {subtitle && (
+            <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{subtitle}</p>
+          )}
         </div>
-        <div className={`p-4 rounded-xl shadow-sm ${colorClasses[color as keyof typeof colorClasses]}`}>
+        <div className={`p-4 rounded-xl shadow-sm ${colorClasses[color as keyof typeof colorClasses] || colorClasses.indigo}`}>
           {icon}
         </div>
       </div>
