@@ -58,6 +58,9 @@ export const links = pgTable('links', {
   customRedirectPage: text('custom_redirect_page'), // Custom branded redirect page HTML
   isReservedCode: boolean('is_reserved_code').notNull().default(false), // Reserved short code for enterprise
   priority: integer('priority').default(0), // Higher priority for enterprise links
+  isArchived: boolean('is_archived').notNull().default(false), // Archived links
+  archivedAt: timestamp('archived_at'), // When link was archived
+  templateId: integer('template_id').references(() => linkTemplates.id, { onDelete: 'set null' }), // Created from template
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -353,6 +356,107 @@ export const ipWhitelist = pgTable('ip_whitelist', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
+// 🏢 Enterprise: Scheduled Reports
+export const scheduledReports = pgTable('scheduled_reports', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  reportType: text('report_type').notNull(), // 'analytics', 'usage', 'compliance', 'custom'
+  frequency: text('frequency').notNull(), // 'daily', 'weekly', 'monthly'
+  recipients: text('recipients').notNull(), // JSON array of email addresses
+  format: text('format').notNull().default('pdf'), // 'pdf', 'csv', 'json', 'html'
+  filters: text('filters'), // JSON object with filters
+  isActive: boolean('is_active').notNull().default(true),
+  lastSentAt: timestamp('last_sent_at'),
+  nextSendAt: timestamp('next_send_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// 🏢 Enterprise: Link Approval Workflows
+export const approvalWorkflows = pgTable('approval_workflows', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  isActive: boolean('is_active').notNull().default(true),
+  requiresApproval: boolean('requires_approval').notNull().default(true),
+  approverIds: text('approver_ids'), // JSON array of user IDs who can approve
+  autoApproveAfter: integer('auto_approve_after'), // Hours until auto-approval
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const linkApprovals = pgTable('link_approvals', {
+  id: serial('id').primaryKey(),
+  linkId: integer('link_id').notNull().references(() => links.id, { onDelete: 'cascade' }),
+  workflowId: integer('workflow_id').references(() => approvalWorkflows.id, { onDelete: 'set null' }),
+  requestedBy: integer('requested_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected', 'auto_approved'
+  approvedBy: integer('approved_by').references(() => users.id, { onDelete: 'set null' }),
+  rejectionReason: text('rejection_reason'),
+  requestedAt: timestamp('requested_at').notNull().defaultNow(),
+  approvedAt: timestamp('approved_at'),
+});
+
+// 🏢 Enterprise: Link Templates
+export const linkTemplates = pgTable('link_templates', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  description: text('description'),
+  longUrl: text('long_url').notNull(),
+  shortCodePrefix: text('short_code_prefix'), // Optional prefix for generated codes
+  defaultTags: text('default_tags'), // JSON array of default tags
+  defaultUtmParams: text('default_utm_params'), // JSON object with default UTM params
+  isPublic: boolean('is_public').notNull().default(false), // Can be used by team members
+  usageCount: integer('usage_count').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// 🏢 Enterprise: Advanced Audit Logs
+export const auditLogs = pgTable('audit_logs', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  action: text('action').notNull(), // 'link.created', 'link.updated', 'link.deleted', 'team.member.added', etc.
+  resourceType: text('resource_type').notNull(), // 'link', 'team', 'user', 'api_key', etc.
+  resourceId: integer('resource_id'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  changes: text('changes'), // JSON object with before/after values
+  metadata: text('metadata'), // JSON object with additional context
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🏢 Enterprise: Team Activity Feed
+export const teamActivityFeed = pgTable('team_activity_feed', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'set null' }),
+  activityType: text('activity_type').notNull(), // 'link.created', 'link.clicked', 'member.joined', etc.
+  title: text('title').notNull(),
+  description: text('description'),
+  linkId: integer('link_id').references(() => links.id, { onDelete: 'set null' }),
+  metadata: text('metadata'), // JSON object
+  isRead: boolean('is_read').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🏢 Enterprise: Link Archiving
+export const archivedLinks = pgTable('archived_links', {
+  id: serial('id').primaryKey(),
+  originalLinkId: integer('original_link_id').notNull(), // Reference to original link
+  shortCode: text('short_code').notNull(),
+  longUrl: text('long_url').notNull(),
+  archivedBy: integer('archived_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  archiveReason: text('archive_reason'),
+  archivedAt: timestamp('archived_at').notNull().defaultNow(),
+  restoreAt: timestamp('restore_at'), // Optional restore date
+  isRestored: boolean('is_restored').notNull().default(false),
+});
+
 export const bioLinks = pgTable('bio_links', {
   id: serial('id').primaryKey(),
   profileId: integer('profile_id').notNull().references(() => bioProfiles.id, { onDelete: 'cascade' }),
@@ -400,6 +504,27 @@ export type NewUsageTracking = typeof usageTracking.$inferInsert;
 
 export type IpWhitelist = typeof ipWhitelist.$inferSelect;
 export type NewIpWhitelist = typeof ipWhitelist.$inferInsert;
+
+export type ScheduledReport = typeof scheduledReports.$inferSelect;
+export type NewScheduledReport = typeof scheduledReports.$inferInsert;
+
+export type ApprovalWorkflow = typeof approvalWorkflows.$inferSelect;
+export type NewApprovalWorkflow = typeof approvalWorkflows.$inferInsert;
+
+export type LinkApproval = typeof linkApprovals.$inferSelect;
+export type NewLinkApproval = typeof linkApprovals.$inferInsert;
+
+export type LinkTemplate = typeof linkTemplates.$inferSelect;
+export type NewLinkTemplate = typeof linkTemplates.$inferInsert;
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type NewAuditLog = typeof auditLogs.$inferInsert;
+
+export type TeamActivity = typeof teamActivityFeed.$inferSelect;
+export type NewTeamActivity = typeof teamActivityFeed.$inferInsert;
+
+export type ArchivedLink = typeof archivedLinks.$inferSelect;
+export type NewArchivedLink = typeof archivedLinks.$inferInsert;
 
 export type LinkComment = typeof linkComments.$inferSelect;
 export type NewLinkComment = typeof linkComments.$inferInsert;
