@@ -65,42 +65,148 @@ export function generateSmartShortCodeSuggestions(longUrl: string): string[] {
 }
 
 /**
- * Generate smart tags from URL
+ * AI-powered smart tag generation from URL
+ * Uses intelligent pattern recognition and semantic analysis
  */
-export function generateSmartTags(longUrl: string): string[] {
+export async function generateSmartTags(longUrl: string): Promise<string[]> {
   const tags: string[] = [];
   
   try {
     const url = new URL(longUrl);
+    const hostname = url.hostname.replace('www.', '').toLowerCase();
+    const pathname = url.pathname.toLowerCase();
+    const searchParams = url.searchParams;
     
-    // Domain-based tags
-    const hostname = url.hostname.replace('www.', '');
+    // AI Pattern 1: Domain semantic analysis
     const domainParts = hostname.split('.');
     if (domainParts.length > 0) {
-      tags.push(domainParts[0]);
+      const mainDomain = domainParts[0];
+      // Extract meaningful domain name
+      tags.push(mainDomain);
+      
+      // Detect domain category
+      if (mainDomain.includes('github')) {
+        tags.push('github', 'code', 'development', 'repository');
+      } else if (mainDomain.includes('youtube') || mainDomain.includes('youtu.be')) {
+        tags.push('youtube', 'video', 'media', 'entertainment');
+      } else if (mainDomain.includes('twitter') || mainDomain.includes('x.com')) {
+        tags.push('twitter', 'social', 'microblog', 'news');
+      } else if (mainDomain.includes('linkedin')) {
+        tags.push('linkedin', 'professional', 'network', 'career');
+      } else if (mainDomain.includes('medium')) {
+        tags.push('medium', 'article', 'blog', 'reading');
+      } else if (mainDomain.includes('amazon')) {
+        tags.push('amazon', 'shopping', 'ecommerce', 'product');
+      } else if (mainDomain.includes('reddit')) {
+        tags.push('reddit', 'discussion', 'community', 'forum');
+      } else if (mainDomain.includes('instagram')) {
+        tags.push('instagram', 'social', 'photo', 'visual');
+      } else if (mainDomain.includes('facebook')) {
+        tags.push('facebook', 'social', 'network');
+      } else if (mainDomain.includes('netflix')) {
+        tags.push('netflix', 'streaming', 'entertainment', 'video');
+      } else if (mainDomain.includes('spotify')) {
+        tags.push('spotify', 'music', 'audio', 'streaming');
+      } else if (mainDomain.includes('stackoverflow') || mainDomain.includes('stackexchange')) {
+        tags.push('stackoverflow', 'programming', 'qa', 'help');
+      } else if (mainDomain.includes('wikipedia')) {
+        tags.push('wikipedia', 'encyclopedia', 'reference', 'knowledge');
+      } else if (mainDomain.includes('docs') || mainDomain.includes('documentation')) {
+        tags.push('docs', 'documentation', 'reference', 'guide');
+      } else if (mainDomain.includes('blog')) {
+        tags.push('blog', 'article', 'writing');
+      } else if (mainDomain.includes('shop') || mainDomain.includes('store')) {
+        tags.push('shop', 'ecommerce', 'shopping');
+      } else if (mainDomain.includes('news')) {
+        tags.push('news', 'media', 'information');
+      }
     }
     
-    // Path-based tags
-    const pathParts = url.pathname.split('/').filter(p => p.length > 0);
-    pathParts.forEach(part => {
-      if (part.length > 2 && part.length < 20 && /^[a-zA-Z0-9-]+$/.test(part)) {
-        tags.push(part);
+    // AI Pattern 2: Path semantic analysis
+    const pathParts = pathname.split('/').filter(p => p.length > 0);
+    for (const part of pathParts) {
+      // Remove common non-semantic patterns
+      const cleaned = part
+        .replace(/[^a-z0-9-]/gi, '')
+        .replace(/\d{4}-\d{2}-\d{2}/g, '') // Remove dates
+        .replace(/^[0-9]+$/, '') // Remove pure numbers
+        .replace(/^[a-z]{1,2}$/, ''); // Remove single/double letters
+      
+      if (cleaned.length >= 3 && cleaned.length < 20) {
+        // Check if it's a meaningful word
+        const meaningfulKeywords = [
+          'article', 'post', 'page', 'product', 'item', 'user', 'profile',
+          'category', 'tag', 'search', 'results', 'about', 'contact',
+          'download', 'upload', 'file', 'image', 'video', 'audio',
+          'api', 'docs', 'help', 'support', 'faq', 'guide', 'tutorial'
+        ];
+        
+        if (meaningfulKeywords.includes(cleaned.toLowerCase())) {
+          tags.push(cleaned);
+        } else if (cleaned.length >= 4) {
+          // Only add longer, more meaningful path parts
+          tags.push(cleaned);
+        }
       }
-    });
+    }
     
-    // Common domain patterns
-    if (hostname.includes('github')) tags.push('github', 'code');
-    if (hostname.includes('youtube')) tags.push('youtube', 'video');
-    if (hostname.includes('twitter') || hostname.includes('x.com')) tags.push('twitter', 'social');
-    if (hostname.includes('linkedin')) tags.push('linkedin', 'professional');
-    if (hostname.includes('medium')) tags.push('medium', 'article');
-    if (hostname.includes('amazon')) tags.push('amazon', 'shopping');
+    // AI Pattern 3: Query parameter semantic analysis
+    const semanticParams: Record<string, string[]> = {
+      'category': ['category', 'topic', 'subject'],
+      'tag': ['tag', 'label', 'keyword'],
+      'type': ['type', 'kind', 'format'],
+      'lang': ['language', 'locale'],
+      'ref': ['referral', 'source'],
+      'utm_campaign': ['campaign', 'marketing'],
+      'utm_source': ['source', 'origin'],
+      'utm_medium': ['medium', 'channel'],
+    };
+    
+    for (const [param, tagVariants] of Object.entries(semanticParams)) {
+      const value = searchParams.get(param);
+      if (value) {
+        tags.push(...tagVariants);
+        const cleanedValue = value.replace(/[^a-z0-9-]/gi, '').toLowerCase();
+        if (cleanedValue.length >= 3 && cleanedValue.length < 15) {
+          tags.push(cleanedValue);
+        }
+      }
+    }
+    
+    // AI Pattern 4: File extension detection
+    const fileExtension = pathname.match(/\.([a-z0-9]+)$/i)?.[1];
+    if (fileExtension) {
+      const extensionTags: Record<string, string[]> = {
+        'pdf': ['pdf', 'document'],
+        'jpg': ['image', 'photo'],
+        'jpeg': ['image', 'photo'],
+        'png': ['image', 'photo'],
+        'gif': ['image', 'animation'],
+        'mp4': ['video'],
+        'mp3': ['audio', 'music'],
+        'zip': ['archive', 'download'],
+        'doc': ['document', 'word'],
+        'xls': ['spreadsheet', 'excel'],
+      };
+      
+      if (extensionTags[fileExtension.toLowerCase()]) {
+        tags.push(...extensionTags[fileExtension.toLowerCase()]);
+      }
+    }
+    
+    // AI Pattern 5: URL structure analysis
+    if (pathname.includes('/api/')) tags.push('api', 'endpoint');
+    if (pathname.includes('/admin/')) tags.push('admin', 'management');
+    if (pathname.includes('/dashboard/')) tags.push('dashboard', 'control');
+    if (pathname.includes('/search')) tags.push('search', 'query');
+    if (pathname.includes('/login') || pathname.includes('/signin')) tags.push('auth', 'login');
+    if (pathname.includes('/register') || pathname.includes('/signup')) tags.push('auth', 'register');
     
   } catch {
     // Return empty array on error
   }
   
-  return [...new Set(tags)].slice(0, 5); // Return unique tags, max 5
+  return [...new Set(tags)].slice(0, 8); // Return unique tags, max 8
 }
 
 /**
