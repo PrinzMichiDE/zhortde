@@ -251,13 +251,26 @@ function LoginContent() {
             </form>
           )}
 
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('noAccount')}{' '}
-              <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200">
-                {t('registerNow')}
-              </Link>
-            </p>
+          <div className="mt-8 space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {t('noAccount')}{' '}
+                <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200">
+                  {t('registerNow')}
+                </Link>
+              </p>
+            </div>
+            
+            {/* Privacy Notice */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-500 text-center leading-relaxed">
+                🔒 <strong>Datenschutzfreundlich:</strong> Wir speichern nur Ihre E-Mail-Adresse und ein verschlüsseltes Passwort. 
+                Keine Tracking-Cookies, keine Werbung, keine Datenweitergabe an Dritte.{' '}
+                <Link href="/datenschutz" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                  Mehr erfahren
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

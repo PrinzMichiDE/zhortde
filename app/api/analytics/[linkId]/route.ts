@@ -102,20 +102,78 @@ export async function GET(
       }
     });
 
-    // Recent clicks (last 50)
+    // OS breakdown
+    const osBreakdownResult = await db
+      .select({
+        os: linkClicks.os,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(linkClicks)
+      .where(eq(linkClicks.linkId, linkIdNum))
+      .groupBy(linkClicks.os);
+
+    const osBreakdown: Record<string, number> = {};
+    osBreakdownResult.forEach((row) => {
+      if (row.os) {
+        osBreakdown[row.os] = row.count;
+      }
+    });
+
+    // Referrer breakdown
+    const referrerBreakdownResult = await db
+      .select({
+        referer: linkClicks.referer,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(linkClicks)
+      .where(eq(linkClicks.linkId, linkIdNum))
+      .groupBy(linkClicks.referer);
+
+    const referrerBreakdown: Record<string, number> = {};
+    referrerBreakdownResult.forEach((row) => {
+      const referer = row.referer || 'direct';
+      referrerBreakdown[referer] = row.count;
+    });
+
+    // City breakdown (top 20)
+    const cityBreakdownResult = await db
+      .select({
+        city: linkClicks.city,
+        country: linkClicks.country,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(linkClicks)
+      .where(eq(linkClicks.linkId, linkIdNum))
+      .groupBy(linkClicks.city, linkClicks.country)
+      .orderBy(sql`count(*)::int DESC`)
+      .limit(20);
+
+    const cityBreakdown: Array<{ city: string | null; country: string | null; count: number }> = [];
+    cityBreakdownResult.forEach((row) => {
+      cityBreakdown.push({
+        city: row.city,
+        country: row.country,
+        count: row.count,
+      });
+    });
+
+    // Recent clicks (last 100)
     const recentClicks = await db
       .select({
         id: linkClicks.id,
         ipAddress: linkClicks.ipAddress,
         country: linkClicks.country,
+        city: linkClicks.city,
         deviceType: linkClicks.deviceType,
         browser: linkClicks.browser,
+        os: linkClicks.os,
+        referer: linkClicks.referer,
         clickedAt: linkClicks.clickedAt,
       })
       .from(linkClicks)
       .where(eq(linkClicks.linkId, linkIdNum))
       .orderBy(desc(linkClicks.clickedAt))
-      .limit(50);
+      .limit(100);
 
     // Time-series data (Last 30 days)
     // Note: Drizzle raw SQL support varies by driver, ensuring safe casting
@@ -142,6 +200,9 @@ export async function GET(
         deviceBreakdown,
         countryBreakdown,
         browserBreakdown,
+        osBreakdown,
+        referrerBreakdown,
+        cityBreakdown,
         recentClicks,
         clicksOverTime: clicksOverTimeResult,
       },

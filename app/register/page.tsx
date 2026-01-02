@@ -332,14 +332,28 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t('hasAccount')}{' '}
-              <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200 relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded">
-                {t('loginNow')}
-                <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
-              </Link>
-            </p>
+          <div className="mt-8 space-y-4">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {t('hasAccount')}{' '}
+                <Link href="/login" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200 relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded">
+                  {t('loginNow')}
+                  <span className="absolute inset-x-0 -bottom-1 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                </Link>
+              </p>
+            </div>
+            
+            {/* Privacy Notice */}
+            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+              <p className="text-xs text-gray-500 dark:text-gray-500 text-center leading-relaxed">
+                🔒 <strong>Minimale Datenerfassung:</strong> Wir benötigen nur Ihre E-Mail-Adresse und ein sicheres Passwort. 
+                Keine persönlichen Daten, keine Tracking-Cookies, keine Werbung. 
+                Ihre Daten bleiben bei uns und werden nicht an Dritte weitergegeben.{' '}
+                <Link href="/datenschutz" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                  Datenschutzerklärung
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

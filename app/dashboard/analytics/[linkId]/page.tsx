@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { TrendingUp, Users, Globe, Smartphone, Clock } from 'lucide-react';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area, LineChart, Line } from 'recharts';
+import { TrendingUp, Users, Globe, Smartphone, Clock, Monitor, Link as LinkIcon, MapPin, Download } from 'lucide-react';
 
 type AnalyticsData = {
   link: {
@@ -18,12 +18,18 @@ type AnalyticsData = {
     deviceBreakdown: Record<string, number>;
     countryBreakdown: Record<string, number>;
     browserBreakdown: Record<string, number>;
+    osBreakdown?: Record<string, number>;
+    referrerBreakdown?: Record<string, number>;
+    cityBreakdown?: Array<{ city: string | null; country: string | null; count: number }>;
     recentClicks: Array<{
       id: number;
       ipAddress: string | null;
       country: string | null;
+      city?: string | null;
       deviceType: string | null;
       browser: string | null;
+      os?: string | null;
+      referer?: string | null;
       clickedAt: string;
     }>;
     clicksOverTime?: Array<{
@@ -97,6 +103,27 @@ export default function AnalyticsDashboardPage() {
     value,
   }));
 
+  const osData = Object.entries(analytics.osBreakdown || {}).map(([name, value]) => ({
+    name: name || 'Unknown',
+    value,
+  }));
+
+  const referrerData = Object.entries(analytics.referrerBreakdown || {})
+    .map(([name, value]) => ({ 
+      name: name === 'direct' ? 'Direct' : name.length > 30 ? name.substring(0, 30) + '...' : name, 
+      value,
+      fullName: name 
+    }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+
+  const cityData = (analytics.cityBreakdown || [])
+    .map((item) => ({
+      name: item.city ? `${item.city}, ${item.country || ''}` : item.country || 'Unknown',
+      value: item.count,
+    }))
+    .slice(0, 15);
+
   const timeData = analytics.clicksOverTime || [];
 
   return (
@@ -113,9 +140,19 @@ export default function AnalyticsDashboardPage() {
                 <span className="truncate max-w-md" title={link.longUrl}>{link.longUrl}</span>
               </div>
             </div>
-            <a href="/dashboard" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
-              &larr; Zurück
-            </a>
+            <div className="flex items-center gap-3">
+              <a
+                href={`/api/analytics/${params.linkId}/export?format=csv`}
+                download
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Download className="w-4 h-4" />
+                CSV Export
+              </a>
+              <a href="/dashboard" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
+                &larr; Zurück
+              </a>
+            </div>
           </div>
         </div>
 
@@ -232,6 +269,107 @@ export default function AnalyticsDashboardPage() {
           </div>
         </div>
 
+        {/* OS and Browser Breakdown */}
+        {osData.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '250ms' }}>
+            {/* OS Breakdown */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+                <Monitor className="h-5 w-5 text-blue-500" />
+                Betriebssysteme
+              </h2>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={osData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={80} />
+                    <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    />
+                    <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Browser Breakdown */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+                <Monitor className="h-5 w-5 text-green-500" />
+                Browser
+              </h2>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={browserData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} angle={-45} textAnchor="end" height={80} />
+                    <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    />
+                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Referrer and City Breakdown */}
+        {(referrerData.length > 0 || cityData.length > 0) && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '300ms' }}>
+            {/* Referrer Breakdown */}
+            {referrerData.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+                  <LinkIcon className="h-5 w-5 text-orange-500" />
+                  Referrer (Quellen)
+                </h2>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={referrerData} layout="vertical" margin={{ top: 5, right: 30, left: 80, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
+                      <XAxis type="number" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={75} />
+                      <Tooltip 
+                        cursor={{ fill: 'transparent' }}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                        formatter={(value: number, name: string, props: any) => [value, props.payload.fullName || name]}
+                      />
+                      <Bar dataKey="value" fill="#f59e0b" radius={[0, 4, 4, 0]} barSize={20} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* City Breakdown */}
+            {cityData.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+                  <MapPin className="h-5 w-5 text-teal-500" />
+                  Top Städte
+                </h2>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={cityData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
+                      <XAxis type="number" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} width={95} />
+                      <Tooltip 
+                        cursor={{ fill: 'transparent' }}
+                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                      />
+                      <Bar dataKey="value" fill="#14b8a6" radius={[0, 4, 4, 0]} barSize={20} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Recent Clicks */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '300ms' }}>
           <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
@@ -255,6 +393,12 @@ export default function AnalyticsDashboardPage() {
                     Browser
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    OS
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Referrer
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     IP
                   </th>
                 </tr>
@@ -262,7 +406,7 @@ export default function AnalyticsDashboardPage() {
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {analytics.recentClicks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                       Noch keine Klicks verzeichnet.
                     </td>
                   </tr>
@@ -273,13 +417,19 @@ export default function AnalyticsDashboardPage() {
                         {new Date(click.clickedAt).toLocaleString('de-DE')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                        {click.country || 'Unknown'}
+                        {click.city ? `${click.city}, ` : ''}{click.country || 'Unknown'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {click.deviceType || 'Unknown'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
                         {click.browser || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                        {click.os || 'Unknown'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate" title={click.referer || 'Direct'}>
+                        {click.referer ? (click.referer.length > 30 ? click.referer.substring(0, 30) + '...' : click.referer) : 'Direct'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500 font-mono">
                         {click.ipAddress ? `${click.ipAddress.substring(0, 7)}...` : 'N/A'}
