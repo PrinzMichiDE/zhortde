@@ -317,11 +317,75 @@ export type NewLinkComment = typeof linkComments.$inferInsert;
 export type LinkHistory = typeof linkHistory.$inferSelect;
 export type NewLinkHistory = typeof linkHistory.$inferInsert;
 
+export type SharedPassword = typeof sharedPasswords.$inferSelect;
+export type NewSharedPassword = typeof sharedPasswords.$inferInsert;
+
+export type P2PFileShare = typeof p2pFileShares.$inferSelect;
+export type NewP2PFileShare = typeof p2pFileShares.$inferInsert;
+
 export type BioProfile = typeof bioProfiles.$inferSelect;
 export type NewBioProfile = typeof bioProfiles.$inferInsert;
 
 export type BioLink = typeof bioLinks.$inferSelect;
 export type NewBioLink = typeof bioLinks.$inferInsert;
+
+// 🔐 End-to-End Encrypted Password Sharing
+export const sharedPasswords = pgTable('shared_passwords', {
+  id: serial('id').primaryKey(),
+  shareId: text('share_id').notNull().unique(), // Public share ID (like short code)
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  
+  // Encrypted data (client-side encrypted, server never sees plaintext)
+  encryptedPassword: text('encrypted_password').notNull(), // Base64 encoded encrypted password
+  encryptedMetadata: text('encrypted_metadata'), // Encrypted JSON: { title, username, notes, etc. }
+  encryptionKeyHash: text('encryption_key_hash'), // Hash of the encryption key (for verification)
+  
+  // Access control
+  accessKey: text('access_key').notNull(), // Hashed access key (password to decrypt)
+  maxAccesses: integer('max_accesses').default(null), // Max number of times password can be accessed
+  currentAccesses: integer('current_accesses').notNull().default(0),
+  
+  // Expiration
+  expiresAt: timestamp('expires_at'),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  lastAccessedAt: timestamp('last_accessed_at'),
+});
+
+// 📁 P2P File Sharing (No server storage - metadata only)
+export const p2pFileShares = pgTable('p2p_file_shares', {
+  id: serial('id').primaryKey(),
+  shareId: text('share_id').notNull().unique(), // Public share ID
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  
+  // File metadata (file never stored on server)
+  fileName: text('file_name').notNull(),
+  fileSize: integer('file_size').notNull(), // Bytes
+  fileType: text('file_type'), // MIME type
+  fileHash: text('file_hash'), // SHA-256 hash for integrity verification
+  
+  // P2P Configuration
+  webrtcOffer: text('webrtc_offer'), // WebRTC offer (temporary, for signaling)
+  webrtcAnswer: text('webrtc_answer'), // WebRTC answer (temporary)
+  signalingToken: text('signaling_token').notNull().unique(), // Token for WebRTC signaling
+  
+  // Access control
+  accessKey: text('access_key'), // Optional password protection
+  maxAccesses: integer('max_accesses').default(null),
+  currentAccesses: integer('current_accesses').notNull().default(0),
+  
+  // Expiration
+  expiresAt: timestamp('expires_at'),
+  
+  // Status
+  isActive: boolean('is_active').notNull().default(true),
+  transferCompleted: boolean('transfer_completed').notNull().default(false),
+  
+  // Metadata
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  lastAccessedAt: timestamp('last_accessed_at'),
+});
 
 // 🔑 Enterprise SSO
 export const ssoDomains = pgTable('sso_domains', {
@@ -365,6 +429,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   teamMemberships: many(teamMembers),
   ssoDomains: many(ssoDomains),
   ssoAdminDomains: many(ssoDomainAdmins),
+  sharedPasswords: many(sharedPasswords),
+  p2pFileShares: many(p2pFileShares),
 }));
 
 export const ssoDomainsRelations = relations(ssoDomains, ({ one, many }) => ({
@@ -535,6 +601,20 @@ export const linkHistoryRelations = relations(linkHistory, ({ one }) => ({
   }),
   user: one(users, {
     fields: [linkHistory.userId],
+    references: [users.id],
+  }),
+}));
+
+export const sharedPasswordsRelations = relations(sharedPasswords, ({ one }) => ({
+  user: one(users, {
+    fields: [sharedPasswords.userId],
+    references: [users.id],
+  }),
+}));
+
+export const p2pFileSharesRelations = relations(p2pFileShares, ({ one }) => ({
+  user: one(users, {
+    fields: [p2pFileShares.userId],
     references: [users.id],
   }),
 }));
