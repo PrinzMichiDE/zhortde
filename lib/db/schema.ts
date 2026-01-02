@@ -10,10 +10,29 @@ export const stats = pgTable('stats', {
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
   email: text('email').notNull().unique(),
-  passwordHash: text('password_hash').notNull(),
+  passwordHash: text('password_hash'), // Optional - can be null if using only Passkeys
   role: text('role').notNull().default('user'), // 'user', 'admin'
   ssoLoginToken: text('sso_login_token'),
   ssoLoginExpiresAt: timestamp('sso_login_expires_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🔐 Passkeys (WebAuthn Credentials)
+export const passkeys = pgTable('passkeys', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  
+  // WebAuthn Credential Data
+  credentialId: text('credential_id').notNull().unique(), // Base64URL encoded credential ID
+  publicKey: text('public_key').notNull(), // Base64URL encoded public key
+  counter: integer('counter').notNull().default(0), // Signature counter for replay protection
+  
+  // Device Information
+  deviceName: text('device_name'), // User-friendly name (e.g., "iPhone 15", "Chrome on Windows")
+  deviceType: text('device_type'), // 'platform' (TouchID/FaceID) or 'cross-platform' (USB key)
+  
+  // Metadata
+  lastUsedAt: timestamp('last_used_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -431,7 +450,18 @@ export const usersRelations = relations(users, ({ many }) => ({
   ssoAdminDomains: many(ssoDomainAdmins),
   sharedPasswords: many(sharedPasswords),
   p2pFileShares: many(p2pFileShares),
+  passkeys: many(passkeys),
 }));
+
+export const passkeysRelations = relations(passkeys, ({ one }) => ({
+  user: one(users, {
+    fields: [passkeys.userId],
+    references: [users.id],
+  }),
+}));
+
+export type Passkey = typeof passkeys.$inferSelect;
+export type NewPasskey = typeof passkeys.$inferInsert;
 
 export const ssoDomainsRelations = relations(ssoDomains, ({ one, many }) => ({
   user: one(users, {

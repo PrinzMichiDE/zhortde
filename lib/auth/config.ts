@@ -18,6 +18,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
         sso_token: { label: 'SSO Token', type: 'text' },
+        passkey_token: { label: 'Passkey Token', type: 'text' },
       },
       async authorize(credentials, req) {
         const clientIp = req?.headers?.['x-forwarded-for'] || 
@@ -76,7 +77,51 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        // 2. Standard Password Login
+        // 2. Passkey Login
+        if (credentials?.passkey_token && credentials?.email) {
+          // Passkey authentication was already verified via API
+          // Just return the user
+          const emailResult = emailSchema.safeParse(credentials.email);
+          if (!emailResult.success) {
+            logSecurityEvent({
+              type: 'auth_failure',
+              ip: clientIp as string,
+              details: { reason: 'invalid_email_format', method: 'passkey' },
+              timestamp: new Date(),
+            });
+            return null;
+          }
+
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, emailResult.data),
+          });
+
+          if (user) {
+            logSecurityEvent({
+              type: 'auth_success',
+              userId: user.id,
+              ip: clientIp as string,
+              details: { method: 'passkey' },
+              timestamp: new Date(),
+            });
+            
+            return {
+              id: user.id.toString(),
+              email: user.email,
+              role: user.role,
+            };
+          }
+
+          logSecurityEvent({
+            type: 'auth_failure',
+            ip: clientIp as string,
+            details: { reason: 'user_not_found', email: emailResult.data, method: 'passkey' },
+            timestamp: new Date(),
+          });
+          return null;
+        }
+
+        // 3. Standard Password Login
         if (!credentials?.email || !credentials?.password) {
           return null;
         }

@@ -18,7 +18,8 @@ import {
   BarChart3,
   Package,
   Menu,
-  X
+  X,
+  Fingerprint
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -39,6 +40,7 @@ export function DashboardSidebar() {
     { name: 'Pastes', href: '/dashboard/pastes', icon: FileText },
     { name: 'Password Sharing', href: '/passwords/create', icon: Lock },
     { name: 'P2P File Sharing', href: '/p2p/create', icon: Share2 },
+    { name: 'Passkeys', href: '/dashboard/passkeys', icon: Fingerprint },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
     { name: 'Bulk Shorten', href: '/dashboard/bulk', icon: Package },
     { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },

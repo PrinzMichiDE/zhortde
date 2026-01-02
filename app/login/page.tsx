@@ -7,8 +7,9 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
+import { ArrowRight, Lock, Mail, Fingerprint } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { PasskeyLogin } from '@/components/passkey-login';
 
 function LoginContent() {
   const router = useRouter();
@@ -17,11 +18,12 @@ function LoginContent() {
   const t = useTranslations('auth');
   const tc = useTranslations('common');
 
-  const [step, setStep] = useState<'email' | 'password'>('email');
+  const [step, setStep] = useState<'email' | 'password' | 'passkey'>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(paramError ? t('authFailed') : '');
+  const [hasPasskeys, setHasPasskeys] = useState(false);
 
   const checkEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,7 +50,24 @@ function LoginContent() {
         return;
       }
 
-      // Not SSO -> Show Password
+      // Check if user has Passkeys
+      try {
+        const passkeyCheck = await fetch('/api/passkeys/authenticate/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        
+        if (passkeyCheck.ok) {
+          setHasPasskeys(true);
+          setStep('passkey');
+          return;
+        }
+      } catch (err) {
+        // No passkeys, continue to password
+      }
+
+      // Not SSO and no Passkeys -> Show Password
       setStep('password');
     } catch (err) {
       console.error(err);
@@ -122,6 +141,66 @@ function LoginContent() {
                 {t('continue')} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
+          ) : step === 'passkey' ? (
+            <div className="space-y-6">
+              <div className="mb-4 flex items-center justify-between text-sm">
+                <span className="font-medium">{email}</span>
+                <button 
+                  type="button" 
+                  onClick={() => { setStep('email'); setError(''); }}
+                  className="text-indigo-600 hover:text-indigo-500"
+                >
+                  {t('change')}
+                </button>
+              </div>
+
+              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                <div className="flex items-center gap-3 mb-3">
+                  <Fingerprint className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">
+                    Sign in with Passkey
+                  </h3>
+                </div>
+                <p className="text-sm text-indigo-800 dark:text-indigo-400 mb-4">
+                  Use your device's biometric authentication or security key to sign in securely.
+                </p>
+                <PasskeyLogin
+                  email={email}
+                  onSuccess={() => {
+                    router.push('/dashboard');
+                    router.refresh();
+                  }}
+                  onError={(err) => setError(err)}
+                />
+              </div>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                    or
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => setStep('password')}
+                variant="outline"
+                fullWidth
+              >
+                <Lock className="w-4 h-4 mr-2" />
+                Sign in with Password
+              </Button>
+
+              {error && (
+                <Alert variant="error" icon="⚠️">
+                  {error}
+                </Alert>
+              )}
+            </div>
           ) : (
             <form onSubmit={handlePasswordLogin} className="space-y-6">
                <div className="mb-4 flex items-center justify-between text-sm">

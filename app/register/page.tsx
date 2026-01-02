@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { useTranslations } from 'next-intl';
+import { PasskeyRegister } from '@/components/passkey-register';
+import { Fingerprint } from 'lucide-react';
 
 // Password strength requirements
 const PASSWORD_REQUIREMENTS = [
@@ -32,6 +34,8 @@ export default function RegisterPage() {
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [showPasswordStrength, setShowPasswordStrength] = useState(false);
   const [honeypot, setHoneypot] = useState(''); // Anti-bot honeypot field
+  const [showPasskeyOption, setShowPasskeyOption] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
 
   // Calculate password strength in real-time
   const passwordStrength = useMemo(() => {
@@ -106,8 +110,10 @@ export default function RegisterPage() {
           password,
           redirect: false,
         });
-        router.push('/dashboard');
-        router.refresh();
+        setRegistrationSuccess(true);
+        // Don't redirect immediately - show Passkey option
+        // router.push('/dashboard');
+        // router.refresh();
       }
     } catch (err) {
       setError(tc('error'));
@@ -248,6 +254,73 @@ export default function RegisterPage() {
               {loading ? t('registering') : t('register')}
             </Button>
           </form>
+
+          {registrationSuccess && (
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                    Optional
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                <div className="flex items-center gap-3 mb-3">
+                  <Fingerprint className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">
+                    Add a Passkey (Optional)
+                  </h3>
+                </div>
+                <p className="text-sm text-indigo-800 dark:text-indigo-400 mb-4">
+                  Create a Passkey to sign in without a password using your device's biometric authentication.
+                </p>
+                <PasskeyRegister
+                  onSuccess={() => {
+                    router.push('/dashboard');
+                    router.refresh();
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {!registrationSuccess && (
+            <div className="mt-6">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                    or
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => setShowPasskeyOption(true)}
+                variant="outline"
+                fullWidth
+                className="mt-6"
+              >
+                <Fingerprint className="w-4 h-4 mr-2" />
+                Register with Passkey Only
+              </Button>
+            </div>
+          )}
+
+          {showPasskeyOption && !registrationSuccess && (
+            <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+              <p className="text-sm text-indigo-800 dark:text-indigo-400 mb-4">
+                Note: To register with Passkey only, you need to create an account first with email and password, then add a Passkey.
+              </p>
+            </div>
+          )}
 
           <div className="mt-8 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
