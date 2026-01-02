@@ -5,20 +5,22 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const cardVariants = cva(
-  'rounded-xl border bg-card text-card-foreground shadow',
+  'rounded-xl border bg-card text-card-foreground transition-all duration-300',
   {
     variants: {
       variant: {
-        default: 'shadow-sm',
-        elevated: 'shadow-md',
-        outlined: 'bg-transparent border-2',
-        glass: 'glass-effect border-none shadow-lg',
+        default: 'shadow-md border-gray-200 dark:border-gray-800 hover:shadow-lg',
+        elevated: 'shadow-lg border-gray-200 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1',
+        outlined: 'bg-transparent border-2 border-gray-300 dark:border-gray-700',
+        glass: 'glass-effect border-none shadow-xl backdrop-blur-xl',
+        gradient: 'bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/50 dark:to-purple-950/50 border-indigo-200 dark:border-indigo-800 shadow-lg',
       },
       padding: {
         none: 'p-0',
         sm: 'p-4',
         md: 'p-6',
         lg: 'p-8',
+        xl: 'p-10',
       },
     },
     defaultVariants: {
@@ -65,7 +67,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, HTMLAttributes<HTMLHeadi
     return (
       <h3
         ref={ref}
-        className={cn('font-semibold leading-none tracking-tight', className)}
+        className={cn('text-xl font-bold leading-tight tracking-tight text-gray-900 dark:text-gray-100', className)}
         {...props}
       />
     );
@@ -79,7 +81,7 @@ export const CardDescription = forwardRef<HTMLParagraphElement, HTMLAttributes<H
     return (
       <p
         ref={ref}
-        className={cn('text-sm text-muted-foreground', className)}
+        className={cn('text-sm text-gray-600 dark:text-gray-400 leading-relaxed', className)}
         {...props}
       />
     );

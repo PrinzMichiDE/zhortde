@@ -25,16 +25,19 @@ export function Header() {
   ].filter(item => item.show);
 
   return (
-    <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
+    <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b-2 border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label={t('mainNav')}>
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-4 md:space-x-8">
             <Link 
               href="/" 
-              className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent hover:scale-105 transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+              className="flex items-center gap-2 text-2xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent hover:scale-105 transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-lg px-2"
               aria-label="Zhort"
             >
-              Zhort
+              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-white font-bold text-lg">Z</span>
+              </div>
+              <span>Zhort</span>
             </Link>
             
             {/* Desktop Navigation */}
@@ -43,9 +46,10 @@ export function Header() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative group focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                 >
                   {item.name}
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                 </Link>
               ))}
               <div className="ml-2 pl-2 border-l border-border flex items-center gap-1">
