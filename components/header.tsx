@@ -17,6 +17,8 @@ export function Header() {
   const navigation = [
     { name: t('home'), href: '/', show: true },
     { name: t('paste'), href: '/paste/create', show: true },
+    { name: 'Password Share', href: '/passwords/create', show: !!session },
+    { name: 'P2P Files', href: '/p2p/create', show: !!session },
     { name: t('bio'), href: '/dashboard/bio', show: !!session },
     { name: t('api'), href: '/api', show: true },
     { name: t('dashboard'), href: '/dashboard', show: !!session },
@@ -102,7 +104,7 @@ export function Header() {
                       {session.user.email}
                     </span>
                   </MenuButton>
-                  <MenuItems className="absolute right-0 mt-2 w-48 origin-top-right rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-border overflow-hidden">
+                  <MenuItems className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-border overflow-hidden">
                     <div className="py-1">
                       <MenuItem>
                         <Link
@@ -112,6 +114,24 @@ export function Header() {
                           📊 {t('dashboard')}
                         </Link>
                       </MenuItem>
+                      <div className="border-t border-border my-1" />
+                      <MenuItem>
+                        <Link
+                          href="/passwords/create"
+                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground transition-colors"
+                        >
+                          🔐 Password Sharing
+                        </Link>
+                      </MenuItem>
+                      <MenuItem>
+                        <Link
+                          href="/p2p/create"
+                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground transition-colors"
+                        >
+                          🌐 P2P File Sharing
+                        </Link>
+                      </MenuItem>
+                      <div className="border-t border-border my-1" />
                       <MenuItem>
                         <button
                           onClick={() => signOut()}

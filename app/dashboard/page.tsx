@@ -33,6 +33,8 @@ export default async function DashboardPage() {
 
   const features = [
     { name: t('bulkShorten'), href: '/dashboard/bulk', icon: '📦', description: t('bulkDescription'), color: 'from-blue-500 to-cyan-500' },
+    { name: 'Password Sharing', href: '/passwords/create', icon: '🔐', description: 'End-to-end encrypted password sharing', color: 'from-green-500 to-emerald-500' },
+    { name: 'P2P File Sharing', href: '/p2p/create', icon: '🌐', description: 'Peer-to-peer file transfer without server storage', color: 'from-purple-500 to-pink-500' },
     { name: t('apiKeys'), href: '/dashboard/api-keys', icon: '🔑', description: t('apiKeysDescription'), color: 'from-amber-500 to-orange-500' },
     { name: t('webhooks'), href: '/dashboard/webhooks', icon: '🔔', description: t('webhooksDescription'), color: 'from-pink-500 to-rose-500' },
     { name: t('teams'), href: '/dashboard/teams', icon: '👥', description: t('teamsDescription'), color: 'from-purple-500 to-indigo-500' },
@@ -40,8 +42,8 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-950 transition-colors duration-300">
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 transition-colors duration-300">
+      <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-12 animate-fade-in">
           <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
             {t('title')}
@@ -54,7 +56,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Feature Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-12 animate-slide-up">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-12 animate-slide-up">
           {features.map((feature, idx) => (
             <Link 
               key={feature.name} 
