@@ -98,13 +98,15 @@ export default async function Home() {
           </div>
 
           {/* Link Form */}
-          <div className="max-w-3xl mx-auto mb-12">
+          <div className="max-w-3xl mx-auto mb-16">
             <LinkForm />
           </div>
 
-          {/* Support Banner */}
-          <div className="max-w-5xl mx-auto mb-20">
-            <KofiSupport variant="banner" showMonthly={true} />
+          {/* Support Banner - Prominent */}
+          <div className="max-w-6xl mx-auto mb-24 px-4">
+            <div className="animate-fade-in">
+              <KofiSupport variant="banner" showMonthly={true} />
+            </div>
           </div>
         </div>
 
@@ -251,9 +253,11 @@ export default async function Home() {
             </div>
           </div>
 
-          {/* Support Section */}
-          <div className="max-w-4xl mx-auto mt-20 mb-12">
-            <KofiSupport variant="full" showMonthly={true} />
+          {/* Support Section - Full Card */}
+          <div className="max-w-5xl mx-auto mt-24 mb-16 px-4">
+            <div className="animate-fade-in">
+              <KofiSupport variant="full" showMonthly={true} />
+            </div>
           </div>
         </div>
       </div>
