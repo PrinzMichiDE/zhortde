@@ -19,7 +19,8 @@ import {
   Package,
   Menu,
   X,
-  Fingerprint
+  Fingerprint,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +47,7 @@ export function DashboardSidebar() {
     { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
     { name: 'Webhooks', href: '/dashboard/webhooks', icon: Webhook },
     { name: 'Teams', href: '/dashboard/teams', icon: Users },
+    { name: 'Enterprise', href: '/dashboard/enterprise', icon: Building2 },
     { name: 'Integrations', href: '/dashboard/integrations', icon: Zap },
     { name: 'Bio Pages', href: '/dashboard/bio', icon: CloudUpload },
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },

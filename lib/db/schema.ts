@@ -41,6 +41,7 @@ export const links = pgTable('links', {
   shortCode: text('short_code').notNull().unique(),
   longUrl: text('long_url').notNull(),
   userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }), // Enterprise: Team-owned links
   isPublic: boolean('is_public').notNull().default(true),
   hits: integer('hits').notNull().default(0),
   passwordHash: text('password_hash'), // Optional password protection
@@ -52,6 +53,11 @@ export const links = pgTable('links', {
   utmCampaign: text('utm_campaign'),
   utmTerm: text('utm_term'),
   utmContent: text('utm_content'),
+  
+  // 🏢 Enterprise Features
+  customRedirectPage: text('custom_redirect_page'), // Custom branded redirect page HTML
+  isReservedCode: boolean('is_reserved_code').notNull().default(false), // Reserved short code for enterprise
+  priority: integer('priority').default(0), // Higher priority for enterprise links
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -235,15 +241,27 @@ export const teams = pgTable('teams', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
   ownerId: integer('owner_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  // Enterprise Features
+  isEnterprise: boolean('is_enterprise').notNull().default(false),
+  customDomain: text('custom_domain'), // White-label domain
+  customLogo: text('custom_logo'), // URL to custom logo
+  customBranding: text('custom_branding'), // JSON: { primaryColor, secondaryColor, etc. }
+  usageQuota: integer('usage_quota'), // Max links/clicks per month (null = unlimited)
+  currentUsage: integer('current_usage').notNull().default(0), // Current month usage
+  usageResetDate: timestamp('usage_reset_date'), // When to reset usage counter
+  ipWhitelist: text('ip_whitelist'), // JSON array of allowed IPs/CIDR blocks
+  reservedShortCodes: text('reserved_short_codes'), // JSON array of reserved codes
+  slaLevel: text('sla_level').default('standard'), // 'standard', 'premium', 'enterprise'
   createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const teamMembers = pgTable('team_members', {
   id: serial('id').primaryKey(),
   teamId: integer('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
   userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  role: text('role').notNull().default('member'), // 'owner', 'admin', 'member'
-  permissions: text('permissions'), // JSON object with permissions
+  role: text('role').notNull().default('member'), // 'owner', 'admin', 'member', 'viewer'
+  permissions: text('permissions'), // JSON object with granular permissions: { canCreateLinks, canEditLinks, canDeleteLinks, canViewAnalytics, canManageTeam, canExportData }
   joinedAt: timestamp('joined_at').notNull().defaultNow(),
 });
 
@@ -291,6 +309,50 @@ export const bioProfiles = pgTable('bio_profiles', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
+// 🏢 Enterprise: Custom Redirect Pages
+export const customRedirectPages = pgTable('custom_redirect_pages', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(), // Template name
+  htmlContent: text('html_content').notNull(), // Custom HTML for redirect page
+  cssContent: text('css_content'), // Custom CSS
+  logoUrl: text('logo_url'),
+  backgroundColor: text('background_color'),
+  textColor: text('text_color'),
+  buttonColor: text('button_color'),
+  buttonTextColor: text('button_text_color'),
+  isDefault: boolean('is_default').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+// 🏢 Enterprise: Usage Tracking
+export const usageTracking = pgTable('usage_tracking', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  resourceType: text('resource_type').notNull(), // 'link', 'click', 'api_call', 'export'
+  resourceId: integer('resource_id'), // ID of the resource (link, etc.)
+  count: integer('count').notNull().default(1),
+  period: text('period').notNull(), // 'daily', 'monthly', 'yearly'
+  periodStart: timestamp('period_start').notNull(),
+  periodEnd: timestamp('period_end').notNull(),
+  metadata: text('metadata'), // JSON with additional info
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+// 🏢 Enterprise: IP Whitelist
+export const ipWhitelist = pgTable('ip_whitelist', {
+  id: serial('id').primaryKey(),
+  teamId: integer('team_id').references(() => teams.id, { onDelete: 'cascade' }),
+  userId: integer('user_id').references(() => users.id, { onDelete: 'cascade' }),
+  ipAddress: text('ip_address').notNull(), // IP or CIDR block (e.g., "192.168.1.1" or "192.168.1.0/24")
+  description: text('description'),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
 export const bioLinks = pgTable('bio_links', {
   id: serial('id').primaryKey(),
   profileId: integer('profile_id').notNull().references(() => bioProfiles.id, { onDelete: 'cascade' }),
@@ -329,6 +391,15 @@ export type NewTeamMember = typeof teamMembers.$inferInsert;
 
 export type TeamLink = typeof teamLinks.$inferSelect;
 export type NewTeamLink = typeof teamLinks.$inferInsert;
+
+export type CustomRedirectPage = typeof customRedirectPages.$inferSelect;
+export type NewCustomRedirectPage = typeof customRedirectPages.$inferInsert;
+
+export type UsageTracking = typeof usageTracking.$inferSelect;
+export type NewUsageTracking = typeof usageTracking.$inferInsert;
+
+export type IpWhitelist = typeof ipWhitelist.$inferSelect;
+export type NewIpWhitelist = typeof ipWhitelist.$inferInsert;
 
 export type LinkComment = typeof linkComments.$inferSelect;
 export type NewLinkComment = typeof linkComments.$inferInsert;
