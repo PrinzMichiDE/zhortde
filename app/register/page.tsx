@@ -278,14 +278,14 @@ export default function RegisterPage() {
                 </div>
               </div>
 
-              <div className="mt-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+              <div className="mt-6 p-4 rounded-lg border border-border bg-muted/50">
                 <div className="flex items-center gap-3 mb-3">
-                  <Fingerprint className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">
+                  <Fingerprint className="w-6 h-6 text-primary" />
+                  <h3 className="font-semibold text-foreground">
                     Add a Passkey (Optional)
                   </h3>
                 </div>
-                <p className="text-sm text-indigo-800 dark:text-indigo-400 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Create a Passkey to sign in without a password using your device's biometric authentication.
                 </p>
                 <PasskeyRegister

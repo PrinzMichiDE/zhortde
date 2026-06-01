@@ -119,11 +119,8 @@ export function LinkForm() {
   };
 
   return (
-    <div className="bg-white/95 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 backdrop-blur-xl border-2 border-gray-200 dark:border-gray-800 hover:shadow-2xl hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 transition-all duration-300 relative overflow-hidden">
-      {/* Decorative gradient overlay */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl -z-10 animate-blob"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-pink-500/10 to-purple-500/10 rounded-full blur-3xl -z-10 animate-blob animation-delay-2000"></div>
-      <div className="relative">
+    <div className="rounded-xl border border-border bg-card shadow-md p-6 sm:p-8 lg:p-10">
+      <div>
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Honeypot Field - Hidden from real users */}
         <div className="opacity-0 absolute top-0 left-0 h-0 w-0 overflow-hidden" aria-hidden="true">
@@ -174,7 +171,7 @@ export function LinkForm() {
             {t('customCode')}
           </label>
           <div className="flex items-center space-x-2">
-            <span className="text-gray-600 dark:text-gray-400 text-sm font-semibold bg-gray-100 dark:bg-gray-700 px-3 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 min-h-[44px] flex items-center">/s/</span>
+            <span className="text-muted-foreground text-sm font-medium bg-muted px-3 py-3 rounded-lg border border-border min-h-[44px] flex items-center">/s/</span>
             <Input
               id="customCode"
               type="text"
@@ -218,7 +215,7 @@ export function LinkForm() {
         </button>
 
         {showAdvanced && (
-          <div id="advanced-options" className="space-y-4 p-5 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl border-2 border-gray-200 dark:border-gray-600 shadow-inner">
+          <div id="advanced-options" className="space-y-4 p-5 bg-muted/40 rounded-lg border border-border">
             {/* Password Protection */}
             <Input
               id="password"
@@ -245,7 +242,7 @@ export function LinkForm() {
                 id="expiresIn"
                 value={expiresIn}
                 onChange={(e) => setExpiresIn(e.target.value)}
-                className="w-full px-4 py-2.5 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 hover:border-indigo-400 dark:hover:border-indigo-500 font-medium cursor-pointer min-h-[44px]"
+                className="w-full px-4 py-2.5 border border-input rounded-lg focus:ring-2 focus:ring-ring bg-background text-foreground font-medium cursor-pointer min-h-[44px]"
               >
                 <option value="never">{te('never')}</option>
                 <option value="1h">{te('1hour')}</option>
@@ -259,7 +256,7 @@ export function LinkForm() {
 
             {/* Public/Private Toggle (nur für eingeloggte User) */}
             {session && (
-              <div className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border-2 border-gray-200 dark:border-gray-600">
+              <div className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {t('publicVisible')}
                 </span>
@@ -267,7 +264,7 @@ export function LinkForm() {
                   checked={isPublic}
                   onChange={setIsPublic}
                   className={`${
-                    isPublic ? 'bg-gradient-to-r from-indigo-600 to-purple-600' : 'bg-gray-400 dark:bg-gray-600'
+                    isPublic ? 'bg-primary' : 'bg-muted-foreground/50'
                   } relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
                   aria-label={isPublic ? 'Öffentlich' : 'Privat'}
                 >
