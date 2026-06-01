@@ -125,23 +125,23 @@ export default function LinkSchedulePage() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-full bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="min-h-full bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Button variant="ghost" onClick={() => router.push('/dashboard')} className="mb-4">
             ← Zurück zum Dashboard
           </Button>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
             Link Scheduling
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Planen Sie die Aktivierung und Deaktivierung Ihrer Links
           </p>
         </div>
@@ -192,7 +192,7 @@ export default function LinkSchedulePage() {
                     <select
                       value={formData.timezone}
                       onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[44px]"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-card text-foreground min-h-[44px]"
                     >
                       <option value="UTC">UTC</option>
                       <option value="Europe/Berlin">Europe/Berlin (CET)</option>
@@ -238,7 +238,7 @@ export default function LinkSchedulePage() {
                       className={`p-4 rounded-lg border-2 ${
                         isActive
                           ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700'
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                          : 'bg-card border-border'
                       }`}
                     >
                       <div className="flex items-start justify-between">
@@ -277,7 +277,7 @@ export default function LinkSchedulePage() {
                               </p>
                             )}
                             {schedule.fallbackUrl && (
-                              <p className="text-gray-600 dark:text-gray-400">
+                              <p className="text-muted-foreground">
                                 <span className="font-semibold">Fallback:</span> {schedule.fallbackUrl}
                               </p>
                             )}

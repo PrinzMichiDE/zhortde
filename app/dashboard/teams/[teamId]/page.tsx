@@ -102,7 +102,7 @@ export default function TeamDetailsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -123,16 +123,16 @@ export default function TeamDetailsPage() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-12">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="bg-card border-b border-border shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
-                 <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Team</span>
+                 <span className="text-sm font-medium text-primary uppercase tracking-wider">Team</span>
                  <span className="text-gray-300 dark:text-gray-600">|</span>
                  <span className="text-sm text-gray-500 dark:text-gray-400">Gegründet {new Date(team.createdAt).toLocaleDateString()}</span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+              <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                 {team.name}
                 <span className={`text-sm font-normal px-3 py-1 rounded-full border ${
                    team.currentUserRole === 'owner' 
@@ -156,7 +156,7 @@ export default function TeamDetailsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700 mb-8">
+        <div className="flex border-b border-border mb-8">
           <button
             onClick={() => setActiveTab('members')}
             className={`pb-4 px-4 text-sm font-medium transition-colors border-b-2 ${
@@ -190,10 +190,10 @@ export default function TeamDetailsPage() {
             
             {/* Invite Box */}
             {canManageTeam && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
+              <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">Neues Mitglied einladen</h3>
+                    <h3 className="text-lg font-bold text-foreground">Neues Mitglied einladen</h3>
                     <p className="text-sm text-gray-500 dark:text-gray-400">Fügen Sie Kollegen zu Ihrem Team hinzu.</p>
                   </div>
                   {!isInviting && (
@@ -205,7 +205,7 @@ export default function TeamDetailsPage() {
                 </div>
 
                 {isInviting && (
-                  <form onSubmit={handleInvite} className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg animate-fade-in border border-gray-200 dark:border-gray-700">
+                  <form onSubmit={handleInvite} className="bg-gray-50 dark:bg-gray-700/30 p-4 rounded-lg border border-border">
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                       <div className="flex-1 w-full">
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-Mail Adresse</label>
@@ -245,7 +245,7 @@ export default function TeamDetailsPage() {
             )}
 
             {/* Members List */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
+            <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                  <thead className="bg-gray-50 dark:bg-gray-700/50">
                    <tr>
@@ -255,7 +255,7 @@ export default function TeamDetailsPage() {
                      {canManageTeam && <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Aktionen</th>}
                    </tr>
                  </thead>
-                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                 <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
                    {members.map((member) => (
                      <tr key={member.userId}>
                        <td className="px-6 py-4 whitespace-nowrap">
@@ -264,7 +264,7 @@ export default function TeamDetailsPage() {
                              {member.email.charAt(0).toUpperCase()}
                            </div>
                            <div className="ml-4">
-                             <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{member.email}</div>
+                             <div className="text-sm font-medium text-foreground">{member.email}</div>
                            </div>
                          </div>
                        </td>
@@ -296,8 +296,8 @@ export default function TeamDetailsPage() {
         )}
 
         {activeTab === 'settings' && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Team Einstellungen</h3>
+          <div className="bg-card rounded-xl p-6 shadow-sm border border-border">
+            <h3 className="text-lg font-bold text-foreground mb-4">Team Einstellungen</h3>
             <p className="text-gray-500 dark:text-gray-400">Einstellungen für den Team-Namen und Löschung kommen bald.</p>
           </div>
         )}

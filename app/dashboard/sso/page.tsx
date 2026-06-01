@@ -300,7 +300,7 @@ export default function SSOPage() {
               
               {/* Settings Panel */}
               {expandedDomain === d.id && (
-                  <div className="mt-6 pt-6 border-t space-y-6 animate-fade-in">
+                  <div className="mt-6 pt-6 border-t space-y-6">
                       {/* Configuration Form */}
                       <div>
                           <h4 className="font-semibold mb-4">Identity Provider Configuration</h4>

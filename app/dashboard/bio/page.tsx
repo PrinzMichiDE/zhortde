@@ -135,7 +135,7 @@ export default function BioDashboardPage() {
   if (fetching) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -146,14 +146,14 @@ export default function BioDashboardPage() {
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Link-in-Bio Editor</h1>
-            <p className="text-gray-600 dark:text-gray-400">Gestalten Sie Ihre persönliche Landingpage für Social Media.</p>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Link-in-Bio Editor</h1>
+            <p className="text-muted-foreground">Gestalten Sie Ihre persönliche Landingpage für Social Media.</p>
           </div>
           {username && (
              <a 
                href={`/bio/${username}`} 
                target="_blank"
-               className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700"
+               className="inline-flex items-center px-4 py-2 border border-gray-300 dark:border-gray-600 shadow-sm text-sm font-medium rounded-md text-gray-700 dark:text-gray-200 bg-card hover:bg-gray-50 dark:hover:bg-gray-700"
              >
                Profil ansehen <ExternalLink className="ml-2 h-4 w-4" />
              </a>
@@ -166,7 +166,7 @@ export default function BioDashboardPage() {
             <form onSubmit={handleSave} className="space-y-6">
               
               {/* Profile Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+              <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
                 <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-gray-200 flex items-center gap-2">
                   👤 Profil Details
                 </h2>
@@ -183,7 +183,7 @@ export default function BioDashboardPage() {
                         type="text"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        className="flex-1 block w-full rounded-none rounded-r-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-indigo-500 focus:border-indigo-500 min-h-[42px] px-3 sm:text-sm"
+                        className="flex-1 block w-full rounded-none rounded-r-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-foreground focus:ring-indigo-500 focus:border-indigo-500 min-h-[42px] px-3 sm:text-sm"
                         placeholder="ihr-name"
                       />
                     </div>
@@ -202,7 +202,7 @@ export default function BioDashboardPage() {
                     <textarea
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
-                      className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[100px] p-3 text-gray-900 dark:text-gray-100 text-sm shadow-sm"
+                      className="w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[100px] p-3 text-foreground text-sm shadow-sm"
                       placeholder="Erzählen Sie Ihren Besuchern kurz, wer Sie sind..."
                     />
                   </div>
@@ -210,7 +210,7 @@ export default function BioDashboardPage() {
               </div>
 
               {/* Links Card */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 border border-gray-200 dark:border-gray-700">
+              <div className="bg-card rounded-xl shadow-sm p-6 border border-border">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
                     🔗 Links
@@ -222,7 +222,7 @@ export default function BioDashboardPage() {
                 
                 <div className="space-y-4">
                   {links.map((link, idx) => (
-                    <div key={idx} className="group flex gap-3 items-start bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-gray-200 dark:border-gray-700 transition-all hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-sm">
+                    <div key={idx} className="group flex gap-3 items-start bg-gray-50 dark:bg-gray-700/30 p-4 rounded-xl border border-border transition-all hover:border-indigo-300 dark:hover:border-indigo-500/50 hover:shadow-sm">
                       
                       {/* Drag Handle & Sort Buttons */}
                       <div className="flex flex-col gap-1 pt-2">
@@ -247,7 +247,7 @@ export default function BioDashboardPage() {
                       <div className="flex-1 space-y-3">
                         <input 
                           type="text"
-                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 font-medium"
+                          className="block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-foreground shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 font-medium"
                           placeholder="Link Titel (z.B. Meine Website)" 
                           value={link.title}
                           onChange={(e) => updateLink(idx, 'title', e.target.value)}
@@ -288,7 +288,7 @@ export default function BioDashboardPage() {
               {success && <Alert variant="success">Profil erfolgreich gespeichert!</Alert>}
 
               {/* Action Bar */}
-              <div className="sticky bottom-4 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 flex justify-between items-center gap-4">
+              <div className="sticky bottom-4 bg-card p-4 rounded-xl shadow-lg border border-border flex justify-between items-center gap-4">
                  <span className="text-sm text-gray-500 hidden sm:inline">
                    Vergessen Sie nicht zu speichern!
                  </span>
