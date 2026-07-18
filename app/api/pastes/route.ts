@@ -15,6 +15,7 @@ import {
   handleApiError,
 } from '@/lib/api-security';
 import { logSecurityEvent, isSecureInput } from '@/lib/security';
+import { getDatabaseErrorMessage, isDatabaseUnavailable } from '@/lib/db/errors';
 
 // Maximum paste size: 500KB
 const MAX_PASTE_SIZE = 512000;
@@ -100,6 +101,11 @@ export async function POST(request: NextRequest) {
       getRateLimitHeaders(rateLimitResult)
     );
   } catch (error) {
+    if (isDatabaseUnavailable(error)) {
+      return secureErrorResponse(
+        { error: getDatabaseErrorMessage(error), status: 503 },
+      );
+    }
     return handleApiError(error, 'pastes/POST');
   }
 }
