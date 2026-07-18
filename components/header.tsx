@@ -22,48 +22,42 @@ export function Header() {
     { name: t('bio'), href: '/dashboard/bio', show: !!session },
     { name: t('api'), href: '/api', show: true },
     { name: t('dashboard'), href: '/dashboard', show: !!session },
-  ].filter(item => item.show);
+  ].filter((item) => item.show);
+
+  const navLinkClass =
+    'text-sm font-medium text-muted-foreground hover:text-foreground px-3 py-2 rounded-md hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
   return (
-    <header className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-b-2 border-gray-200 dark:border-gray-800 sticky top-0 z-50 shadow-sm">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label={t('mainNav')}>
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-4 md:space-x-8">
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 text-2xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent hover:scale-105 transform transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-lg px-2"
+          <div className="flex items-center gap-6 md:gap-8">
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 text-lg font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
               aria-label="Zhort"
             >
-              <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-lg">Z</span>
-              </div>
+              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm font-bold">
+                Z
+              </span>
               <span>Zhort</span>
             </Link>
-            
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex space-x-1">
+
+            <div className="hidden md:flex items-center gap-0.5">
               {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 relative group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
+                <Link key={item.name} href={item.href} className={navLinkClass}>
                   {item.name}
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-indigo-600 to-purple-600 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left rounded-full" />
                 </Link>
               ))}
-              <div className="ml-2 pl-2 border-l border-border flex items-center gap-1">
-                <Link
-                  href="/datenschutz"
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                >
+              <div className="ml-2 pl-2 border-l border-border flex items-center gap-0.5">
+                <Link href="/datenschutz" className={`${navLinkClass} text-xs`}>
                   {t('privacy')}
                 </Link>
                 <Link
                   href="https://www.michelfritzsch.de/impressum"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-foreground hover:bg-accent px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  className={`${navLinkClass} text-xs`}
                 >
                   {t('imprint')}
                 </Link>
@@ -71,17 +65,13 @@ export function Header() {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 md:space-x-4">
-            {/* Language Selector */}
+          <div className="flex items-center gap-2">
             <LanguageSelector />
-            
-            {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Mobile Menu Button */}
             <button
               type="button"
-              className="md:hidden flex items-center justify-center w-11 h-11 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="md:hidden flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               aria-label={t('openMenu')}
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -93,98 +83,91 @@ export function Header() {
               )}
             </button>
 
-            {/* Desktop User Menu / Auth */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center gap-3">
               {status === 'loading' ? (
                 <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
               ) : session ? (
                 <Menu as="div" className="relative">
-                  <MenuButton 
-                    className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors duration-200 group focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-lg p-1"
+                  <MenuButton
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground rounded-md p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     aria-label={t('userMenu')}
                   >
-                    <UserCircleIcon className="h-8 w-8 group-hover:scale-110 transition-transform duration-200" aria-hidden="true" />
-                    <span className="text-sm font-medium">
-                      {session.user.email}
-                    </span>
+                    <UserCircleIcon className="h-8 w-8" aria-hidden="true" />
+                    <span className="max-w-[180px] truncate font-medium">{session.user.email}</span>
                   </MenuButton>
-                  <MenuItems className="absolute right-0 mt-2 w-56 origin-top-right rounded-xl bg-popover text-popover-foreground shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none border border-border overflow-hidden">
+                  <MenuItems className="absolute right-0 mt-2 w-56 origin-top-right rounded-lg bg-popover text-popover-foreground shadow-lg border border-border focus:outline-none overflow-hidden">
                     <div className="py-1">
                       <MenuItem>
                         <Link
                           href="/dashboard"
-                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground transition-colors"
+                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent"
                         >
-                          📊 {t('dashboard')}
+                          {t('dashboard')}
                         </Link>
                       </MenuItem>
                       <div className="border-t border-border my-1" />
                       <MenuItem>
                         <Link
                           href="/passwords/create"
-                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground transition-colors"
+                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent"
                         >
-                          🔐 Password Sharing
+                          Password Sharing
                         </Link>
                       </MenuItem>
                       <MenuItem>
                         <Link
                           href="/p2p/create"
-                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent data-[focus]:text-accent-foreground transition-colors"
+                          className="block px-4 py-2.5 text-sm data-[focus]:bg-accent"
                         >
-                          🌐 P2P File Sharing
+                          P2P File Sharing
                         </Link>
                       </MenuItem>
                       <div className="border-t border-border my-1" />
                       <MenuItem>
                         <button
                           onClick={() => signOut()}
-                          className="block w-full text-left px-4 py-2.5 text-sm text-destructive data-[focus]:bg-destructive/10 transition-colors"
+                          className="block w-full text-left px-4 py-2.5 text-sm text-destructive data-[focus]:bg-destructive/10"
                         >
-                          🚪 {t('logout')}
+                          {t('logout')}
                         </button>
                       </MenuItem>
                     </div>
                   </MenuItems>
                 </Menu>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <Link
-                    href="/login"
-                    className="text-muted-foreground hover:text-foreground px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                  >
+                <>
+                  <Link href="/login" className={navLinkClass}>
                     {t('login')}
                   </Link>
                   <Link
                     href="/register"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-lg text-sm font-semibold shadow hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                    className="inline-flex items-center justify-center rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-semibold shadow-sm hover:bg-primary/90 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[44px]"
                   >
                     {t('register')}
                   </Link>
-                </div>
+                </>
               )}
             </div>
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border py-4 animate-slide-up bg-background">
-            <div className="space-y-1">
+          <div className="md:hidden border-t border-border py-4">
+            <div className="space-y-0.5">
               {navigation.map((item) => (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+                  className="block px-3 py-2.5 rounded-md text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {item.name}
                 </Link>
               ))}
-              <div className="border-t border-border my-2 pt-2 space-y-1">
+              <div className="border-t border-border my-2 pt-2 space-y-0.5">
                 <Link
                   href="/datenschutz"
-                  className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+                  className="block px-3 py-2.5 rounded-md text-base font-medium text-muted-foreground hover:bg-accent"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t('privacy')}
@@ -193,48 +176,44 @@ export function Header() {
                   href="https://www.michelfritzsch.de/impressum"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+                  className="block px-3 py-2.5 rounded-md text-base font-medium text-muted-foreground hover:bg-accent"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t('imprint')}
                 </Link>
               </div>
               {session ? (
-                <>
-                  <div className="border-t border-border my-2 pt-2">
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      {session.user.email}
-                    </div>
-                    <Link
-                      href="/dashboard"
-                      className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      📊 {t('dashboard')}
-                    </Link>
-                    <button
-                      onClick={() => {
-                        signOut();
-                        setMobileMenuOpen(false);
-                      }}
-                      className="block w-full text-left px-3 py-2 rounded-lg text-base font-medium text-destructive hover:bg-destructive/10 transition-all duration-200"
-                    >
-                      🚪 {t('logout')}
-                    </button>
-                  </div>
-                </>
+                <div className="border-t border-border mt-2 pt-2">
+                  <p className="px-3 py-2 text-sm text-muted-foreground truncate">{session.user.email}</p>
+                  <Link
+                    href="/dashboard"
+                    className="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-accent"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {t('dashboard')}
+                  </Link>
+                  <button
+                    onClick={() => {
+                      signOut();
+                      setMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2.5 rounded-md text-base font-medium text-destructive hover:bg-destructive/10"
+                  >
+                    {t('logout')}
+                  </button>
+                </div>
               ) : (
-                <div className="border-t border-border my-2 pt-2 space-y-1">
+                <div className="border-t border-border mt-2 pt-2 space-y-1">
                   <Link
                     href="/login"
-                    className="block px-3 py-2 rounded-lg text-base font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200"
+                    className="block px-3 py-2.5 rounded-md text-base font-medium hover:bg-accent"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {t('login')}
                   </Link>
                   <Link
                     href="/register"
-                    className="block px-3 py-2 rounded-lg text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200"
+                    className="block px-3 py-2.5 rounded-md text-base font-medium bg-primary text-primary-foreground text-center"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {t('register')}

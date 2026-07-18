@@ -123,23 +123,23 @@ export default function ABTestingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      <div className="min-h-full bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="min-h-full bg-background">
       <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Button variant="ghost" onClick={() => router.push('/dashboard')} className="mb-4">
             ← Zurück zum Dashboard
           </Button>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
             A/B Testing
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Testen Sie verschiedene Ziel-URLs und finden Sie die beste Conversion-Rate
           </p>
         </div>
@@ -160,8 +160,8 @@ export default function ABTestingPage() {
                     <ChartBarIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Gesamt Klicks</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalClicks}</p>
+                    <p className="text-sm text-muted-foreground">Gesamt Klicks</p>
+                    <p className="text-2xl font-bold text-foreground">{totalClicks}</p>
                   </div>
                 </div>
               </CardContent>
@@ -173,8 +173,8 @@ export default function ABTestingPage() {
                     <TrophyIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Gesamt Conversions</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{totalConversions}</p>
+                    <p className="text-sm text-muted-foreground">Gesamt Conversions</p>
+                    <p className="text-2xl font-bold text-foreground">{totalConversions}</p>
                   </div>
                 </div>
               </CardContent>
@@ -186,8 +186,8 @@ export default function ABTestingPage() {
                     <BeakerIcon className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-sm text-muted-foreground">Conversion Rate</p>
+                    <p className="text-2xl font-bold text-foreground">
                       {totalClicks > 0 ? ((totalConversions / totalClicks) * 100).toFixed(1) : '0.0'}%
                     </p>
                   </div>
@@ -271,7 +271,7 @@ export default function ABTestingPage() {
                       className={`p-6 rounded-lg border-2 ${
                         variant.isWinner
                           ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700'
-                          : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+                          : 'bg-card border-border'
                       }`}
                     >
                       <div className="flex items-start justify-between mb-4">
@@ -283,17 +283,17 @@ export default function ABTestingPage() {
                                 Gewinner
                               </span>
                             )}
-                            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">
+                            <span className="text-sm font-semibold text-muted-foreground">
                               {variant.trafficPercentage}% Traffic
                             </span>
                           </div>
-                          <p className="text-sm text-gray-900 dark:text-gray-100 font-mono break-all mb-4">
+                          <p className="text-sm text-foreground font-mono break-all mb-4">
                             {variant.variantUrl}
                           </p>
                           <div className="grid grid-cols-3 gap-4">
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Klicks</p>
-                              <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{variant.clicks}</p>
+                              <p className="text-lg font-bold text-foreground">{variant.clicks}</p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Conversions</p>
@@ -301,7 +301,7 @@ export default function ABTestingPage() {
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Conversion Rate</p>
-                              <p className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                              <p className="text-lg font-bold text-primary">
                                 {conversionRate.toFixed(1)}%
                               </p>
                             </div>

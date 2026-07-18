@@ -148,7 +148,7 @@ export default function EnterpriseDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -157,10 +157,10 @@ export default function EnterpriseDashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Enterprise Features
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Manage enterprise-level features for your teams
           </p>
         </div>
@@ -180,7 +180,7 @@ export default function EnterpriseDashboardPage() {
             <select
               value={selectedTeam || ''}
               onChange={(e) => setSelectedTeam(parseInt(e.target.value))}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-card text-foreground"
             >
               {teams.map((team) => (
                 <option key={team.id} value={team.id}>
@@ -196,13 +196,13 @@ export default function EnterpriseDashboardPage() {
             {/* Usage Quota */}
             <Card className="p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-indigo-500" />
                   Usage Quota
                 </h2>
                 <a
                   href={`/api/enterprise/quota?teamId=${selectedTeam}`}
-                  className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="text-sm text-primary hover:underline"
                 >
                   View Details
                 </a>
@@ -211,8 +211,8 @@ export default function EnterpriseDashboardPage() {
                 <div className="space-y-4">
                   <div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-gray-600 dark:text-gray-400">Usage</span>
-                      <span className="text-gray-900 dark:text-gray-100 font-semibold">
+                      <span className="text-muted-foreground">Usage</span>
+                      <span className="text-foreground font-semibold">
                         {selectedTeamData.currentUsage} / {selectedTeamData.usageQuota}
                       </span>
                     </div>
@@ -238,14 +238,14 @@ export default function EnterpriseDashboardPage() {
                   )}
                 </div>
               ) : (
-                <p className="text-gray-600 dark:text-gray-400">Unlimited usage</p>
+                <p className="text-muted-foreground">Unlimited usage</p>
               )}
             </Card>
 
             {/* IP Whitelist */}
             <Card className="p-6 mb-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
                   <Shield className="h-5 w-5 text-purple-500" />
                   IP Whitelist
                 </h2>
@@ -293,7 +293,7 @@ export default function EnterpriseDashboardPage() {
               )}
 
               {whitelistEntries.length === 0 ? (
-                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                <p className="text-muted-foreground text-sm">
                   No IP whitelist entries. All IPs are allowed by default.
                 </p>
               ) : (
@@ -305,7 +305,7 @@ export default function EnterpriseDashboardPage() {
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <code className="text-sm font-mono text-gray-900 dark:text-gray-100">
+                          <code className="text-sm font-mono text-foreground">
                             {entry.ipAddress}
                           </code>
                           {entry.isActive ? (
@@ -315,7 +315,7 @@ export default function EnterpriseDashboardPage() {
                           )}
                         </div>
                         {entry.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             {entry.description}
                           </p>
                         )}
@@ -338,11 +338,11 @@ export default function EnterpriseDashboardPage() {
               <Card className="p-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                    <Globe className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                    <Globe className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Custom Domain</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <h3 className="font-semibold text-foreground">Custom Domain</h3>
+                    <p className="text-sm text-muted-foreground">
                       {selectedTeamData.customDomain || 'Not configured'}
                     </p>
                   </div>
@@ -355,8 +355,8 @@ export default function EnterpriseDashboardPage() {
                     <Palette className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Custom Branding</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <h3 className="font-semibold text-foreground">Custom Branding</h3>
+                    <p className="text-sm text-muted-foreground">
                       {selectedTeamData.customLogo ? 'Configured' : 'Not configured'}
                     </p>
                   </div>
@@ -369,8 +369,8 @@ export default function EnterpriseDashboardPage() {
                     <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">SLA Level</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                    <h3 className="font-semibold text-foreground">SLA Level</h3>
+                    <p className="text-sm text-muted-foreground capitalize">
                       {selectedTeamData.slaLevel || 'Standard'}
                     </p>
                   </div>
@@ -383,10 +383,10 @@ export default function EnterpriseDashboardPage() {
         {teams.length === 0 && (
           <Card className="p-12 text-center">
             <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               No Teams Found
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Create a team to access enterprise features
             </p>
             <Button onClick={() => router.push('/dashboard/teams')}>

@@ -110,13 +110,13 @@ export default function BulkShorteningPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="min-h-full bg-background">
       <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
             Bulk URL Shortening
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Kürzen Sie mehrere URLs gleichzeitig - perfekt für Marketing-Kampagnen und Newsletter
           </p>
         </div>
@@ -155,10 +155,10 @@ export default function BulkShorteningPage() {
                       value={textInput}
                       onChange={(e) => setTextInput(e.target.value)}
                       placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 font-mono text-sm min-h-[200px]"
+                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-card text-foreground placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 font-mono text-sm min-h-[200px]"
                       rows={10}
                     />
-                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       Geben Sie eine URL pro Zeile ein. Maximal 100 URLs pro Batch.
                     </p>
                   </div>
@@ -193,12 +193,12 @@ export default function BulkShorteningPage() {
                         Datei auswählen
                       </label>
                       {csvFile && (
-                        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        <p className="mt-2 text-sm text-muted-foreground">
                           {csvFile.name}
                         </p>
                       )}
                     </div>
-                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                    <p className="mt-2 text-xs text-muted-foreground">
                       CSV-Format: url,customCode,password,expiresIn,isPublic (optional)
                     </p>
                   </div>
@@ -222,17 +222,17 @@ export default function BulkShorteningPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                <h3 className="font-semibold text-foreground mb-2">
                   Text-Input Modus:
                 </h3>
-                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 list-disc list-inside">
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                   <li>Eine URL pro Zeile eingeben</li>
                   <li>Maximal 100 URLs pro Batch</li>
                   <li>Automatische Short-Code-Generierung</li>
                 </ul>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                <h3 className="font-semibold text-foreground mb-2">
                   CSV-Format:
                 </h3>
                 <pre className="text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto">
@@ -242,10 +242,10 @@ https://example2.com,link2,secret123,7-day,false`}
                 </pre>
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">
+                <h3 className="font-semibold text-foreground mb-2">
                   Tipps:
                 </h3>
-                <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1 list-disc list-inside">
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
                   <li>CSV kann optional Header-Zeile enthalten</li>
                   <li>Passwörter werden sicher gehasht</li>
                   <li>Ergebnisse können als CSV exportiert werden</li>
@@ -298,7 +298,7 @@ https://example2.com,link2,secret123,7-day,false`}
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
                     {results.results.map((result, index) => (
                       <tr key={index} className={result.success ? '' : 'bg-red-50 dark:bg-red-900/20'}>
                         <td className="px-4 py-3 whitespace-nowrap">
@@ -313,17 +313,17 @@ https://example2.com,link2,secret123,7-day,false`}
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-sm text-gray-900 dark:text-gray-100 max-w-md truncate">
+                          <div className="text-sm text-foreground max-w-md truncate">
                             {result.longUrl}
                           </div>
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          <code className="text-sm font-mono text-indigo-600 dark:text-indigo-400">
+                          <code className="text-sm font-mono text-primary">
                             {result.shortCode || '-'}
                           </code>
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-sm text-indigo-600 dark:text-indigo-400 max-w-md truncate">
+                          <div className="text-sm text-primary max-w-md truncate">
                             {result.shortUrl || '-'}
                           </div>
                         </td>

@@ -66,18 +66,18 @@ export default function PasskeysPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-full bg-background">
       <div className="max-w-4xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
+            <div className="p-3 bg-primary rounded-xl">
               <Fingerprint className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight">
               Passkeys
             </h1>
           </div>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted-foreground">
             Manage your passwordless authentication devices
           </p>
         </div>
@@ -95,7 +95,7 @@ export default function PasskeysPage() {
           <div className="mb-6">
             <Button
               onClick={() => setShowRegister(true)}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+              className="bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New Passkey
@@ -132,12 +132,12 @@ export default function PasskeysPage() {
           <Card className="p-12 text-center border-2 border-dashed">
             <Fingerprint className="w-16 h-16 mx-auto mb-4 text-gray-400 dark:text-gray-600" />
             <h3 className="text-xl font-semibold mb-2">No Passkeys</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-muted-foreground mb-6">
               Add a Passkey to enable passwordless sign-in
             </p>
             <Button
               onClick={() => setShowRegister(true)}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
+              className="bg-primary hover:bg-primary/90"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Your First Passkey
@@ -151,16 +151,16 @@ export default function PasskeysPage() {
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 rounded-lg">
                       {passkey.deviceType === 'platform' ? (
-                        <Smartphone className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <Smartphone className="w-6 h-6 text-primary" />
                       ) : (
-                        <Key className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                        <Key className="w-6 h-6 text-primary" />
                       )}
                     </div>
                     <div>
                       <h3 className="font-semibold text-lg">
                         {passkey.deviceName || 'Unknown Device'}
                       </h3>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                      <div className="text-sm text-muted-foreground space-y-1">
                         <p>
                           Type: {passkey.deviceType === 'platform' ? 'Platform Authenticator' : 'Security Key'}
                         </p>
@@ -183,7 +183,7 @@ export default function PasskeysPage() {
           </div>
         )}
 
-        <Card className="mt-8 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-2 border-indigo-200 dark:border-indigo-800">
+        <Card className="mt-8 p-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-border">
           <h3 className="font-semibold text-indigo-900 dark:text-indigo-300 mb-3">
             About Passkeys
           </h3>

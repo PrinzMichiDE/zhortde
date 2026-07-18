@@ -1,19 +1,58 @@
 import dynamic from 'next/dynamic';
 import { LinkForm } from '@/components/link-form';
+import { FeatureCard } from '@/components/ui/feature-card';
+import { StatChip } from '@/components/ui/stat-chip';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  PageContainer,
+  PageShell,
+  Section,
+  SectionHeader,
+  Surface,
+} from '@/components/layout/section';
+import {
+  LockClosedIcon,
+  ClockIcon,
+  QrCodeIcon,
+  ChartBarIcon,
+  ShieldCheckIcon,
+  BoltIcon,
+  GlobeAltIcon,
+  LinkIcon,
+  UserGroupIcon,
+} from '@heroicons/react/24/outline';
 import { getStat } from '@/lib/db/init-stats';
 import { getTranslations, getLocale } from 'next-intl/server';
-import { Skeleton } from '@/components/ui/skeleton';
-import { HomeFeatures } from '@/components/home/home-features';
 
 const KofiSupport = dynamic(
   () => import('@/components/kofi-support').then((m) => ({ default: m.KofiSupport })),
-  {
-    loading: () => <Skeleton className="h-32 w-full rounded-2xl" />,
-  }
+  { loading: () => <Skeleton className="h-32 w-full rounded-2xl" /> }
 );
 
-// Cache stats for 60s — avoids force-dynamic on every request
+const ExtensionDownload = dynamic(
+  () => import('@/components/extension-download').then((m) => ({ default: m.ExtensionDownload })),
+  { loading: () => <Skeleton className="h-24 w-full rounded-xl" /> }
+);
+
 export const revalidate = 60;
+
+const FEATURE_ICONS = [
+  LockClosedIcon,
+  ClockIcon,
+  QrCodeIcon,
+  ChartBarIcon,
+  BoltIcon,
+  ShieldCheckIcon,
+] as const;
+
+const FEATURE_KEYS = [
+  'passwordProtection',
+  'expiration',
+  'qrCodes',
+  'analytics',
+  'bulkProcessing',
+  'enterprise',
+] as const;
 
 export default async function Home() {
   const [visitorCount, linkCount, t, tf, locale] = await Promise.all([
@@ -24,81 +63,105 @@ export default async function Home() {
     getLocale(),
   ]);
 
+  const features = FEATURE_KEYS.map((key, index) => ({
+    key,
+    icon: FEATURE_ICONS[index],
+    title: tf(`${key}.title`),
+    description: tf(`${key}.description`),
+  }));
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative overflow-hidden">
-      {/* Static background — lighter than animated blobs for performance */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300/20 dark:bg-purple-900/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300/20 dark:bg-indigo-900/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Hero Section */}
-        <div className="pt-16 pb-12 sm:pt-20 sm:pb-16">
-          <div className="text-center mb-12 animate-fade-in">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 mb-6 bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border-2 border-indigo-200 dark:border-indigo-800 rounded-full shadow-lg">
-              <span className="text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                {t('badge')}
-              </span>
-            </div>
-
-            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold mb-6 leading-tight">
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400">
-                {t('title1')}
-              </span>
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 dark:from-pink-400 dark:via-purple-400 dark:to-indigo-400">
-                {t('title2')}
-              </span>
+    <PageShell>
+      <PageContainer>
+        <Section className="pt-16 pb-10 sm:pt-20 sm:pb-12">
+          <div className="mx-auto max-w-3xl text-center">
+            <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-4">
+              {t('badge')}
+            </p>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-foreground tracking-tight mb-5">
+              {t('title1')}
+              <span className="block text-primary">{t('title2')}</span>
             </h1>
-
-            <p className="text-lg sm:text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed mb-8">
+            <p className="text-lg text-muted-foreground leading-relaxed mb-8">
               {t('subtitle')}{' '}
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">{t('subtitleHighlight')}</span>{' '}
+              <span className="font-medium text-foreground">{t('subtitleHighlight')}</span>{' '}
               {t('subtitleEnd')}
             </p>
 
-            {/* Stats */}
-            <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
-              <div className="flex items-center gap-2.5 bg-white/90 dark:bg-gray-800/90 px-4 py-2.5 rounded-xl backdrop-blur-xl border border-indigo-200 dark:border-indigo-800 shadow-sm">
-                <div>
-                  <div className="font-bold text-gray-900 dark:text-gray-100 tabular-nums">{linkCount.toLocaleString(locale)}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{t('linksCreated')}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 bg-white/90 dark:bg-gray-800/90 px-4 py-2.5 rounded-xl backdrop-blur-xl border border-purple-200 dark:border-purple-800 shadow-sm">
-                <div>
-                  <div className="font-bold text-gray-900 dark:text-gray-100 tabular-nums">{visitorCount.toLocaleString(locale)}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">{t('visitors')}</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2.5 bg-white/90 dark:bg-gray-800/90 px-4 py-2.5 rounded-xl backdrop-blur-xl border border-green-200 dark:border-green-800 shadow-sm">
-                <div>
-                  <div className="font-bold text-gray-900 dark:text-gray-100">{t('secure')}</div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">100% Secure</div>
-                </div>
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-10">
+              <StatChip
+                icon={LinkIcon}
+                value={linkCount.toLocaleString(locale)}
+                label={t('linksCreated')}
+              />
+              <StatChip
+                icon={UserGroupIcon}
+                value={visitorCount.toLocaleString(locale)}
+                label={t('visitors')}
+              />
+              <StatChip icon={ShieldCheckIcon} value={t('secure')} label="100% Secure" />
             </div>
           </div>
 
-          {/* Link Form — primary CTA above the fold */}
           <div className="max-w-3xl mx-auto mb-12">
             <LinkForm />
           </div>
 
-          {/* Support Banner — lazy loaded */}
-          <div className="max-w-6xl mx-auto mb-16 px-4">
+          <div className="max-w-4xl mx-auto">
             <KofiSupport variant="banner" showMonthly={true} />
           </div>
-        </div>
+        </Section>
 
-        {/* Features — separate component for maintainability */}
-        <HomeFeatures t={t} tf={tf} />
+        <Section className="border-t border-border" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 1200px' }}>
+          <SectionHeader
+            eyebrow={t('whyZhort')}
+            title={t('whyZhort')}
+            description={t('whyZhortSubtitle')}
+          />
 
-        {/* Support Section — lazy loaded */}
-        <div className="max-w-5xl mx-auto mt-16 mb-16 px-4">
-          <KofiSupport variant="full" showMonthly={true} />
-        </div>
-      </div>
-    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {features.map((feature) => (
+              <FeatureCard
+                key={feature.key}
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+              />
+            ))}
+          </div>
+
+          <Surface elevated className="mt-8 p-6 sm:p-8 md:col-span-full">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
+              <div className="flex-1 min-w-0">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <GlobeAltIcon className="h-5 w-5" aria-hidden />
+                </div>
+                <ExtensionDownload />
+              </div>
+              <div className="w-full max-w-sm shrink-0 rounded-lg border border-border bg-muted/30 p-4" aria-hidden="true">
+                <div className="flex items-center gap-2 mb-3 border-b border-border pb-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <div className="flex-1 bg-muted h-5 rounded text-[10px] flex items-center px-2 text-muted-foreground ml-1">
+                    zhort.de
+                  </div>
+                </div>
+                <div className="rounded-md border border-border bg-card p-4 text-center">
+                  <p className="font-semibold text-foreground text-sm mb-2">Zhort Extension</p>
+                  <div className="bg-primary text-primary-foreground text-sm py-1.5 px-3 rounded-md w-full">
+                    Shorten
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Surface>
+
+          <div className="max-w-4xl mx-auto mt-16">
+            <KofiSupport variant="full" showMonthly={true} />
+          </div>
+        </Section>
+      </PageContainer>
+    </PageShell>
   );
 }

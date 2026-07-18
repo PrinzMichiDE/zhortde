@@ -83,7 +83,7 @@ export default function AnalyticsDashboardPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 dark:border-indigo-400"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -93,7 +93,7 @@ export default function AnalyticsDashboardPage() {
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 text-xl mb-4">⚠️ {error || 'Keine Daten verfügbar'}</p>
-          <a href="/dashboard" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+          <a href="/dashboard" className="text-primary hover:underline">
             Zurück zum Dashboard
           </a>
         </div>
@@ -186,11 +186,11 @@ export default function AnalyticsDashboardPage() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-8 border border-gray-100 dark:border-gray-700 animate-fade-in">
+        <div className="bg-card rounded-2xl shadow-sm p-6 mb-8 border border-border">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Analytics Dashboard</h1>
-              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <h1 className="text-3xl font-bold text-foreground mb-2">Analytics Dashboard</h1>
+              <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <span className="font-mono bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-md font-bold">/{link.shortCode}</span>
                 <span className="text-gray-400 dark:text-gray-600">→</span>
                 <span className="truncate max-w-md" title={link.longUrl}>{link.longUrl}</span>
@@ -205,7 +205,7 @@ export default function AnalyticsDashboardPage() {
                 <Download className="w-4 h-4" />
                 CSV Export
               </a>
-              <a href="/dashboard" className="text-indigo-600 dark:text-indigo-400 hover:underline text-sm font-medium">
+              <a href="/dashboard" className="text-primary hover:underline text-sm font-medium">
                 &larr; Zurück
               </a>
             </div>
@@ -213,7 +213,7 @@ export default function AnalyticsDashboardPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-up">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
             title="Total Clicks"
             value={analytics.totalClicks}
@@ -245,7 +245,7 @@ export default function AnalyticsDashboardPage() {
         </div>
 
         {/* Additional Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 animate-slide-up" style={{ animationDelay: '50ms' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8" style={{ animationDelay: '50ms' }}>
           <StatCard
             title="Peak Tag"
             value={metrics.peakDayName}
@@ -278,8 +278,8 @@ export default function AnalyticsDashboardPage() {
 
         {/* Time Series Chart */}
         {timeData.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '100ms' }}>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+          <div className="bg-card rounded-2xl shadow-lg p-6 mb-8 border border-border" style={{ animationDelay: '100ms' }}>
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-indigo-500" />
               Klicks über Zeit (Täglich)
             </h2>
@@ -307,11 +307,11 @@ export default function AnalyticsDashboardPage() {
         )}
 
         {/* Hourly and Day of Week Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '150ms' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" style={{ animationDelay: '150ms' }}>
           {/* Hourly Breakdown */}
           {hourlyData.some(d => d.count > 0) && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <Clock className="h-5 w-5 text-purple-500" />
                 Klicks nach Stunden
               </h2>
@@ -341,8 +341,8 @@ export default function AnalyticsDashboardPage() {
 
           {/* Day of Week Breakdown */}
           {dayOfWeekData.some(d => d.count > 0) && (
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-pink-500" />
                 Klicks nach Wochentag
               </h2>
@@ -374,8 +374,8 @@ export default function AnalyticsDashboardPage() {
 
         {/* Monthly Chart */}
         {monthlyData.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-8 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '175ms' }}>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+          <div className="bg-card rounded-2xl shadow-lg p-6 mb-8 border border-border" style={{ animationDelay: '175ms' }}>
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <Activity className="h-5 w-5 text-blue-500" />
               Klicks nach Monat
             </h2>
@@ -404,10 +404,10 @@ export default function AnalyticsDashboardPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '200ms' }}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" style={{ animationDelay: '200ms' }}>
           {/* Device Breakdown */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+          <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <Smartphone className="h-5 w-5 text-purple-500" />
               Geräte
             </h2>
@@ -437,8 +437,8 @@ export default function AnalyticsDashboardPage() {
           </div>
 
           {/* Country Breakdown */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+          <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+            <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
               <Globe className="h-5 w-5 text-pink-500" />
               Top Länder
             </h2>
@@ -461,10 +461,10 @@ export default function AnalyticsDashboardPage() {
 
         {/* OS and Browser Breakdown */}
         {osData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '250ms' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" style={{ animationDelay: '250ms' }}>
             {/* OS Breakdown */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <Monitor className="h-5 w-5 text-blue-500" />
                 Betriebssysteme
               </h2>
@@ -484,8 +484,8 @@ export default function AnalyticsDashboardPage() {
             </div>
 
             {/* Browser Breakdown */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+            <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+              <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                 <Monitor className="h-5 w-5 text-green-500" />
                 Browser
               </h2>
@@ -508,11 +508,11 @@ export default function AnalyticsDashboardPage() {
 
         {/* Referrer and City Breakdown */}
         {(referrerData.length > 0 || cityData.length > 0) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 animate-slide-up" style={{ animationDelay: '300ms' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8" style={{ animationDelay: '300ms' }}>
             {/* Referrer Domains Breakdown */}
             {referrerDomainsData.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+              <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+                <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <LinkIcon className="h-5 w-5 text-orange-500" />
                   Top Referrer Domains
                 </h2>
@@ -535,8 +535,8 @@ export default function AnalyticsDashboardPage() {
 
             {/* City Breakdown */}
             {cityData.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6 flex items-center gap-2">
+              <div className="bg-card rounded-2xl shadow-lg p-6 border border-border">
+                <h2 className="text-xl font-bold text-foreground mb-6 flex items-center gap-2">
                   <MapPin className="h-5 w-5 text-teal-500" />
                   Top Städte
                 </h2>
@@ -560,28 +560,28 @@ export default function AnalyticsDashboardPage() {
         )}
 
         {/* Summary Section */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl shadow-lg p-6 mb-8 border border-indigo-200 dark:border-indigo-800 animate-slide-up" style={{ animationDelay: '250ms' }}>
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-            <Activity className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+        <div className="bg-muted/50 rounded-2xl shadow-lg p-6 mb-8 border border-indigo-200 dark:border-indigo-800" style={{ animationDelay: '250ms' }}>
+          <h2 className="text-xl font-bold text-foreground mb-4 flex items-center gap-2">
+            <Activity className="h-5 w-5 text-primary" />
             Zusammenfassung
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
-              <p className="text-gray-600 dark:text-gray-400 mb-1">Durchschnitt pro Tag</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.averageClicksPerDay.toFixed(1)}</p>
+            <div className="bg-card rounded-lg p-4">
+              <p className="text-muted-foreground mb-1">Durchschnitt pro Tag</p>
+              <p className="text-2xl font-bold text-foreground">{metrics.averageClicksPerDay.toFixed(1)}</p>
             </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
-              <p className="text-gray-600 dark:text-gray-400 mb-1">Beste Stunde</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.peakHour}:00</p>
+            <div className="bg-card rounded-lg p-4">
+              <p className="text-muted-foreground mb-1">Beste Stunde</p>
+              <p className="text-2xl font-bold text-foreground">{metrics.peakHour}:00</p>
               <p className="text-xs text-gray-500 dark:text-gray-500">{metrics.peakHourClicks} Klicks</p>
             </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
-              <p className="text-gray-600 dark:text-gray-400 mb-1">Bester Wochentag</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.peakDayName}</p>
+            <div className="bg-card rounded-lg p-4">
+              <p className="text-muted-foreground mb-1">Bester Wochentag</p>
+              <p className="text-2xl font-bold text-foreground">{metrics.peakDayName}</p>
               <p className="text-xs text-gray-500 dark:text-gray-500">{metrics.peakDayClicks} Klicks</p>
             </div>
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-4">
-              <p className="text-gray-600 dark:text-gray-400 mb-1">Wachstum (7 Tage)</p>
+            <div className="bg-card rounded-lg p-4">
+              <p className="text-muted-foreground mb-1">Wachstum (7 Tage)</p>
               <p className={`text-2xl font-bold ${metrics.growthRate >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {metrics.growthRate >= 0 ? '+' : ''}{metrics.growthRate.toFixed(1)}%
               </p>
@@ -593,9 +593,9 @@ export default function AnalyticsDashboardPage() {
         </div>
 
         {/* Recent Clicks */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 border border-gray-100 dark:border-gray-700 animate-slide-up" style={{ animationDelay: '300ms' }}>
+        <div className="bg-card rounded-2xl shadow-lg p-6 border border-border" style={{ animationDelay: '300ms' }}>
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
               <Clock className="h-5 w-5 text-indigo-500" />
               Letzte Klicks
             </h2>
@@ -610,7 +610,7 @@ export default function AnalyticsDashboardPage() {
               </a>
             </div>
           </div>
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto rounded-lg border border-border">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr>
@@ -637,7 +637,7 @@ export default function AnalyticsDashboardPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
                 {analytics.recentClicks.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -650,19 +650,19 @@ export default function AnalyticsDashboardPage() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-200">
                         {new Date(click.clickedAt).toLocaleString('de-DE')}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {click.city ? `${click.city}, ` : ''}{click.country || 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {click.deviceType || 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {click.browser || 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                         {click.os || 'Unknown'}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-xs truncate" title={click.referer || 'Direct'}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground max-w-xs truncate" title={click.referer || 'Direct'}>
                         {click.referer ? (click.referer.length > 30 ? click.referer.substring(0, 30) + '...' : click.referer) : 'Direct'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-500 font-mono">
@@ -705,11 +705,11 @@ function StatCard({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-md transition-all p-6 border border-gray-100 dark:border-gray-700">
+    <div className="bg-card rounded-2xl shadow-sm hover:shadow-md transition-all p-6 border border-border">
       <div className="flex items-center justify-between">
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-gray-100 mt-2">
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{title}</p>
+          <p className="text-3xl font-bold text-foreground mt-2">
             {typeof value === 'number' ? value.toLocaleString() : value}
           </p>
           {subtitle && (
