@@ -1,3 +1,5 @@
+export const LEGACY_IDENTICAL_SEED = 126_819;
+
 /**
  * Plausible seed statistics shown before real traffic accumulates.
  * Visitors are intentionally higher than links — typical for a URL shortener.

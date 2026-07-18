@@ -1,7 +1,7 @@
 import { db } from './index';
 import { stats } from './schema';
 import { eq, sql } from 'drizzle-orm';
-import { getInitialStat, INITIAL_STATS, type StatKey } from '@/lib/stats-config';
+import { getInitialStat, INITIAL_STATS, LEGACY_IDENTICAL_SEED, type StatKey } from '@/lib/stats-config';
 import { isMissingRelationError } from '@/lib/db/errors';
 
 export { INITIAL_STATS, getInitialStat };
@@ -36,6 +36,28 @@ async function ensureStatsTable(): Promise<boolean> {
   }
 }
 
+async function migrateLegacySeedStats(): Promise<void> {
+  const [visitorStat, linksStat] = await Promise.all([
+    db.query.stats.findFirst({ where: eq(stats.key, 'visitors') }),
+    db.query.stats.findFirst({ where: eq(stats.key, 'links') }),
+  ]);
+
+  if (
+    visitorStat?.value === LEGACY_IDENTICAL_SEED &&
+    linksStat?.value === LEGACY_IDENTICAL_SEED
+  ) {
+    await Promise.all([
+      db.update(stats)
+        .set({ value: INITIAL_STATS.visitors })
+        .where(eq(stats.key, 'visitors')),
+      db.update(stats)
+        .set({ value: INITIAL_STATS.links })
+        .where(eq(stats.key, 'links')),
+    ]);
+    console.log('Migrated legacy identical seed stats to plausible values');
+  }
+}
+
 export async function initStats() {
   try {
     const ready = await ensureStatsTable();
@@ -56,6 +78,8 @@ export async function initStats() {
         console.log(`Initialized ${key} counter to ${INITIAL_STATS[key]}`);
       }
     }
+
+    await migrateLegacySeedStats();
   } catch (error) {
     if (isMissingRelationError(error)) {
       statsTableReady = false;
