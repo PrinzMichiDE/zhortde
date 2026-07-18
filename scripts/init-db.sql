@@ -93,7 +93,7 @@ ALTER TABLE "pastes" ADD CONSTRAINT "pastes_user_id_users_id_fk"
 
 -- Initialize stats
 INSERT INTO "stats" ("key", "value") 
-VALUES ('visitors', 126819), ('links', 54428)
+VALUES ('visitors', 267843), ('links', 71529)
 ON CONFLICT ("key") DO NOTHING;
 
 -- Success message (PostgreSQL will show this)

@@ -52,8 +52,8 @@ if (!databaseUrl) {
 // Import postgres
 const postgres = require('postgres');
 
-const INITIAL_VISITORS = 126819;
-const INITIAL_LINKS = 126819;
+const INITIAL_VISITORS = 267843;
+const INITIAL_LINKS = 71529;
 
 async function seedStats() {
   console.log('\n📊 Seeding Statistics...\n');

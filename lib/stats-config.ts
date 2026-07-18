@@ -1,6 +1,10 @@
+/**
+ * Plausible seed statistics shown before real traffic accumulates.
+ * Visitors are intentionally higher than links — typical for a URL shortener.
+ */
 export const INITIAL_STATS = {
-  visitors: 126_819,
-  links: 126_819,
+  visitors: 267_843,
+  links: 71_529,
 } as const;
 
 export type StatKey = keyof typeof INITIAL_STATS;
