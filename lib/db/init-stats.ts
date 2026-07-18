@@ -1,12 +1,48 @@
 import { db } from './index';
 import { stats } from './schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { getInitialStat, INITIAL_STATS, type StatKey } from '@/lib/stats-config';
+import { isMissingRelationError } from '@/lib/db/errors';
 
 export { INITIAL_STATS, getInitialStat };
 
+let statsTableReady = false;
+
+const CREATE_STATS_TABLE_SQL = sql`
+  CREATE TABLE IF NOT EXISTS "stats" (
+    "id" serial PRIMARY KEY NOT NULL,
+    "key" text NOT NULL,
+    "value" integer NOT NULL,
+    CONSTRAINT "stats_key_unique" UNIQUE("key")
+  )
+`;
+
+async function ensureStatsTable(): Promise<boolean> {
+  if (statsTableReady) {
+    return true;
+  }
+
+  try {
+    await db.execute(CREATE_STATS_TABLE_SQL);
+    statsTableReady = true;
+    return true;
+  } catch (error) {
+    if (isMissingRelationError(error)) {
+      console.warn('Stats table missing and could not be created automatically.');
+    } else {
+      console.error('Error ensuring stats table:', error);
+    }
+    return false;
+  }
+}
+
 export async function initStats() {
   try {
+    const ready = await ensureStatsTable();
+    if (!ready) {
+      return;
+    }
+
     for (const key of Object.keys(INITIAL_STATS) as StatKey[]) {
       const existing = await db.query.stats.findFirst({
         where: eq(stats.key, key),
@@ -21,11 +57,19 @@ export async function initStats() {
       }
     }
   } catch (error) {
+    if (isMissingRelationError(error)) {
+      statsTableReady = false;
+      const recreated = await ensureStatsTable();
+      if (recreated) {
+        await initStats();
+      }
+      return;
+    }
     console.error('Error initializing stats:', error);
   }
 }
 
-export async function incrementStat(key: string): Promise<number> {
+export async function incrementStat(key: string, retry = true): Promise<number> {
   const fallback = getInitialStat(key);
 
   try {
@@ -48,12 +92,18 @@ export async function incrementStat(key: string): Promise<number> {
 
     return newValue;
   } catch (error) {
+    if (retry && isMissingRelationError(error)) {
+      statsTableReady = false;
+      if (await ensureStatsTable()) {
+        return incrementStat(key, false);
+      }
+    }
     console.error(`Error incrementing stat ${key}:`, error);
     return fallback;
   }
 }
 
-export async function getStat(key: string): Promise<number> {
+export async function getStat(key: string, retry = true): Promise<number> {
   const fallback = getInitialStat(key);
 
   try {
@@ -65,6 +115,12 @@ export async function getStat(key: string): Promise<number> {
 
     return stat?.value ?? fallback;
   } catch (error) {
+    if (retry && isMissingRelationError(error)) {
+      statsTableReady = false;
+      if (await ensureStatsTable()) {
+        return getStat(key, false);
+      }
+    }
     console.error(`Error getting stat ${key}:`, error);
     return fallback;
   }
