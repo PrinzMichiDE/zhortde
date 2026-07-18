@@ -121,7 +121,7 @@ export default function CollectionsPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -131,10 +131,10 @@ export default function CollectionsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Link Collections
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               Organize your links into collections
             </p>
           </div>
@@ -216,10 +216,10 @@ export default function CollectionsPage() {
         {collections.length === 0 ? (
           <Card className="p-12 text-center">
             <Folder className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-lg font-semibold text-foreground mb-2">
               No Collections Yet
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-muted-foreground mb-4">
               Create your first collection to organize your links
             </p>
             <Button onClick={() => setShowCreateForm(true)}>
@@ -240,10 +240,10 @@ export default function CollectionsPage() {
                       {collection.icon || '📁'}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                      <h3 className="font-bold text-foreground">
                         {collection.name}
                       </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-sm text-muted-foreground">
                         {collection.linkCount} {collection.linkCount === 1 ? 'link' : 'links'}
                       </p>
                     </div>
@@ -257,7 +257,7 @@ export default function CollectionsPage() {
                   </Button>
                 </div>
                 {collection.description && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  <p className="text-sm text-muted-foreground mb-4">
                     {collection.description}
                   </p>
                 )}

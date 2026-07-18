@@ -246,10 +246,10 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
             if (e.target === e.currentTarget) closeEdit();
           }}
         >
-          <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-gray-200 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-card rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-border animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-start justify-between gap-4 mb-6">
               <div>
-                <h3 id="edit-link-title" className="text-xl font-bold text-gray-900 dark:text-gray-100">
+                <h3 id="edit-link-title" className="text-xl font-bold text-foreground">
                   {tc('edit')} {t('link')}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -295,7 +295,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                 errorText={t('invalidShortCode') as string}
               />
 
-              <div className="flex items-start gap-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4">
+              <div className="flex items-start gap-3 rounded-xl border border-border bg-gray-50 dark:bg-gray-900/30 p-4">
                 <input
                   id="edit-link-public"
                   type="checkbox"
@@ -304,7 +304,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                   className="mt-1 h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
                 />
                 <div className="flex-1">
-                  <label htmlFor="edit-link-public" className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <label htmlFor="edit-link-public" className="text-sm font-medium text-foreground">
                     {t('publicVisible')}
                   </label>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

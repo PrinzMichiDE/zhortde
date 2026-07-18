@@ -103,23 +103,16 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-indigo-50/30 to-purple-50/50 dark:from-gray-950 dark:via-slate-900 dark:to-gray-950 flex items-center justify-center px-4 py-16 transition-colors duration-300 relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 dark:bg-purple-900/20 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-30 animate-blob"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 dark:bg-indigo-900/20 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-      </div>
-      
-      <div className="max-w-md w-full relative z-10">
-        <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl rounded-2xl shadow-2xl p-8 sm:p-10 border-2 border-gray-200 dark:border-gray-800 animate-fade-in hover:shadow-3xl transition-shadow duration-500">
+    <div className="min-h-[calc(100vh-4rem)] bg-background flex items-center justify-center px-4 py-16">
+      <div className="auth-panel">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg">
-              <Lock className="w-8 h-8 text-white" />
+            <div className="auth-panel-icon mx-auto">
+              <Lock className="w-6 h-6" aria-hidden />
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-400 dark:via-purple-400 dark:to-pink-400 bg-clip-text text-transparent mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               {t('login')}
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">{t('welcomeBack')}</p>
+            <p className="text-muted-foreground text-sm">{t('welcomeBack')}</p>
           </div>
 
           {step === 'email' ? (
@@ -157,20 +150,20 @@ function LoginContent() {
                 <button 
                   type="button" 
                   onClick={() => { setStep('email'); setError(''); }}
-                  className="text-indigo-600 hover:text-indigo-500"
+                  className="text-primary hover:text-primary/80"
                 >
                   {t('change')}
                 </button>
               </div>
 
-              <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+              <div className="p-4 rounded-lg border border-border bg-muted/50">
                 <div className="flex items-center gap-3 mb-3">
-                  <Fingerprint className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                  <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">
+                  <Fingerprint className="w-6 h-6 text-primary" />
+                  <h3 className="font-semibold text-foreground">
                     Sign in with Passkey
                   </h3>
                 </div>
-                <p className="text-sm text-indigo-800 dark:text-indigo-400 mb-4">
+                <p className="text-sm text-muted-foreground mb-4">
                   Use your device's biometric authentication or security key to sign in securely.
                 </p>
                 <PasskeyLogin
@@ -188,7 +181,7 @@ function LoginContent() {
                   <div className="w-full border-t border-gray-300 dark:border-gray-700"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  <span className="px-2 bg-card text-muted-foreground">
                     or
                   </span>
                 </div>
@@ -217,7 +210,7 @@ function LoginContent() {
                  <button 
                     type="button" 
                     onClick={() => { setStep('email'); setPassword(''); setError(''); }}
-                    className="text-indigo-600 hover:text-indigo-500"
+                    className="text-primary hover:text-primary/80"
                   >
                     {t('change')}
                   </button>
@@ -253,26 +246,25 @@ function LoginContent() {
 
           <div className="mt-8 space-y-4">
             <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-sm text-muted-foreground">
                 {t('noAccount')}{' '}
-                <Link href="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-purple-600 dark:hover:text-purple-400 font-semibold transition-colors duration-200">
+                <Link href="/register" className="text-primary font-semibold hover:underline">
                   {t('registerNow')}
                 </Link>
               </p>
             </div>
             
             {/* Privacy Notice */}
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-border">
               <p className="text-xs text-gray-500 dark:text-gray-500 text-center leading-relaxed">
                 🔒 <strong>Datenschutzfreundlich:</strong> Wir speichern nur Ihre E-Mail-Adresse und ein verschlüsseltes Passwort. 
                 Keine Tracking-Cookies, keine Werbung, keine Datenweitergabe an Dritte.{' '}
-                <Link href="/datenschutz" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                <Link href="/datenschutz" className="text-primary hover:underline">
                   Mehr erfahren
                 </Link>
               </p>
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
@@ -280,7 +272,7 @@ function LoginContent() {
 
 function LoginFallback() {
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center">
+    <div className="min-h-[calc(100vh-4rem)] bg-background flex items-center justify-center">
       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
     </div>
   );

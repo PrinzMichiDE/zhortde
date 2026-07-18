@@ -3,14 +3,14 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  Link as LinkIcon, 
-  FileText, 
-  Key, 
-  Webhook, 
-  Users, 
-  Zap, 
+import {
+  LayoutDashboard,
+  Link as LinkIcon,
+  FileText,
+  Key,
+  Webhook,
+  Users,
+  Zap,
   Settings,
   Lock,
   Share2,
@@ -21,7 +21,7 @@ import {
   X,
   Fingerprint,
   Building2,
-  Folder
+  Folder,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,14 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
   badge?: number;
 }
+
+const navLinkClass = (isActive: boolean) =>
+  cn(
+    'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+    isActive
+      ? 'bg-primary/10 text-primary border border-primary/20'
+      : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+  );
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -55,136 +63,77 @@ export function DashboardSidebar() {
     { name: 'Settings', href: '/dashboard/settings', icon: Settings },
   ];
 
+  const renderNav = (onNavigate?: () => void) =>
+    navItems.map((item) => {
+      const isActive =
+        pathname === item.href ||
+        (item.href !== '/dashboard' && pathname?.startsWith(item.href));
+      const Icon = item.icon;
+
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          onClick={onNavigate}
+          className={navLinkClass(!!isActive)}
+        >
+          <Icon className={cn('h-5 w-5 shrink-0', isActive && 'text-primary')} />
+          <span className="flex-1">{item.name}</span>
+          {item.badge ? (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-foreground">
+              {item.badge}
+            </span>
+          ) : null}
+        </Link>
+      );
+    });
+
   return (
     <>
-      {/* Mobile Menu Button */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-b-2 border-gray-200 dark:border-gray-800 px-4 py-3 flex items-center justify-between shadow-lg">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
-            <span className="text-white font-bold text-lg">Z</span>
-          </div>
-          <span className="text-xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-            Zhort
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-border bg-background/95 backdrop-blur px-4 py-3">
+        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-foreground">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
+            Z
           </span>
+          Zhort
         </Link>
         <button
+          type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+          aria-label="Menü"
         >
-          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 bg-white dark:bg-gray-900 pt-16">
-          <nav className="overflow-y-auto h-full p-4 space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href || 
-                             (item.href !== '/dashboard' && pathname?.startsWith(item.href));
-              const Icon = item.icon;
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
-                  )}
-                >
-                  <Icon
-                    className={cn(
-                      'w-5 h-5',
-                      isActive
-                        ? 'text-indigo-600 dark:text-indigo-400'
-                        : 'text-gray-500 dark:text-gray-400'
-                    )}
-                  />
-                  <span className="flex-1">{item.name}</span>
-                </Link>
-              );
-            })}
-          </nav>
+      {mobileMenuOpen ? (
+        <div className="lg:hidden fixed inset-0 z-40 bg-background pt-16">
+          <nav className="h-full overflow-y-auto p-4 space-y-0.5">{renderNav(() => setMobileMenuOpen(false))}</nav>
         </div>
-      )}
+      ) : null}
 
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r-2 border-gray-200 dark:border-gray-800 h-screen sticky top-0 shadow-lg">
-        <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-6 border-b-2 border-gray-200 dark:border-gray-800 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/30 dark:to-purple-950/30">
-            <Link href="/dashboard" className="flex items-center space-x-3 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
-                <span className="text-white font-bold text-xl">Z</span>
-              </div>
-              <span className="text-xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
-                Zhort
-              </span>
-            </Link>
-          </div>
+      <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-card h-screen sticky top-0">
+        <div className="border-b border-border p-5">
+          <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-foreground">
+            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
+              Z
+            </span>
+            Zhort
+          </Link>
+        </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4 space-y-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.href || 
-                           (item.href !== '/dashboard' && pathname?.startsWith(item.href));
-            const Icon = item.icon;
+        <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">{renderNav()}</nav>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  'flex items-center space-x-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 group relative',
-                  isActive
-                    ? 'bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 text-indigo-700 dark:text-indigo-300 shadow-md shadow-indigo-500/10'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 hover:shadow-sm'
-                )}
-              >
-                {isActive && (
-                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-r-full" />
-                )}
-                <Icon
-                  className={cn(
-                    'w-5 h-5 transition-all duration-200',
-                    isActive
-                      ? 'text-indigo-600 dark:text-indigo-400 scale-110'
-                      : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:scale-110'
-                  )}
-                />
-                <span className="flex-1">{item.name}</span>
-                {item.badge && (
-                  <span className="px-2.5 py-1 text-xs font-bold rounded-full bg-gradient-to-r from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                    {item.badge}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Footer */}
-        <div className="p-4 border-t-2 border-gray-200 dark:border-gray-800 mt-auto">
-          <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white text-xs">🔒</span>
-              </div>
-              <p className="text-xs font-bold text-gray-900 dark:text-gray-100">
-                Zero-Knowledge
-              </p>
-            </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+        <div className="border-t border-border p-4">
+          <div className="rounded-lg border border-border bg-muted/50 p-3">
+            <p className="text-xs font-semibold text-foreground mb-1">Zero-Knowledge</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Your data is encrypted end-to-end
             </p>
           </div>
         </div>
-      </div>
-    </aside>
+      </aside>
     </>
   );
 }

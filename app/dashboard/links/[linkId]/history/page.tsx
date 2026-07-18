@@ -48,7 +48,7 @@ export default function LinkHistoryPage() {
       if (!isRecord(changes)) return <span className="text-gray-500">Invalid data</span>;
 
       return (
-        <div className="mt-2 text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded-md border border-gray-200 dark:border-gray-700 font-mono overflow-x-auto">
+        <div className="mt-2 text-sm bg-gray-50 dark:bg-gray-900 p-3 rounded-md border border-border font-mono overflow-x-auto">
           {Object.entries(changes).map(([key, value]) => {
             const from =
               isRecord(value) && 'from' in value ? (value.from as unknown) : undefined;
@@ -56,7 +56,7 @@ export default function LinkHistoryPage() {
 
             return (
               <div key={key} className="flex flex-col sm:flex-row gap-1 sm:gap-4 mb-1 last:mb-0">
-                <span className="font-semibold text-gray-600 dark:text-gray-400 min-w-[100px]">{key}:</span>
+                <span className="font-semibold text-muted-foreground min-w-[100px]">{key}:</span>
                 <div className="flex items-center gap-2">
                   <span className="text-red-500 line-through opacity-70">{String(from ?? '')}</span>
                   <span className="text-gray-400">→</span>
@@ -84,7 +84,7 @@ export default function LinkHistoryPage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -94,7 +94,7 @@ export default function LinkHistoryPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <Clock className="h-6 w-6 text-indigo-500" />
               Audit Log / Historie
             </h1>
@@ -110,12 +110,12 @@ export default function LinkHistoryPage() {
         {error ? (
           <div className="bg-red-50 dark:bg-red-900/20 text-red-600 p-4 rounded-lg">{error}</div>
         ) : history.length === 0 ? (
-          <div className="bg-white dark:bg-gray-800 p-12 rounded-xl text-center text-gray-500 dark:text-gray-400 shadow-sm border border-gray-100 dark:border-gray-700">
+          <div className="bg-card p-12 rounded-xl text-center text-gray-500 dark:text-gray-400 shadow-sm border border-border">
             <FileDiff className="h-12 w-12 mx-auto mb-4 opacity-20" />
             Keine Änderungen protokolliert.
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-card rounded-xl shadow-sm border border-border overflow-hidden">
              <div className="divide-y divide-gray-200 dark:divide-gray-700">
                {history.map((item) => {
                  const { label, color } = getActionLabel(item.action);
@@ -131,7 +131,7 @@ export default function LinkHistoryPage() {
                            {new Date(item.createdAt).toLocaleString('de-DE')}
                          </span>
                        </div>
-                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                          <User className="h-4 w-4 text-gray-400" />
                          {item.user?.email || 'System / Unbekannt'}
                        </div>

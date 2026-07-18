@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="flex min-h-screen bg-muted/30">
       <DashboardSidebar />
       <main className="flex-1 overflow-x-hidden lg:ml-0 pt-16 lg:pt-0">
         {children}

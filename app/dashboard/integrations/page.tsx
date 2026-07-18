@@ -19,13 +19,13 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="min-h-full bg-background">
       <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8 animate-fade-in">
-          <Link href="/dashboard" className="text-indigo-600 dark:text-indigo-400 hover:underline mb-4 inline-block">
+        <div className="mb-8">
+          <Link href="/dashboard" className="text-primary hover:underline mb-4 inline-block">
             &larr; Zurück zum Dashboard
           </Link>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-3">
             Enterprise Integrations
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -35,14 +35,14 @@ export default function IntegrationsPage() {
 
         <div className="space-y-8">
           {/* MCP Server Integration */}
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700 animate-slide-up">
+          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl shadow-xl p-8 border border-gray-100 dark:border-gray-700">
             <div className="flex items-start justify-between mb-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-foreground flex items-center gap-3">
                   <span className="text-2xl" aria-hidden="true">🤖</span>
                   Model Context Protocol (MCP)
                 </h2>
-                <p className="mt-2 text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-muted-foreground">
                   Nutzen Sie Zhort direkt aus Ihrem AI-Editor (wie Cursor) oder anderen MCP-fähigen Tools.
                   Der MCP Server stellt Tools zum Kürzen von Links und Abrufen von Statistiken bereit.
                 </p>
@@ -52,7 +52,7 @@ export default function IntegrationsPage() {
               </span>
             </div>
 
-            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700 mb-6">
+            <div className="bg-gray-50 dark:bg-gray-900/50 rounded-xl p-6 border border-border mb-6">
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
                 Server URL (SSE Endpoint)
               </label>
@@ -62,7 +62,7 @@ export default function IntegrationsPage() {
                 </code>
                 <button
                   onClick={copyToClipboard}
-                  className="p-3 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="p-3 text-gray-500 hover:text-indigo-600 dark:text-gray-400 dark:hover:text-indigo-400 bg-card border border-gray-300 dark:border-gray-700 rounded-lg hover:border-indigo-400 dark:hover:border-indigo-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   title="URL kopieren"
                 >
                   {copied ? (
@@ -94,7 +94,7 @@ export default function IntegrationsPage() {
             <div className="mt-6 flex justify-end">
                <Link 
                  href="/dashboard/api-keys"
-                 className="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
+                 className="text-sm font-medium text-primary hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center gap-1"
                >
                  API Key erstellen &rarr;
                </Link>
