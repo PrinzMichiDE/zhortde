@@ -20,15 +20,16 @@ export default async function DashboardPage() {
 
   const userId = parseInt(session.user.id);
 
-  const userLinks = await db.query.links.findMany({
-    where: eq(links.userId, userId),
-    orderBy: [desc(links.createdAt)],
-  });
-
-  const userPastes = await db.query.pastes.findMany({
-    where: eq(pastes.userId, userId),
-    orderBy: [desc(pastes.createdAt)],
-  });
+  const [userLinks, userPastes] = await Promise.all([
+    db.query.links.findMany({
+      where: eq(links.userId, userId),
+      orderBy: [desc(links.createdAt)],
+    }),
+    db.query.pastes.findMany({
+      where: eq(pastes.userId, userId),
+      orderBy: [desc(pastes.createdAt)],
+    }),
+  ]);
 
   const features = [
     { name: t('bulkShorten'), href: '/dashboard/bulk', description: t('bulkDescription') },

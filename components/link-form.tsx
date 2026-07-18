@@ -159,9 +159,8 @@ export function LinkForm() {
               setCustomCode(code);
               setCustomCodeError('');
             }}
-            onTagsSelect={(tags) => {
-              // Tags können später verwendet werden
-              console.log('Selected tags:', tags);
+            onTagsSelect={() => {
+              // Tags can be applied when link management supports them
             }}
           />
         )}

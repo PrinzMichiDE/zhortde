@@ -1,8 +1,8 @@
+import dynamic from 'next/dynamic';
 import { LinkForm } from '@/components/link-form';
-import { ExtensionDownload } from '@/components/extension-download';
-import { KofiSupport } from '@/components/kofi-support';
 import { FeatureCard } from '@/components/ui/feature-card';
 import { StatChip } from '@/components/ui/stat-chip';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   PageContainer,
   PageShell,
@@ -24,7 +24,17 @@ import {
 import { getStat } from '@/lib/db/init-stats';
 import { getTranslations, getLocale } from 'next-intl/server';
 
-export const dynamic = 'force-dynamic';
+const KofiSupport = dynamic(
+  () => import('@/components/kofi-support').then((m) => ({ default: m.KofiSupport })),
+  { loading: () => <Skeleton className="h-32 w-full rounded-2xl" /> }
+);
+
+const ExtensionDownload = dynamic(
+  () => import('@/components/extension-download').then((m) => ({ default: m.ExtensionDownload })),
+  { loading: () => <Skeleton className="h-24 w-full rounded-xl" /> }
+);
+
+export const revalidate = 60;
 
 const FEATURE_ICONS = [
   LockClosedIcon,
@@ -45,11 +55,13 @@ const FEATURE_KEYS = [
 ] as const;
 
 export default async function Home() {
-  const visitorCount = await getStat('visitors');
-  const linkCount = await getStat('links');
-  const t = await getTranslations('home');
-  const tf = await getTranslations('features');
-  const locale = await getLocale();
+  const [visitorCount, linkCount, t, tf, locale] = await Promise.all([
+    getStat('visitors'),
+    getStat('links'),
+    getTranslations('home'),
+    getTranslations('features'),
+    getLocale(),
+  ]);
 
   const features = FEATURE_KEYS.map((key, index) => ({
     key,
@@ -61,7 +73,6 @@ export default async function Home() {
   return (
     <PageShell>
       <PageContainer>
-        {/* Hero */}
         <Section className="pt-16 pb-10 sm:pt-20 sm:pb-12">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-4">
@@ -101,8 +112,7 @@ export default async function Home() {
           </div>
         </Section>
 
-        {/* Features */}
-        <Section className="border-t border-border">
+        <Section className="border-t border-border" style={{ contentVisibility: 'auto', containIntrinsicSize: '0 1200px' }}>
           <SectionHeader
             eyebrow={t('whyZhort')}
             title={t('whyZhort')}
@@ -120,7 +130,6 @@ export default async function Home() {
             ))}
           </div>
 
-          {/* Extension */}
           <Surface elevated className="mt-8 p-6 sm:p-8 md:col-span-full">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-8">
               <div className="flex-1 min-w-0">
@@ -129,7 +138,7 @@ export default async function Home() {
                 </div>
                 <ExtensionDownload />
               </div>
-              <div className="w-full max-w-sm shrink-0 rounded-lg border border-border bg-muted/30 p-4">
+              <div className="w-full max-w-sm shrink-0 rounded-lg border border-border bg-muted/30 p-4" aria-hidden="true">
                 <div className="flex items-center gap-2 mb-3 border-b border-border pb-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
                   <div className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
@@ -140,13 +149,9 @@ export default async function Home() {
                 </div>
                 <div className="rounded-md border border-border bg-card p-4 text-center">
                   <p className="font-semibold text-foreground text-sm mb-2">Zhort Extension</p>
-                  <button
-                    type="button"
-                    className="bg-primary text-primary-foreground text-sm py-1.5 px-3 rounded-md w-full"
-                    tabIndex={-1}
-                  >
+                  <div className="bg-primary text-primary-foreground text-sm py-1.5 px-3 rounded-md w-full">
                     Shorten
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>

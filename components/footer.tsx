@@ -35,7 +35,6 @@ export function Footer() {
     <footer className="mt-auto border-t border-border bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {/* Statistics */}
           <div>
             <h3 className="text-sm font-semibold text-foreground mb-4">{t('statistics')}</h3>
             <div className="space-y-3">
@@ -60,7 +59,6 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Brand */}
           <div className="text-center md:px-4">
             <div className="inline-flex items-center gap-2 mb-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
@@ -74,7 +72,6 @@ export function Footer() {
             </p>
           </div>
 
-          {/* Support */}
           <div className="text-center md:text-right">
             <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center justify-center md:justify-end gap-2">
               <HeartIcon className="h-4 w-4 text-destructive" aria-hidden />

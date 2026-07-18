@@ -18,6 +18,7 @@ interface LinksListProps {
 export function LinksList({ links: initialLinks }: LinksListProps) {
   const [links, setLinks] = useState(initialLinks);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [copiedId, setCopiedId] = useState<number | null>(null);
   const [editingLink, setEditingLink] = useState<LinkType | null>(null);
   const [editForm, setEditForm] = useState({ longUrl: '', isPublic: false, shortCode: '' });
   const [saving, setSaving] = useState(false);
@@ -50,9 +51,11 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
     }
   };
 
-  const copyShortUrl = (shortCode: string) => {
+  const copyShortUrl = async (shortCode: string, linkId: number) => {
     const baseUrl = window.location.origin;
-    navigator.clipboard.writeText(`${baseUrl}/s/${shortCode}`);
+    await navigator.clipboard.writeText(`${baseUrl}/s/${shortCode}`);
+    setCopiedId(linkId);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const openEdit = (link: LinkType) => {
@@ -135,7 +138,78 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
 
   return (
     <>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      {/* Mobile card layout */}
+      <div className="md:hidden space-y-3">
+        {links.map((link) => (
+          <div
+            key={link.id}
+            className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <code className="text-sm font-mono text-primary font-semibold break-all">
+                /s/{link.shortCode}
+              </code>
+              <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                link.isPublic
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+              }`}>
+                {link.isPublic ? t('public') : t('private')}
+              </span>
+            </div>
+            <p className="text-sm text-foreground line-clamp-2 break-all">{link.longUrl}</p>
+            <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <span>{link.hits} {t('clicks')}</span>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => copyShortUrl(link.shortCode, link.id)}
+                  className="h-10 w-10"
+                  aria-label={`${t('shortCode')} ${link.shortCode} ${tc('copy')}`}
+                >
+                  {copiedId === link.id ? (
+                    <span className="text-xs text-green-600 font-medium">{tc('copied')}</span>
+                  ) : (
+                    <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
+                  )}
+                </Button>
+                <a
+                  href={`/s/${link.shortCode}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }), "h-10 w-10")}
+                  aria-label={`${t('link')} ${link.shortCode} ${t('view')}`}
+                >
+                  <EyeIcon className="h-4 w-4" aria-hidden="true" />
+                </a>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => openEdit(link)}
+                  className="h-10 w-10"
+                  aria-label={`${t('link')} ${link.shortCode} ${tc('edit')}`}
+                >
+                  <PencilIcon className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleDelete(link.id)}
+                  disabled={deleting === link.id}
+                  className="h-10 w-10 text-destructive hover:text-destructive/80 hover:bg-destructive/10"
+                  aria-label={`${t('link')} ${link.shortCode} ${tc('delete')}`}
+                >
+                  <TrashIcon className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop table layout */}
+      <div className="hidden md:block overflow-x-auto rounded-lg border border-border">
         <table className="min-w-full divide-y divide-border">
         <thead className="bg-muted/50">
           <tr>
@@ -167,12 +241,16 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => copyShortUrl(link.shortCode)}
-                    title={tc('copy') as string}
+                    onClick={() => copyShortUrl(link.shortCode, link.id)}
+                    title={copiedId === link.id ? (tc('copied') as string) : (tc('copy') as string)}
                     aria-label={`${t('shortCode')} ${link.shortCode} ${tc('copy')}`}
                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
                   >
-                    <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
+                    {copiedId === link.id ? (
+                      <span className="text-xs text-green-600 font-medium">{tc('copied')}</span>
+                    ) : (
+                      <ClipboardIcon className="h-4 w-4" aria-hidden="true" />
+                    )}
                   </Button>
                 </div>
               </td>
