@@ -181,6 +181,11 @@ const nextConfig: NextConfig = {
   
   // Output configuration
   output: 'standalone',
+
+  // Include migration assets for runtime schema bootstrap (instrumentation)
+  outputFileTracingIncludes: {
+    '/': ['./drizzle/**/*', './drizzle.config.ts', './lib/db/schema.ts'],
+  },
 };
 
 export default withNextIntl(nextConfig);
