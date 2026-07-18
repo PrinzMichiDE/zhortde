@@ -7,6 +7,7 @@ import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { Bars3Icon, UserCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { ThemeToggle } from './theme-toggle';
 import { LanguageSelector } from './language-selector';
+import { ZhortLogo } from './zhort-logo';
 import { useTranslations } from 'next-intl';
 
 export function Header() {
@@ -34,13 +35,10 @@ export function Header() {
           <div className="flex items-center gap-6 md:gap-8">
             <Link
               href="/"
-              className="flex items-center gap-2.5 text-lg font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
+              className="focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-md"
               aria-label="Zhort"
             >
-              <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm font-bold">
-                Z
-              </span>
-              <span>Zhort</span>
+              <ZhortLogo size="md" />
             </Link>
 
             <div className="hidden md:flex items-center gap-0.5">

@@ -3,11 +3,13 @@
 import { useState, useEffect } from 'react';
 import { HeartIcon, LinkIcon, UserIcon } from '@heroicons/react/24/outline';
 import { CookieSettingsButton } from './cookie-settings-button';
+import { ZhortLogo } from './zhort-logo';
+import { INITIAL_STATS } from '@/lib/stats-config';
 import { useTranslations, useLocale } from 'next-intl';
 
 export function Footer() {
-  const [visitorCount, setVisitorCount] = useState(0);
-  const [linkCount, setLinkCount] = useState(0);
+  const [visitorCount, setVisitorCount] = useState(INITIAL_STATS.visitors);
+  const [linkCount, setLinkCount] = useState(INITIAL_STATS.links);
   const t = useTranslations('footer');
   const locale = useLocale();
 
@@ -19,8 +21,8 @@ export function Footer() {
         setVisitorCount(data.visitors || 0);
         setLinkCount(data.links || 0);
       } catch {
-        setVisitorCount(0);
-        setLinkCount(0);
+        setVisitorCount(INITIAL_STATS.visitors);
+        setLinkCount(INITIAL_STATS.links);
       }
     };
     loadStats();
@@ -61,10 +63,7 @@ export function Footer() {
 
           <div className="text-center md:px-4">
             <div className="inline-flex items-center gap-2 mb-3">
-              <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-                Z
-              </span>
-              <span className="text-xl font-bold text-foreground">Zhort</span>
+              <ZhortLogo size="sm" />
             </div>
             <p className="text-sm text-muted-foreground mb-1">{t('freeService')}</p>
             <p className="text-xs text-muted-foreground">

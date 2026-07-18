@@ -21,7 +21,7 @@ import {
   LinkIcon,
   UserGroupIcon,
 } from '@heroicons/react/24/outline';
-import { getStat } from '@/lib/db/init-stats';
+import { getStat, initStats } from '@/lib/db/init-stats';
 import { getTranslations, getLocale } from 'next-intl/server';
 
 const KofiSupport = dynamic(
@@ -55,6 +55,8 @@ const FEATURE_KEYS = [
 ] as const;
 
 export default async function Home() {
+  await initStats();
+
   const [visitorCount, linkCount, t, tf, locale] = await Promise.all([
     getStat('visitors'),
     getStat('links'),

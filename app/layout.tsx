@@ -61,14 +61,20 @@ export async function generateMetadata(): Promise<Metadata> {
       title: t('title'),
       description: t('description'),
       locale,
+      images: [{ url: '/logo.png', width: 512, height: 512, alt: 'Zhort' }],
     },
     twitter: {
       card: 'summary_large_image',
       title: t('title'),
       description: t('description'),
+      images: ['/logo.png'],
     },
     icons: {
-      icon: '/favicon.ico',
+      icon: [
+        { url: '/logo.svg', type: 'image/svg+xml' },
+        { url: '/logo.png', type: 'image/png' },
+      ],
+      apple: '/apple-touch-icon.png',
     },
   };
 }
