@@ -281,11 +281,43 @@
   outline: none;
 }
 
-/* Smooth Transitions */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
+/* Scoped transitions — avoid universal * selector for performance */
+.transition-base {
+  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* Animation delay utilities */
+.animation-delay-1000 { animation-delay: 1s; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+
+/* Respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-blob,
+  .animate-gradient,
+  .animate-wave,
+  .animate-float,
+  .animate-pulse-slow,
+  .animate-shimmer {
+    animation: none !important;
+  }
+}
+
+/* GPU-friendly animated backgrounds */
+.animate-blob {
+  will-change: transform;
+  contain: layout style paint;
 }
 
 /* Scrollbar */

@@ -59,47 +59,55 @@ export function Footer() {
     };
   }, []);
 
-  // Animierte Zähler
+  // Animated counters using requestAnimationFrame (more efficient than setInterval)
   useEffect(() => {
     if (!isVisible || visitorCount === 0) return;
 
-    const duration = 2000; // 2 Sekunden
-    const steps = 60;
-    const increment = visitorCount / steps;
-    let current = 0;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setAnimatedVisitors(visitorCount);
+      return;
+    }
 
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= visitorCount) {
-        setAnimatedVisitors(visitorCount);
-        clearInterval(timer);
-      } else {
-        setAnimatedVisitors(Math.floor(current));
+    const duration = 1500;
+    const start = performance.now();
+    let frameId: number;
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      setAnimatedVisitors(Math.floor(visitorCount * progress));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
       }
-    }, duration / steps);
+    };
 
-    return () => clearInterval(timer);
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
   }, [visitorCount, isVisible]);
 
   useEffect(() => {
     if (!isVisible || linkCount === 0) return;
 
-    const duration = 2000;
-    const steps = 60;
-    const increment = linkCount / steps;
-    let current = 0;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setAnimatedLinks(linkCount);
+      return;
+    }
 
-    const timer = setInterval(() => {
-      current += increment;
-      if (current >= linkCount) {
-        setAnimatedLinks(linkCount);
-        clearInterval(timer);
-      } else {
-        setAnimatedLinks(Math.floor(current));
+    const duration = 1500;
+    const start = performance.now();
+    let frameId: number;
+
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      setAnimatedLinks(Math.floor(linkCount * progress));
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
       }
-    }, duration / steps);
+    };
 
-    return () => clearInterval(timer);
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
   }, [linkCount, isVisible]);
 
   const formatNumber = (num: number) => {

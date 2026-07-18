@@ -12,6 +12,7 @@ import { getBaseUrl } from '@/lib/env';
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -107,7 +108,13 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={dir} suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground flex flex-col min-h-screen transition-colors duration-300`}>
+      <body className={`${inter.variable} font-sans antialiased bg-background text-foreground flex flex-col min-h-screen`}>
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:shadow-lg"
+        >
+          Skip to content
+        </a>
         <Providers locale={locale} messages={messages}>
           <script
             type="application/ld+json"
@@ -119,7 +126,7 @@ export default async function RootLayout({
             dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
           />
           <Header />
-          <main className="flex-grow">{children}</main>
+          <main id="main-content" className="flex-grow">{children}</main>
           <Footer />
           <CookieConsentBanner />
         </Providers>

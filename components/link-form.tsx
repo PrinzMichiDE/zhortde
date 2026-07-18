@@ -119,10 +119,7 @@ export function LinkForm() {
   };
 
   return (
-    <div className="bg-white/95 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 backdrop-blur-xl border-2 border-gray-200 dark:border-gray-800 hover:shadow-2xl hover:shadow-indigo-500/20 dark:hover:shadow-indigo-500/10 transition-all duration-300 relative overflow-hidden">
-      {/* Decorative gradient overlay */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl -z-10 animate-blob"></div>
-      <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-pink-500/10 to-purple-500/10 rounded-full blur-3xl -z-10 animate-blob animation-delay-2000"></div>
+    <div className="bg-white/95 dark:bg-gray-800/95 rounded-3xl shadow-2xl p-6 sm:p-8 lg:p-10 backdrop-blur-xl border-2 border-gray-200 dark:border-gray-800 relative overflow-hidden">
       <div className="relative">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         {/* Honeypot Field - Hidden from real users */}
@@ -162,9 +159,8 @@ export function LinkForm() {
               setCustomCode(code);
               setCustomCodeError('');
             }}
-            onTagsSelect={(tags) => {
-              // Tags können später verwendet werden
-              console.log('Selected tags:', tags);
+            onTagsSelect={() => {
+              // Tags can be applied when link management supports them
             }}
           />
         )}
