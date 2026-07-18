@@ -5,7 +5,7 @@ import { Providers } from "@/components/providers";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { CookieConsentBanner } from "@/components/cookie-consent-banner";
-import { getLocale, getMessages, getTranslations } from 'next-intl/server';
+import { getLocale, getMessages, getTimeZone, getTranslations } from 'next-intl/server';
 import { isRtlLocale, type Locale } from '@/i18n/config';
 import { getBaseUrl } from '@/lib/env';
 
@@ -86,6 +86,7 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale() as Locale;
   const messages = await getMessages();
+  const timeZone = await getTimeZone();
   const dir = isRtlLocale(locale) ? 'rtl' : 'ltr';
   const baseUrl = getBaseUrl();
 
@@ -121,7 +122,7 @@ export default async function RootLayout({
         >
           Skip to content
         </a>
-        <Providers locale={locale} messages={messages}>
+        <Providers locale={locale} messages={messages} timeZone={timeZone}>
           <script
             type="application/ld+json"
             // JSON-LD must be inline per spec; CSP currently allows inline scripts.

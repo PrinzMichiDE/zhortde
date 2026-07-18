@@ -25,6 +25,7 @@ function getDb() {
       max: 10,
       idle_timeout: 20,
       connect_timeout: 10,
+      onnotice: () => {},
     });
 
     global.dbConnection = drizzle(client, { schema });

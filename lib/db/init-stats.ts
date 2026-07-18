@@ -9,7 +9,7 @@ export { INITIAL_STATS, getInitialStat };
 let statsTableReady = false;
 
 const CREATE_STATS_TABLE_SQL = sql`
-  CREATE TABLE IF NOT EXISTS "stats" (
+  CREATE TABLE "stats" (
     "id" serial PRIMARY KEY NOT NULL,
     "key" text NOT NULL,
     "value" integer NOT NULL,
@@ -17,12 +17,29 @@ const CREATE_STATS_TABLE_SQL = sql`
   )
 `;
 
+async function statsTableExists(): Promise<boolean> {
+  const rows = await db.execute(sql`
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'stats'
+    LIMIT 1
+  `);
+
+  return rows.length > 0;
+}
+
 async function ensureStatsTable(): Promise<boolean> {
   if (statsTableReady) {
     return true;
   }
 
   try {
+    if (await statsTableExists()) {
+      statsTableReady = true;
+      return true;
+    }
+
     await db.execute(CREATE_STATS_TABLE_SQL);
     statsTableReady = true;
     return true;
@@ -54,7 +71,10 @@ async function migrateLegacySeedStats(): Promise<void> {
         .set({ value: INITIAL_STATS.links })
         .where(eq(stats.key, 'links')),
     ]);
-    console.log('Migrated legacy identical seed stats to plausible values');
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Migrated legacy identical seed stats to plausible values');
+    }
   }
 }
 
@@ -75,7 +95,10 @@ export async function initStats() {
           key,
           value: INITIAL_STATS[key],
         });
-        console.log(`Initialized ${key} counter to ${INITIAL_STATS[key]}`);
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Initialized ${key} counter to ${INITIAL_STATS[key]}`);
+        }
       }
     }
 
