@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build output
+.next
+out
+dist
+
+# Git / CI
+.git
+.github
+
+# Local env and secrets
+.env
+.env.*
+!.env.example
+
+# Dev / docs
+*.md
+!README.md
+.cursor
+internal-docs
+
+# Tests and tooling
+coverage
+.eslintcache
+tsconfig.tsbuildinfo
