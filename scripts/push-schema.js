@@ -3,65 +3,64 @@
 
 /**
  * Push Schema zur Datenbank
- * Lädt .env.local und führt drizzle-kit push aus
+ * Nutzt DATABASE_URL aus der Umgebung oder .env.local
  */
 
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-// Load .env.local
+function loadEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+
+  const envVars = {};
+  const envContent = fs.readFileSync(filePath, 'utf8');
+
+  envContent.split('\n').forEach((line) => {
+    line = line.trim();
+    if (line.startsWith('#') || !line) {
+      return;
+    }
+
+    const equalIndex = line.indexOf('=');
+    if (equalIndex === -1) {
+      return;
+    }
+
+    const key = line.substring(0, equalIndex).trim();
+    let value = line.substring(equalIndex + 1).trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.substring(1, value.length - 1);
+    }
+
+    if (key && value) {
+      envVars[key] = value;
+    }
+  });
+
+  return envVars;
+}
+
 const envPath = path.join(process.cwd(), '.env.local');
+const fileEnv = loadEnvFile(envPath);
+const databaseUrl =
+  process.env.DATABASE_URL ||
+  process.env.POSTGRES_URL ||
+  fileEnv.DATABASE_URL ||
+  fileEnv.POSTGRES_URL;
 
-if (!fs.existsSync(envPath)) {
-  console.error('❌ .env.local nicht gefunden!');
-  console.log('\n📝 Erstellen Sie .env.local mit:');
-  console.log('npm run quickfix\n');
+if (!databaseUrl) {
+  console.error('❌ DATABASE_URL oder POSTGRES_URL nicht gefunden!');
+  console.log('\n📝 Setzen Sie DATABASE_URL in der Umgebung oder in .env.local\n');
   process.exit(1);
 }
 
-// Parse .env.local
-const envContent = fs.readFileSync(envPath, 'utf8');
-const envVars = {};
-
-envContent.split('\n').forEach(line => {
-  // Skip comments and empty lines
-  line = line.trim();
-  if (line.startsWith('#') || !line) {
-    return;
-  }
-  
-  const equalIndex = line.indexOf('=');
-  if (equalIndex === -1) {
-    return;
-  }
-  
-  const key = line.substring(0, equalIndex).trim();
-  let value = line.substring(equalIndex + 1).trim();
-  
-  // Remove surrounding quotes (both single and double)
-  if ((value.startsWith('"') && value.endsWith('"')) ||
-      (value.startsWith("'") && value.endsWith("'"))) {
-    value = value.substring(1, value.length - 1);
-  }
-  
-  if (key && value) {
-    envVars[key] = value;
-  }
-});
-
-if (!envVars.DATABASE_URL && !envVars.POSTGRES_URL) {
-  console.error('❌ DATABASE_URL oder POSTGRES_URL nicht in .env.local gefunden!');
-  console.log('\n📝 Ihre .env.local sollte enthalten:');
-  console.log('DATABASE_URL="postgresql://..."');
-  console.log('\noder');
-  console.log('POSTGRES_URL="postgresql://..."\n');
-  process.exit(1);
-}
-
-const databaseUrl = envVars.DATABASE_URL || envVars.POSTGRES_URL;
-
-// Validate it's a PostgreSQL URL
 if (!databaseUrl.startsWith('postgres://') && !databaseUrl.startsWith('postgresql://')) {
   console.error('❌ Ungültige DATABASE_URL!');
   console.log(`Gefunden: ${databaseUrl}`);
@@ -73,24 +72,28 @@ console.log('\n📊 Pushing schema to database...\n');
 console.log(`Database: ${databaseUrl.replace(/:([^:@]+)@/, ':****@')}\n`);
 
 try {
-  // Set environment variable and run drizzle-kit push
-  process.env.DATABASE_URL = databaseUrl;
-  process.env.POSTGRES_URL = databaseUrl;
-  
-  execSync('drizzle-kit push', {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      DATABASE_URL: databaseUrl,
-      POSTGRES_URL: databaseUrl,
-    }
-  });
-  
+  const drizzleKitPath = path.join(
+    process.cwd(),
+    'node_modules',
+    '.bin',
+    process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit',
+  );
+
+  execFileSync(
+    drizzleKitPath,
+    ['push', '--force', '--url', databaseUrl],
+    {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        DATABASE_URL: databaseUrl,
+        POSTGRES_URL: databaseUrl,
+      },
+    },
+  );
+
   console.log('\n✅ Schema erfolgreich gepusht!\n');
-  console.log('🚀 Starten Sie jetzt den Dev-Server:');
-  console.log('npm run dev\n');
-} catch (error) {
+} catch {
   console.error('\n❌ Fehler beim Pushen des Schemas');
   process.exit(1);
 }
-

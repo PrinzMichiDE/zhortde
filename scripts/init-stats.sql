@@ -5,8 +5,8 @@
 DELETE FROM stats WHERE key IN ('visitors', 'links');
 
 -- Insert initial values
-Update stats set value = 3526819 where key = 'visitors';
-Update stats set value = 126819 where key = 'links';
+Update stats set value = 267843 where key = 'visitors';
+Update stats set value = 71529 where key = 'links';
 VALUES 
   ('visitors', 3526819),
   ('links', 54428);

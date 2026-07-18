@@ -3,6 +3,9 @@ export type Locale = (typeof locales)[number];
 
 export const defaultLocale: Locale = 'de';
 
+/** Fixed timezone avoids next-intl ENVIRONMENT_FALLBACK SSR warnings */
+export const defaultTimeZone = 'Europe/Berlin';
+
 export const localeNames: Record<Locale, string> = {
   de: 'Deutsch',
   en: 'English',

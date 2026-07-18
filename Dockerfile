@@ -32,9 +32,17 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
+COPY --from=builder /app/lib/db/schema.ts ./lib/db/schema.ts
+COPY --from=builder /app/scripts/ensure-database.js ./scripts/ensure-database.js
+COPY --from=builder /app/scripts/docker-entrypoint.js ./scripts/docker-entrypoint.js
+COPY --from=builder /app/package.json ./package.json
 
+USER root
+RUN npm install drizzle-kit@0.31.8 --no-save --omit=dev
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["node", "scripts/docker-entrypoint.js"]

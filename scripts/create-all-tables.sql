@@ -94,8 +94,8 @@ ON UPDATE no action;
 -- Initialize stats counters
 INSERT INTO "stats" ("key", "value") 
 VALUES 
-  ('visitors', 126819),
-  ('links', 126819)
+  ('visitors', 267843),
+  ('links', 71529)
 ON CONFLICT ("key") DO NOTHING;
 
 -- ========================================
