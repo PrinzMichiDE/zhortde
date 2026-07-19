@@ -1,24 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { Switch } from '@headlessui/react';
-import { 
-  CheckIcon, 
-  ClipboardIcon, 
+import {
+  CheckIcon,
+  ClipboardIcon,
   LockClosedIcon,
   ClockIcon,
-  QrCodeIcon 
+  QrCodeIcon,
+  ClipboardDocumentIcon,
 } from '@heroicons/react/24/outline';
 import { EXPIRATION_OPTIONS } from '@/lib/password-protection';
+import type { UtmParameters } from '@/lib/utm-builder';
+import { addRecentLink } from '@/lib/recent-links';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Alert } from './ui/alert';
 import { SmartSuggestions } from './smart-suggestions';
+import { UtmBuilder } from './utm-builder';
+import { RecentLinks } from './recent-links';
 import { useTranslations } from 'next-intl';
 
 export function LinkForm() {
   const { data: session } = useSession();
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const [longUrl, setLongUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [isPublic, setIsPublic] = useState(true);
@@ -30,9 +36,12 @@ export function LinkForm() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showUtm, setShowUtm] = useState(false);
   const [urlError, setUrlError] = useState('');
   const [customCodeError, setCustomCodeError] = useState('');
-  const [honeyPot, setHoneyPot] = useState(''); // Anti-Spam field
+  const [honeyPot, setHoneyPot] = useState('');
+  const [utmParams, setUtmParams] = useState<UtmParameters>({});
+  const [utmFinalUrl, setUtmFinalUrl] = useState('');
   const t = useTranslations('linkForm');
   const te = useTranslations('expiration');
   const tc = useTranslations('common');
@@ -46,16 +55,39 @@ export function LinkForm() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUtmChange = useCallback((params: UtmParameters, finalUrl: string) => {
+    setUtmParams(params);
+    setUtmFinalUrl(finalUrl);
+  }, []);
+
+  const copyToClipboard = useCallback((text?: string) => {
+    const value = text ?? shortUrl;
+    if (!value) return;
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [shortUrl]);
+
+  const pasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text && validateUrl(text.trim())) {
+        setLongUrl(text.trim());
+        setUrlError('');
+      }
+    } catch {
+      setError(t('pasteError'));
+      setTimeout(() => setError(''), 3000);
+    }
+  };
+
+  const submitForm = async () => {
     setError('');
     setUrlError('');
     setCustomCodeError('');
     setShortUrl('');
 
-    // Honeypot Check (Client-side pre-check, though real check is backend)
     if (honeyPot) {
-      // Silently fail for bots
       setLoading(true);
       setTimeout(() => {
         setLoading(false);
@@ -64,8 +96,11 @@ export function LinkForm() {
       return;
     }
 
-    // Validierung
-    if (!validateUrl(longUrl)) {
+    const urlToShorten = utmFinalUrl && Object.values(utmParams).some(Boolean)
+      ? utmFinalUrl
+      : longUrl;
+
+    if (!validateUrl(urlToShorten)) {
       setUrlError(t('validUrlError'));
       return;
     }
@@ -82,12 +117,17 @@ export function LinkForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          longUrl,
+          longUrl: urlToShorten,
           isPublic,
           customCode: customCode.trim() || undefined,
           password: password || undefined,
           expiresIn: expiresIn === 'never' ? undefined : expiresIn,
-          hp: honeyPot // Send honeypot field
+          utmSource: utmParams.source,
+          utmMedium: utmParams.medium,
+          utmCampaign: utmParams.campaign,
+          utmTerm: utmParams.term,
+          utmContent: utmParams.content,
+          hp: honeyPot,
         }),
       });
 
@@ -98,13 +138,23 @@ export function LinkForm() {
       }
 
       const baseUrl = window.location.origin;
-      setShortUrl(`${baseUrl}/s/${data.shortCode}`);
+      const createdShortUrl = `${baseUrl}/s/${data.shortCode}`;
+      setShortUrl(createdShortUrl);
       setShortCode(data.shortCode);
+      addRecentLink({
+        shortCode: data.shortCode,
+        shortUrl: createdShortUrl,
+        longUrl: urlToShorten,
+      });
+      copyToClipboard(createdShortUrl);
       setLongUrl('');
       setCustomCode('');
       setPassword('');
       setExpiresIn('never');
+      setUtmParams({});
+      setUtmFinalUrl('');
       setShowAdvanced(false);
+      setShowUtm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : tc('error'));
     } finally {
@@ -112,17 +162,34 @@ export function LinkForm() {
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(shortUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitForm();
   };
+
+  useEffect(() => {
+    urlInputRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+        event.preventDefault();
+        if (!loading && longUrl && validateUrl(longUrl)) {
+          void submitForm();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  });
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-md p-6 sm:p-8 lg:p-10">
-      <div>
+      <RecentLinks />
+
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        {/* Honeypot Field - Hidden from real users */}
         <div className="opacity-0 absolute top-0 left-0 h-0 w-0 overflow-hidden" aria-hidden="true">
           <label htmlFor="hp_check">Please leave blank</label>
           <input
@@ -136,22 +203,36 @@ export function LinkForm() {
           />
         </div>
 
-        <Input
-          id="url"
-          type="url"
-          label={t('longUrl')}
-          value={longUrl}
-          onChange={(e) => {
-            setLongUrl(e.target.value);
-            setUrlError('');
-          }}
-          placeholder={t('placeholder')}
-          required
-          error={!!urlError}
-          errorText={urlError}
-        />
+        <div className="space-y-2">
+          <Input
+            ref={urlInputRef}
+            id="url"
+            type="url"
+            label={t('longUrl')}
+            value={longUrl}
+            onChange={(e) => {
+              setLongUrl(e.target.value);
+              setUrlError('');
+            }}
+            placeholder={t('placeholder')}
+            required
+            error={!!urlError}
+            errorText={urlError}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pasteFromClipboard}
+            >
+              <ClipboardDocumentIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
+              {t('pasteUrl')}
+            </Button>
+            <span className="text-xs text-muted-foreground">{t('keyboardHint')}</span>
+          </div>
+        </div>
 
-        {/* Smart Suggestions */}
         {session && longUrl && longUrl.length > 10 && validateUrl(longUrl) && (
           <SmartSuggestions
             longUrl={longUrl}
@@ -159,9 +240,7 @@ export function LinkForm() {
               setCustomCode(code);
               setCustomCodeError('');
             }}
-            onTagsSelect={() => {
-              // Tags can be applied when link management supports them
-            }}
+            onTagsSelect={() => {}}
           />
         )}
 
@@ -190,7 +269,6 @@ export function LinkForm() {
           </div>
         </div>
 
-        {/* Advanced Options Toggle */}
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
@@ -198,10 +276,10 @@ export function LinkForm() {
           aria-expanded={showAdvanced}
           aria-controls="advanced-options"
         >
-          <svg 
+          <svg
             className={`w-4 h-4 transform transition-transform duration-300 ${showAdvanced ? 'rotate-180' : 'rotate-0'}`}
-            fill="none" 
-            stroke="currentColor" 
+            fill="none"
+            stroke="currentColor"
             viewBox="0 0 24 24"
             aria-hidden="true"
           >
@@ -215,7 +293,6 @@ export function LinkForm() {
 
         {showAdvanced && (
           <div id="advanced-options" className="space-y-4 p-5 bg-muted/40 rounded-lg border border-border">
-            {/* Password Protection */}
             <Input
               id="password"
               type="password"
@@ -231,7 +308,6 @@ export function LinkForm() {
               helperText={t('passwordHelper')}
             />
 
-            {/* Expiration */}
             <div>
               <label htmlFor="expiresIn" className="flex items-center text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                 <ClockIcon className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
@@ -243,17 +319,14 @@ export function LinkForm() {
                 onChange={(e) => setExpiresIn(e.target.value)}
                 className="w-full px-4 py-2.5 border border-input rounded-lg focus:ring-2 focus:ring-ring bg-background text-foreground font-medium cursor-pointer min-h-[44px]"
               >
-                <option value="never">{te('never')}</option>
-                <option value="1h">{te('1hour')}</option>
-                <option value="1d">{te('1day')}</option>
-                <option value="7d">{te('7days')}</option>
-                <option value="30d">{te('30days')}</option>
-                <option value="90d">{te('90days')}</option>
-                <option value="1y">{te('1year')}</option>
+                {EXPIRATION_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {te(option.labelKey)}
+                  </option>
+                ))}
               </select>
             </div>
 
-            {/* Public/Private Toggle (nur für eingeloggte User) */}
             {session && (
               <div className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -265,7 +338,7 @@ export function LinkForm() {
                   className={`${
                     isPublic ? 'bg-primary' : 'bg-muted-foreground/50'
                   } relative inline-flex h-7 w-12 items-center rounded-full transition-all duration-300 shadow-inner focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
-                  aria-label={isPublic ? 'Öffentlich' : 'Privat'}
+                  aria-label={isPublic ? t('publicVisible') : t('privateVisible')}
                 >
                   <span
                     className={`${
@@ -273,6 +346,21 @@ export function LinkForm() {
                     } inline-block h-5 w-5 transform rounded-full bg-white transition-transform duration-300 shadow-md`}
                   />
                 </Switch>
+              </div>
+            )}
+
+            {longUrl && validateUrl(longUrl) && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <button
+                  type="button"
+                  onClick={() => setShowUtm(!showUtm)}
+                  className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  {showUtm ? t('hideUtm') : t('showUtm')}
+                </button>
+                {showUtm && (
+                  <UtmBuilder baseUrl={longUrl} onChange={handleUtmChange} initialParams={utmParams} />
+                )}
               </div>
             )}
           </div>
@@ -284,12 +372,7 @@ export function LinkForm() {
           </Alert>
         )}
 
-        <Button
-          type="submit"
-          loading={loading}
-          fullWidth
-          size="lg"
-        >
+        <Button type="submit" loading={loading} fullWidth size="lg">
           {loading ? t('shortening') : t('shortenUrl')}
         </Button>
       </form>
@@ -301,49 +384,64 @@ export function LinkForm() {
               <CheckIcon className="h-5 w-5" aria-hidden="true" />
               {t('success')}
             </h3>
-            
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-md border border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 transition-colors">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                  <span aria-hidden="true">🔗</span>
-                  <span>{t('yourShortUrl')}:</span>
-                </span>
-                <Button
-                  variant={copied ? 'success' : 'outline'}
-                  size="sm"
-                  onClick={copyToClipboard}
-                  aria-label={copied ? tc('copied') : tc('copy')}
-                >
-                  {copied ? (
-                    <>
-                      <CheckIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                      {tc('copied')}
-                    </>
-                  ) : (
-                    <>
-                      <ClipboardIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
-                      {tc('copy')}
-                    </>
-                  )}
-                </Button>
+
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
+              <div className="shrink-0 rounded-xl border border-border bg-white p-3 dark:bg-gray-900 shadow-sm">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={`/api/qr/${shortCode}?format=png&width=180`}
+                  alt={t('qrPreviewAlt')}
+                  width={180}
+                  height={180}
+                  className="rounded-lg"
+                />
               </div>
-              <a
-                href={shortUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-mono text-sm sm:text-base md:text-lg break-all underline decoration-2 underline-offset-2 hover:decoration-indigo-800 dark:hover:decoration-indigo-400 transition-colors font-semibold"
-              >
-                {shortUrl}
-              </a>
+
+              <div className="flex-1 w-full bg-white dark:bg-gray-800 rounded-xl p-4 sm:p-5 shadow-md border border-green-200 dark:border-green-800">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                    <span aria-hidden="true">🔗</span>
+                    <span>{t('yourShortUrl')}:</span>
+                  </span>
+                  <Button
+                    variant={copied ? 'success' : 'outline'}
+                    size="sm"
+                    onClick={() => copyToClipboard()}
+                    aria-label={copied ? tc('copied') : tc('copy')}
+                  >
+                    {copied ? (
+                      <>
+                        <CheckIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                        {tc('copied')}
+                      </>
+                    ) : (
+                      <>
+                        <ClipboardIcon className="h-4 w-4 mr-1.5" aria-hidden="true" />
+                        {tc('copy')}
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <a
+                  href={shortUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-mono text-sm sm:text-base break-all underline decoration-2 underline-offset-2 font-semibold"
+                >
+                  {shortUrl}
+                </a>
+                {copied && (
+                  <p className="mt-2 text-xs text-green-600 dark:text-green-400">{t('autoCopied')}</p>
+                )}
+              </div>
             </div>
 
-            {/* QR Code Actions */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
               <a
                 href={`/api/qr/${shortCode}?format=png`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-semibold rounded-lg border-2 border-indigo-200 dark:border-indigo-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all duration-300 shadow-sm hover:shadow-md min-h-[44px] focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold rounded-lg border-2 border-indigo-200 dark:border-indigo-800 transition-all min-h-[44px]"
               >
                 <QrCodeIcon className="h-5 w-5" aria-hidden="true" />
                 {t('showQr')}
@@ -351,7 +449,7 @@ export function LinkForm() {
               <a
                 href={`/api/qr/${shortCode}?format=png&width=600`}
                 download={`qr-${shortCode}.png`}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-semibold rounded-lg border-2 border-green-200 dark:border-green-800 hover:border-green-300 dark:hover:border-green-700 transition-all duration-300 shadow-sm hover:shadow-md min-h-[44px] focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-gray-800 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold rounded-lg border-2 border-green-200 dark:border-green-800 transition-all min-h-[44px]"
               >
                 <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -362,7 +460,6 @@ export function LinkForm() {
           </div>
         </Alert>
       )}
-      </div>
     </div>
   );
 }

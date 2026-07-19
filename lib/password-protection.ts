@@ -30,6 +30,10 @@ export function calculateExpiration(duration: string): Date | null {
       return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
     case '30d':
       return new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    case '90d':
+      return new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    case '1y':
+      return new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
     case 'never':
       return null;
     default:
@@ -49,11 +53,13 @@ export function isExpired(expiresAt: Date | null): boolean {
  * Get expiration options for UI
  */
 export const EXPIRATION_OPTIONS = [
-  { value: '1h', label: '1 Stunde' },
-  { value: '24h', label: '24 Stunden' },
-  { value: '7d', label: '7 Tage' },
-  { value: '30d', label: '30 Tage' },
-  { value: 'never', label: 'Nie' },
+  { value: 'never', labelKey: 'never' },
+  { value: '1h', labelKey: '1hour' },
+  { value: '24h', labelKey: '1day' },
+  { value: '7d', labelKey: '7days' },
+  { value: '30d', labelKey: '30days' },
+  { value: '90d', labelKey: '90days' },
+  { value: '1y', labelKey: '1year' },
 ] as const;
 
 export type ExpirationDuration = typeof EXPIRATION_OPTIONS[number]['value'];
