@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
 import { links, pastes } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { LinksList } from '@/components/dashboard/links-list';
+import { LinksListEnhanced } from '@/components/dashboard/links-list-enhanced';
 import { PastesList } from '@/components/dashboard/pastes-list';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
@@ -78,7 +78,17 @@ export default async function DashboardPage() {
                 {userLinks.length} {userLinks.length === 1 ? t('link') : t('links')}
               </span>
             </div>
-            <LinksList links={userLinks} />
+            <LinksListEnhanced links={userLinks.slice(0, 5)} />
+            {userLinks.length > 5 && (
+              <div className="mt-6 text-center">
+                <Link
+                  href="/dashboard/links"
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {t('viewAllLinks')} ({userLinks.length})
+                </Link>
+              </div>
+            )}
           </Surface>
 
           <Surface elevated className="p-6 sm:p-8">

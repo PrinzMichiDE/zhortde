@@ -24,6 +24,7 @@ import {
   Folder,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ZhortLogo } from '@/components/zhort-logo';
 
 interface NavItem {
   name: string;
@@ -92,10 +93,7 @@ export function DashboardSidebar() {
     <>
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between border-b border-border bg-background/95 backdrop-blur px-4 py-3">
         <Link href="/dashboard" className="flex items-center gap-2 font-bold text-foreground">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-sm">
-            Z
-          </span>
-          Zhort
+          <ZhortLogo size="sm" />
         </Link>
         <button
           type="button"
@@ -116,10 +114,7 @@ export function DashboardSidebar() {
       <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-card h-screen sticky top-0">
         <div className="border-b border-border p-5">
           <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-foreground">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              Z
-            </span>
-            Zhort
+            <ZhortLogo size="sm" />
           </Link>
         </div>
 

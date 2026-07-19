@@ -129,7 +129,7 @@ export const createLinkSchema = z.object({
   longUrl: urlSchema,
   customCode: shortCodeSchema.optional(),
   password: simplePasswordSchema.optional(),
-  expiresIn: z.enum(['1h', '24h', '7d', '30d', 'never']).optional(),
+  expiresIn: z.enum(['1h', '24h', '7d', '30d', '90d', '1y', 'never']).optional(),
   isPublic: z.boolean().default(true),
   utmSource: z.string().max(100).optional(),
   utmMedium: z.string().max(100).optional(),
