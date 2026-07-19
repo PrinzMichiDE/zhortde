@@ -43,7 +43,7 @@ export function Footer() {
               <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
                 <UserIcon className="h-5 w-5 text-primary shrink-0" aria-hidden />
                 <div>
-                  <div className="text-lg font-semibold text-foreground tabular-nums">
+                  <div className="text-lg font-semibold text-foreground tabular-nums" suppressHydrationWarning>
                     {formatNumber(visitorCount)}
                   </div>
                   <div className="text-xs text-muted-foreground">{t('visitors')}</div>
@@ -52,7 +52,7 @@ export function Footer() {
               <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3">
                 <LinkIcon className="h-5 w-5 text-primary shrink-0" aria-hidden />
                 <div>
-                  <div className="text-lg font-semibold text-foreground tabular-nums">
+                  <div className="text-lg font-semibold text-foreground tabular-nums" suppressHydrationWarning>
                     {formatNumber(linkCount)}
                   </div>
                   <div className="text-xs text-muted-foreground">{t('links')}</div>

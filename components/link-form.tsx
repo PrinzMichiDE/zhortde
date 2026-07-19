@@ -42,6 +42,7 @@ export function LinkForm() {
   const [honeyPot, setHoneyPot] = useState('');
   const [utmParams, setUtmParams] = useState<UtmParameters>({});
   const [utmFinalUrl, setUtmFinalUrl] = useState('');
+  const [mounted, setMounted] = useState(false);
   const t = useTranslations('linkForm');
   const te = useTranslations('expiration');
   const tc = useTranslations('common');
@@ -81,7 +82,7 @@ export function LinkForm() {
     }
   };
 
-  const submitForm = async () => {
+  const submitForm = useCallback(async () => {
     setError('');
     setUrlError('');
     setCustomCodeError('');
@@ -160,7 +161,19 @@ export function LinkForm() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    honeyPot,
+    utmFinalUrl,
+    utmParams,
+    longUrl,
+    customCode,
+    isPublic,
+    password,
+    expiresIn,
+    copyToClipboard,
+    t,
+    tc,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -168,10 +181,13 @@ export function LinkForm() {
   };
 
   useEffect(() => {
+    setMounted(true);
     urlInputRef.current?.focus();
   }, []);
 
   useEffect(() => {
+    if (!mounted) return;
+
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault();
@@ -183,7 +199,7 @@ export function LinkForm() {
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  });
+  }, [mounted, loading, longUrl, submitForm]);
 
   return (
     <div className="rounded-xl border border-border bg-card shadow-md p-6 sm:p-8 lg:p-10">
@@ -233,7 +249,7 @@ export function LinkForm() {
           </div>
         </div>
 
-        {session && longUrl && longUrl.length > 10 && validateUrl(longUrl) && (
+        {mounted && session && longUrl && longUrl.length > 10 && validateUrl(longUrl) && (
           <SmartSuggestions
             longUrl={longUrl}
             onShortCodeSelect={(code) => {
@@ -327,7 +343,7 @@ export function LinkForm() {
               </select>
             </div>
 
-            {session && (
+            {mounted && session && (
               <div className="flex items-center justify-between p-3 bg-card rounded-lg border border-border">
                 <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
                   {t('publicVisible')}

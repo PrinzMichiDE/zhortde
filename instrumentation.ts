@@ -3,6 +3,10 @@ export async function register() {
     return;
   }
 
-  const { ensureDatabaseSchema } = await import('./lib/db/ensure-schema');
-  await ensureDatabaseSchema();
+  // Non-blocking: schema sync also runs on first /api/links request.
+  void import('./lib/db/ensure-schema')
+    .then(({ ensureDatabaseSchema }) => ensureDatabaseSchema())
+    .catch((error) => {
+      console.error('Background database schema ensure failed:', error);
+    });
 }
