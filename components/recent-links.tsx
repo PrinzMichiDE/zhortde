@@ -6,11 +6,13 @@ import { getRecentLinks, clearRecentLinks, type RecentLink } from '@/lib/recent-
 import { useTranslations } from 'next-intl';
 
 export function RecentLinks() {
+  const [mounted, setMounted] = useState(false);
   const [links, setLinks] = useState<RecentLink[]>([]);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const t = useTranslations('linkForm');
 
   useEffect(() => {
+    setMounted(true);
     setLinks(getRecentLinks());
 
     const refresh = () => setLinks(getRecentLinks());
@@ -22,7 +24,7 @@ export function RecentLinks() {
     };
   }, []);
 
-  if (links.length === 0) {
+  if (!mounted || links.length === 0) {
     return null;
   }
 

@@ -182,9 +182,11 @@ const nextConfig: NextConfig = {
   // Output configuration
   output: 'standalone',
 
+  serverExternalPackages: ['drizzle-kit'],
+
   // Include migration assets for runtime schema bootstrap (instrumentation)
   outputFileTracingIncludes: {
-    '/': ['./drizzle/**/*', './drizzle.config.ts', './lib/db/schema.ts'],
+    '/': ['./drizzle/**/*', './drizzle.config.ts', './lib/db/schema.ts', './node_modules/drizzle-kit/**/*'],
   },
 };
 

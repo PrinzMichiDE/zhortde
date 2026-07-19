@@ -18,12 +18,16 @@ import {
   logSecurityEvent,
   isSecureInput,
 } from '@/lib/security';
+import { ensureDatabaseSchema } from '@/lib/db/ensure-schema';
+import { isMissingRelationError, getDatabaseErrorMessage } from '@/lib/db/errors';
 
 // Maximum request body size (2KB for link creation)
 const MAX_BODY_SIZE = 2048;
 
 export async function POST(request: NextRequest) {
   try {
+    await ensureDatabaseSchema();
+
     const session = await getServerSession(authOptions);
     
     // 1. 🔒 Validate Content-Type
@@ -264,18 +268,27 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Error creating link:', error);
-    
-    // Bessere Fehlerbehandlung
+
+    if (isMissingRelationError(error)) {
+      return NextResponse.json(
+        {
+          error: 'Datenbank-Schema ist unvollständig. Bitte versuchen Sie es in wenigen Sekunden erneut.',
+          details: process.env.NODE_ENV === 'development' ? String(error) : undefined,
+        },
+        { status: 503 },
+      );
+    }
+
     const errorMessage = error instanceof Error ? error.message : 'Fehler beim Erstellen des Links';
     
     // Spezielle Fehlerbehandlung für DB-Verbindungsprobleme
     if (errorMessage.includes('PostgreSQL connection string') || errorMessage.includes('Invalid URL')) {
       return NextResponse.json(
         { 
-          error: 'Datenbank-Konfigurationsfehler',
-          details: process.env.NODE_ENV === 'development' ? errorMessage : 'Bitte kontaktieren Sie den Administrator'
+          error: getDatabaseErrorMessage(error),
+          details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
         },
-        { status: 503 } // Service Unavailable
+        { status: 503 }
       );
     }
     

@@ -1,30 +1,27 @@
-import { execFileSync } from 'child_process';
-import path from 'path';
+import postgres from 'postgres';
+import { drizzle } from 'drizzle-orm/postgres-js';
 import { resolveDatabaseUrl } from './resolve-database-url';
+import { applySqlMigrations } from './sql-migrate';
+import * as schema from './schema';
 
 let schemaEnsured = false;
 let ensurePromise: Promise<boolean> | null = null;
 
-function runDrizzlePush(databaseUrl: string): void {
-  const drizzleKitPath = path.join(
-    process.cwd(),
-    'node_modules',
-    '.bin',
-    process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit',
-  );
+async function pushSchemaWithDrizzleKit(databaseUrl: string): Promise<void> {
+  const client = postgres(databaseUrl, { max: 1, onnotice: () => {} });
 
-  execFileSync(
-    drizzleKitPath,
-    ['push', '--force', '--url', databaseUrl],
-    {
-      stdio: process.env.NODE_ENV === 'development' ? 'inherit' : 'pipe',
-      env: {
-        ...process.env,
-        DATABASE_URL: databaseUrl,
-        POSTGRES_URL: databaseUrl,
-      },
-    },
-  );
+  try {
+    const db = drizzle(client, { schema });
+    const { pushSchema } = await import('drizzle-kit/api');
+    // drizzle-kit types target node-pg; postgres-js drizzle works at runtime
+    const result = await pushSchema(
+      { './lib/db/schema.ts': schema },
+      db as never,
+    );
+    await result.apply();
+  } finally {
+    await client.end();
+  }
 }
 
 async function ensureSchemaInternal(): Promise<boolean> {
@@ -42,15 +39,12 @@ async function ensureSchemaInternal(): Promise<boolean> {
   }
 
   try {
-    runDrizzlePush(databaseUrl);
+    await applySqlMigrations(databaseUrl);
+    await pushSchemaWithDrizzleKit(databaseUrl);
     schemaEnsured = true;
 
     const { initStats } = await import('./init-stats');
     await initStats();
-
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('Database schema ensured successfully.');
-    }
 
     return true;
   } catch (error) {
