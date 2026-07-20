@@ -7,7 +7,10 @@ vi.mock('@/lib/auth/passkey-auth-attempt', () => ({
   consumePasskeyLoginToken: vi.fn(),
 }));
 
-const authorize = (authOptions.providers[0] as CredentialsConfig).authorize;
+const credentialsProvider = authOptions.providers[0] as CredentialsConfig & {
+  options: CredentialsConfig;
+};
+const authorize = credentialsProvider.options.authorize;
 const request = {
   body: {},
   query: {},
