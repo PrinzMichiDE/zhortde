@@ -95,7 +95,7 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 | F-04 | positiv mit Restbefund | `npm audit --json` sank für das vollständige Lockfile von 21 Befunden (1 niedrig, 13 mittel, 7 hoch) auf 9 moderate Befunde; keine hohen oder kritischen Befunde verbleiben. | Vorheriges Lockfile aus `58c06b7^`; aktuelles `package-lock.json`; Auditläufe am 2026-07-20. | Neun moderate Befunde risikobasiert bewerten und in Folgeänderung behandeln. | Security (A), Entwicklung (R) |
 | A-01 | mittel | `drizzle/0004_secure_passkey_auth.sql` ist idempotent, aber `drizzle/meta/_journal.json` endet bei `0003`. Eine Anwendung über `drizzle-kit migrate` ist damit nicht aus dem Journal nachweisbar. Der vorhandene Upgradepfad verwendet zusätzlich `db:push`; dessen Ausführung ist nicht belegt. | Migrationsdatei, `drizzle/meta/_journal.json`, `scripts/upgrade.js`, `scripts/push-schema.js`. | Vor Freigabe `npm run upgrade` in Staging ausführen, Log archivieren und die vier Spalten per Schemaabfrage bestätigen. Danach den beabsichtigten Migrationsmechanismus verbindlich dokumentieren. | Betrieb/Release (R), Change Owner (A) |
 | A-02 | mittel | Die sieben Tests prüfen Dienstlogik mit In-Memory-Stores. API-Routen, NextAuth-Provider, konkurrierende Datenbankzugriffe und ein realer WebAuthn-Ablauf werden nicht integriert getestet. | Beide Dateien `lib/auth/*.test.ts`; Testausgabe 2 Dateien/7 Tests. | Vor Produktivfreigabe manuellen Staging-Smoke-Test und Negativtests protokollieren; Entwicklung ergänzt bei der nächsten Codeänderung einen Datenbank-/Routen-Integrationstest. | Entwicklung (R), Security (A) |
-| A-03 | mittel | Der Repository-Lintlauf ist nicht freigabefähig: `npm run lint` endet mit 18 Fehlern und 121 Warnungen. Mindestens ein Fehler liegt in `components/passkey-login.tsx`; weitere Fehler sind repositoryweit vorhanden. | Lintlauf am 2026-07-20. | Fehlerursprung gegen `origin/main` trennen, sicherheitsrelevante geänderte Pfade vor Freigabe bereinigen oder eine dokumentierte Ausnahmeentscheidung treffen. | Entwicklung (R), Change Owner (A) |
+| A-03 | mittel | Der Repository-Lintlauf ist nicht freigabefähig: `npm run lint` endet mit 17 Fehlern und 121 Warnungen. Der separate Lauf über alle zehn geänderten TypeScript-Dateien endet mit 0 Fehlern und einer bereits vorhandenen Warnung in `lib/passkeys.ts`. | Lintläufe am 2026-07-20; Bereinigung von `components/passkey-login.tsx` in Commit `22f129c`. | Verbleibende Baseline-Fehler gegen `origin/main` trennen und bereinigen oder eine dokumentierte Ausnahmeentscheidung treffen; geänderte Pfade weiterhin separat prüfen. | Entwicklung (R), Change Owner (A) |
 | A-04 | offen | Staging-/Produktionsmigration, Deployment, Monitoring und formale Freigabe sind **klaerungsbeduerftige Information**. | Kein entsprechendes Artefakt im geprüften Repository oder Git-Verlauf. | Change Owner fordert Freigabevermerk an; Betrieb/Release archiviert Zeit, Umgebung, Commit-SHA, Migrationslog, Smoke-Test und Rückfallentscheidung. | Change Owner (A), Betrieb/Release (R) |
 
 ### Gesamturteil
@@ -112,6 +112,7 @@ Die kritische Kontoübernahmeursache ist im aktuellen Code schlüssig beseitigt 
 | Sicherheitsfix | `daa2586` | Ändert API, Client, Auth-Provider, Dienste, Schema und Migration. |
 | Testimport-Korrektur | `7ad82b5` | Korrigiert Datenbankimporte der neuen Dienste. |
 | Abhängigkeitsfix | `58c06b7` | Aktualisiert `drizzle-orm` und das Lockfile. |
+| Scope-Lint-Korrektur | `22f129c` | Entfernt den letzten Lintfehler aus dem geänderten Passkey-Client. |
 | Challenge-Dienst | `lib/auth/passkey-challenge.ts` | Fünf Minuten Gültigkeit und atomarer Verbrauch. |
 | Token-Dienst | `lib/auth/passkey-login-token.ts` | 32 Zufallsbytes, SHA-256, zwei Minuten, atomarer Verbrauch. |
 | Authentifizierungsfluss | `lib/passkeys.ts`, `lib/auth/config.ts`, `app/api/passkeys/authenticate/*`, `components/passkey-login.tsx` | Servergebundene Challenge und Tokenübergabe. |
@@ -120,8 +121,9 @@ Die kritische Kontoübernahmeursache ist im aktuellen Code schlüssig beseitigt 
 | Testlauf | `npm test` am 2026-07-20 | 2 Testdateien und 7 Tests bestanden; Dauer 596 ms. |
 | Audit vorher | `npm audit --json --package-lock-only` auf `58c06b7^` | 21 Befunde: 1 niedrig, 13 mittel, 7 hoch, 0 kritisch. |
 | Audit nachher | `npm audit --json` auf `58c06b7` | 9 Befunde: 9 mittel, 0 hoch, 0 kritisch. |
-| Lintlauf | `npm run lint` am 2026-07-20 | Fehlgeschlagen mit 18 Fehlern und 121 Warnungen. |
-| Änderungsübersicht | `git diff --name-status origin/main...HEAD` | 13 geänderte Pfade im Change-Scope. |
+| Lintlauf | `npm run lint` am 2026-07-20 | Repositoryweit fehlgeschlagen mit 17 Fehlern und 121 Warnungen; Scope-Lint ohne Fehler. |
+| Build | `npm run build` am 2026-07-20 | Next.js-Produktionsbuild bestanden; lokales Datenbank-Upgrade mangels `DATABASE_URL` kontrolliert übersprungen. |
+| Änderungsübersicht | `git diff --name-status origin/main...HEAD` | 23 geänderte Pfade einschliesslich Compliance-, Audit- und Architekturartefakten. |
 
 Die npm-Advisory-Datenbank ist zeitabhängig. Für spätere Audits müssen Datum, Commit-SHA, npm-Version und vollständige JSON-Ausgabe gemeinsam archiviert werden. Die hier aufgeführten Zahlen wurden am 2026-07-20 reproduziert.
 

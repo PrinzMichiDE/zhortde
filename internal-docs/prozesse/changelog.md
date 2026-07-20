@@ -2,7 +2,7 @@
 
 ## Einleitung
 
-Dieser Änderungsnachweis beschreibt Anlass, Umsetzung, Auswirkung, Prüfung, Freigabebedingungen und Rückfallvorgehen der Daily Evolution vom 2026-07-20. Maßgeblicher Repository-Stand ist Commit `58c06b7b6129d3069d6990ab481e562a0ea1d12a` auf `cursor/daily-evolution-pipeline-fe2a`; Vergleichsbasis ist `origin/main` bei `7e3b5fc`.
+Dieser Änderungsnachweis beschreibt Anlass, Umsetzung, Auswirkung, Prüfung, Freigabebedingungen und Rückfallvorgehen der Daily Evolution vom 2026-07-20. Maßgeblicher technischer Repository-Stand ist Commit `22f129c` auf `cursor/daily-evolution-pipeline-fe2a`; Vergleichsbasis ist `origin/main` bei `7e3b5fc`.
 
 Der Change beseitigt einen kritischen Kontoübernahmeweg in der Passkey-Anmeldung, ergänzt einen Regressionstest-Harness mit sieben Authentifizierungstests, führt eine additive idempotente Datenbankmigration ein und aktualisiert sicherheitsrelevante Laufzeitabhängigkeiten. Nicht belegte Freigabe- und Betriebsangaben werden als **klaerungsbeduerftige Information** behandelt und erhalten eine verantwortliche Kontrolle.
 
@@ -76,10 +76,10 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 | `npm test` | Bestanden: 2 Testdateien, 7 Tests, 0 Fehler | Fokussierter Regressionstest erfolgreich. |
 | `npm audit --json --package-lock-only` auf `58c06b7^` | 21 Befunde: 1 niedrig, 13 mittel, 7 hoch, 0 kritisch | Reproduzierte Ausgangslage des vollständigen Lockfiles. |
 | `npm audit --json` auf `58c06b7` | 9 Befunde: 9 mittel, 0 hoch, 0 kritisch | Hohe Befunde im aktuellen Graphen beseitigt; moderate Restbefunde offen. |
-| `npm run lint` | Fehlgeschlagen: 18 Fehler, 121 Warnungen | Kein grünes repositoryweites Lint-Gate; Freigabeentscheidung erforderlich. |
+| `npm run lint` | Fehlgeschlagen: 17 Fehler, 121 Warnungen; die zehn geänderten TypeScript-Dateien haben 0 Fehler und 1 bereits vorhandene Warnung | Kein grünes repositoryweites Lint-Gate; geänderter Code ist fehlerfrei, die Baseline-Schulden benötigen weiterhin eine Freigabeentscheidung. |
 | Stagingmigration | **klaerungsbeduerftige Information** | Betrieb/Release muss `npm run upgrade`, Log und Schemaabfrage nachweisen. |
 | WebAuthn-/NextAuth-End-to-End-Test | **klaerungsbeduerftige Information** | Entwicklung führt gemeinsam mit Betrieb einen realen Staging-Smoke-Test aus; Security zeichnet ab. |
-| Build | **klaerungsbeduerftige Information** | Kein Buildnachweis in dieser Prüfung; Betrieb/Release muss den Build gegen denselben Commit protokollieren. |
+| `npm run build` | Bestanden mit Next.js 16.2.10; Datenbank-Upgrade wurde mangels lokaler `DATABASE_URL` kontrolliert übersprungen | Kompilierung, TypeScript, Seitengenerierung und Bundle erfolgreich; Stagingmigration bleibt separat nachzuweisen. |
 | Formale Genehmigung | **klaerungsbeduerftige Information** | Change Owner erfasst Freigaberolle, Zeitpunkt und Artefaktreferenz. |
 
 Die Testdateien verwenden In-Memory-Stores. Sie belegen die Dienstverträge, aber nicht die PostgreSQL-Atomizität, API-Verkabelung oder einen realen Authenticator. Diese Einschränkung ist Bestandteil der Freigabekontrolle.
@@ -133,7 +133,7 @@ Die vollständigen JSON-Ausgaben der npm-Audits und die Kommandoausgaben sind ni
 | Migration ist nicht im Drizzle-Journal registriert | `db:migrate` und `db:push` können unterschiedliche Zustände erzeugen | Mittel | Verbindlichen Upgradepfad festlegen und testen | Betrieb dokumentiert tatsächlich verwendeten Mechanismus; Change Owner prüft | `drizzle/meta/_journal.json` endet bei `0003` |
 | Nur Unit-Tests, kein realer WebAuthn-/DB-Fluss | Integrationsfehler bleiben unentdeckt | Mittel | Staging-Smoke-Test und Negativtests | Security-Abzeichnung gegen Commit-SHA | Testscope und offene Freigabekriterien |
 | Neun moderate Dependency-Befunde verbleiben | Sicherheits- oder Verfügbarkeitsbeeinträchtigung abhängig vom Einsatzpfad | Mittel | Risikobewertung und geplante Folgeaktualisierung | Wiederholter npm-Audit bei jedem Release | Auditstand 9 moderate |
-| Repository-Lint ist rot | Qualitätsfehler werden übersehen oder Gate wird umgangen | Hoch ohne Ausnahmeprozess | Fehler beheben oder begründete befristete Ausnahme | Change Owner und Security zeichnen Ausnahme ab | `npm run lint`: 18 Fehler, 121 Warnungen |
+| Repository-Lint ist rot | Qualitätsfehler werden übersehen oder Gate wird umgangen | Hoch ohne Ausnahmeprozess | Baseline-Fehler beheben oder begründete befristete Ausnahme | Change Owner und Security zeichnen Ausnahme ab; geänderte TypeScript-Dateien bleiben separat fehlerfrei | `npm run lint`: 17 Fehler, 121 Warnungen; Scope-Lint: 0 Fehler, 1 Warnung |
 | Fehlende Freigabe- oder Rollbackzuordnung | Unkontrolliertes Deployment oder verzögerte Störungsreaktion | Mittel | Namentliche RACI- und Rückfallzuordnung | Kein Produktionsdeployment ohne Freigabeartefakt | **klaerungsbeduerftige Information** mit Change Owner als Kontrolle |
 
 ## Pflegeprozess
