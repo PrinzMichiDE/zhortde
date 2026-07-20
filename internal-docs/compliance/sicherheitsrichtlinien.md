@@ -1,6 +1,6 @@
 # Informationssicherheitsrichtlinie
 ## Einleitung
-Diese Richtlinie definiert die verbindlichen Sicherheitsanforderungen fuer Entwicklung, Bereitstellung und Betrieb von Zhort. Sie trennt Soll-Vorgaben von nachweisbaren Ist-Kontrollen. Grundlage ist die Repository-Analyse vom 20.07.2026, Commit `6618792`.
+Diese Richtlinie definiert die verbindlichen Sicherheitsanforderungen fuer Entwicklung, Bereitstellung und Betrieb von Zhort. Sie trennt Soll-Vorgaben von nachweisbaren Ist-Kontrollen. Grundlage ist die Repository-Analyse vom 20.07.2026, Commit `8611a8d`.
 
 Die formale Inkraftsetzung und namentliche Freigabe durch die Leitung sind klaerungsbeduerftige Informationen. Owner ist die Leitung; Kontrolle ist eine signierte Richtlinienfreigabe vor Produktivbetrieb und danach mindestens jaehrlich. Bis zur Freigabe dienen die Anforderungen als Mindeststandard fuer Risikobewertung und technische Aenderungen.
 
@@ -79,11 +79,11 @@ Freie Inhalte koennen eine hoehere Schutzklasse enthalten, als das strukturierte
 |---|---|---|
 | Passwort | Mindestens 8 Zeichen mit Komplexitaet; bcrypt Kostenfaktor 12; Timing-Vergleich bei unbekanntem Nutzer | Rate Limit fuer alle Loginpfade, kompromittierte Passwoerter pruefen, sichere Ruecksetzung und MFA fuer Privilegierte. |
 | NextAuth/JWT | 24 Stunden; Cookie `httpOnly`, `sameSite=lax`, Produktion `secure` | Secret mindestens 32 zufaellige Bytes, Rotation und Sessionwiderruf dokumentieren. |
-| Passkey-Login | WebAuthn mit `requireUserVerification`; eigene `passkey_auth_attempts`-Zeile je zufaelliger opaker Ceremony-ID erlaubt parallele Ceremonies; Challenge 5 Minuten und vor Nachweis nur gelesen; atomarer Abschluss genau eines Attempts; 32-Byte-Login-Token nur als SHA-256-Hash, 2 Minuten; NextAuth loescht die passende Zeile atomar | Operative Migration und Tabellenstruktur nachweisen; User-Enumeration reduzieren; Passkey-Endpunkte gesondert rate-limiten; reale PostgreSQL-Konkurrenz-/WebAuthn-E2E-Tests und Cleanup abgelaufener Attempt-Zeilen. |
+| Passkey-Login | WebAuthn mit `requireUserVerification`; eigene `passkey_auth_attempts`-Zeile je zufaelliger opaker Ceremony-ID erlaubt parallele Ceremonies; Startlimit `passkey_auth_start` 10 je Client-IP/5 Minuten; jeder Start purgt abgelaufene Attempts; Challenge 5 Minuten und vor Nachweis nur gelesen; atomarer Abschluss genau eines Attempts; 32-Byte-Login-Token nur als SHA-256-Hash, 2 Minuten; NextAuth loescht die passende Zeile atomar; Authenticator-Zähler per SQL `GREATEST` monoton | Operative Migration und Tabellenstruktur nachweisen; User-Enumeration und Fail-open-Verhalten des DB-Limits reduzieren; reale PostgreSQL-Konkurrenz-/WebAuthn-E2E-Tests und unabhaengigen zeitgesteuerten Cleanup abgelaufener Attempt-Zeilen belegen. |
 | Passkey-Registrierung | Authentisierte Route und WebAuthn-Verifikation | Challenge nicht an den Client als Vertrauensanker zurueckgeben; serverseitig an Nutzer/Session binden, befristen und einmalig verbrauchen. |
 | SSO | Verifizierte Domain, Provider-Codeaustausch, 5-Minuten-Single-Use-Handoff | Kryptografisch zufaelliger, servergebundener OAuth-State/Nonce; Secret-Vault; PKCE wo anwendbar; strikte Issuer-/Providerbindung. |
 
-`drizzle/0004_secure_passkey_auth.sql` erstellt `passkey_auth_attempts` mit `CREATE TABLE IF NOT EXISTS` und ist in `drizzle/meta/_journal.json` registriert. Sie ist vor Aktivierung des neuen Passkey-Loginpfads anzuwenden; Migrationserfolg, Tabellen-/Constraint-Struktur und Rollback muessen pro Umgebung nachgewiesen werden.
+`drizzle/0004_secure_passkey_auth.sql` erstellt `passkey_auth_attempts` mit `CREATE TABLE IF NOT EXISTS` und Indizes auf Challenge- sowie Token-Ablauf und ist in `drizzle/meta/_journal.json` registriert. `drizzle/meta/0004_snapshot.json` fehlt. Die Migration ist vor Aktivierung des neuen Passkey-Loginpfads anzuwenden; Migrationserfolg, Tabellen-/Constraint-/Indexstruktur, Snapshot-Abweichung und Rollback muessen pro Umgebung nachgewiesen werden.
 
 ### Geheimnis- und Kryptografiemanagement
 - Secrets werden ausschliesslich ueber eine freigegebene Secret-Verwaltung injiziert. `.env`-Dateien mit echten Werten, Secrets in GitHub-Logs und Klartext in Tickets sind verboten.
@@ -107,14 +107,14 @@ Freie Inhalte koennen eine hoehere Schutzklasse enthalten, als das strukturierte
 ### Browser- und Netzwerksicherheit
 - HSTS, `X-Content-Type-Options`, `X-Frame-Options`, Referrer- und Permissions-Policy sind im Code gesetzt; die Auslieferung ist nach jedem Deployment extern zu testen.
 - Die CSP erlaubt derzeit `unsafe-inline`, `unsafe-eval` und ein externes CDN. Ziel ist nonce-/hashbasierte CSP ohne `unsafe-eval` und mit minimaler Allowlist.
-- Middleware-Rate-Limits sind pro Instanz im Speicher und damit in horizontaler/serverloser Skalierung nicht global. DB-Rate-Limits arbeiten bei Datenbankfehler fail-open. Authentisierungs- und Passkeypfade muessen durch ein verteiltes, fail-safe und beobachtbares Limit geschuetzt werden.
+- Middleware-Rate-Limits sind pro Instanz im Speicher und damit in horizontaler/serverloser Skalierung nicht global. Der Passkey-Start verwendet das datenbankgestuetzte Limit `passkey_auth_start` mit 10 Anfragen je Client-IP in 5 Minuten; DB-Rate-Limits arbeiten bei Datenbankfehler jedoch fail-open. Authentisierungs- und Passkeypfade muessen durch ein verteiltes, fail-safe und beobachtbares Limit geschuetzt werden.
 - Vertrauenswuerdige Proxyketten fuer `x-forwarded-for` muessen konfiguriert sein; ungepruefte Client-Header duerfen nicht die Sicherheitsidentitaet bestimmen.
 - Egress ist auf benoetigte Ziele zu begrenzen. Der Code kontaktiert unter anderem ip-api.com, Google Safe Browsing, jsDelivr, SSO-Provider, Nutzer-Webhooks und Google-STUN.
 
 ### Datenbank und Migrationen
 - Separate Datenbankrollen fuer Anwendung, Migration und Read-only-Analyse sind Pflicht; Least Privilege und TLS sind nachzuweisen.
 - Migrationen sind versioniert, peer-reviewed, vor Produktion in einer isolierten Umgebung getestet und rueckrollbar bzw. mit Wiederherstellungsplan versehen.
-- Der Produktions-Build ruft ueber `prebuild` ein Upgrade auf, und Docker versucht beim Start einen Schema-Push; der Container startet nach fehlgeschlagenem Bootstrap weiter. Dieses Verhalten erhoeht Verfuegbarkeit, kann aber zu unkontrollierter Schemaaenderung oder einem halb migrierten Zustand fuehren. Produktiv ist ein explizites, einmaliges, blockierendes Migrations-Gate mit Backup und Erfolgskontrolle vorzuziehen.
+- Der Produktions-Build ruft ueber `prebuild` ein Upgrade auf; `scripts/upgrade.js` fuehrt den Schema-Push verpflichtend aus. Der lokale Build kann ohne `DATABASE_URL` erfolgreich sein, ueberspringt dann aber das Upgrade. Docker fuehrt den Schema-Bootstrap vor Serverstart aus und verweigert den Start bei Fehler. Produktiv bleibt ein explizites, einmaliges, blockierendes Migrations-Gate mit Backup, Stagingnachweis und Erfolgskontrolle erforderlich.
 - Direkte Produktivdaten duerfen nicht in Testumgebungen kopiert werden, ausser sie sind nachweisbar anonymisiert und freigegeben.
 
 ### Sichere Entwicklung und Lieferkette
@@ -170,8 +170,8 @@ Ausnahmen sind nur befristet zulaessig. Erforderlich sind Risiko, Geschaeftsgrun
 ## Nachweise und Artefakte
 - `lib/auth/config.ts`, `lib/auth/actions.ts`: Passwort, JWT, Cookies und Handoff-Verfahren.
 - `lib/auth/passkey-auth-attempt.ts`, `lib/passkeys.ts`: opak adressierte WebAuthn-Ceremonies, atomarer Attempt-Abschluss und Login-Token-Verbrauch.
-- `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json`: dedizierte, journalisierte Tabelle `passkey_auth_attempts`.
-- `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts`: zehn erfolgreiche Tests fuer Parallelitaet, Ablauf, Hash, Einmalverwendung und die NextAuth-Credentials-Grenze am 20.07.2026.
+- `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json`: dedizierte, journalisierte Tabelle `passkey_auth_attempts` und zwei Ablaufindizes; `drizzle/meta/0004_snapshot.json` fehlt.
+- `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts`: zwoelf erfolgreiche Tests fuer Parallelitaet, Ablauf, Startbereinigung, Hash, Einmalverwendung und die NextAuth-Credentials-Grenze am 20.07.2026.
 - `middleware.ts`, `next.config.ts`, `lib/api-security.ts`, `lib/security.ts`, `lib/rate-limit.ts`: Header, CSP, Validierung, Logging und Limits.
 - `lib/db/schema.ts`, `drizzle/*.sql`: Zugriffsdaten, Audit, Loeschbeziehungen und Migrationen.
 - `app/protected/paste/[slug]/page.tsx`, `app/p/[slug]/page.tsx`, `app/p/[slug]/raw/route.ts`, `app/api/auth/sso/*`, `lib/analytics.ts`: dokumentierte offene Risiken.
@@ -186,14 +186,14 @@ Ausnahmen sind nur befristet zulaessig. Erforderlich sind Risiko, Geschaeftsgrun
 | Schutzpasswoerter/Access-Keys in Queryparametern | Geheimnisoffenlegung in Historie/Logs | Mittel | POST-basierte Pruefung und kurzlebiges gebundenes Zugriffstoken | Log-/URL-Test ohne Passwortwerte | Protected-Link-, Paste- und Passwortfreigabe-Flows |
 | P2P-Signalisierung ohne Token-/Access-Key-Pruefung | Manipulation oder Offenlegung von Offer/Answer | Hoch | Signalisierung an Token, Ablauf und Access-Key binden | Negative API-Tests fuer falschen Token, Ablauf und fremde Share-ID | `app/api/p2p/files/[shareId]/route.ts` |
 | Passkey-Registrierung mit clientgelieferter Challenge | Unbefugte Credential-Registrierung | Mittel | Serverseitige, sessiongebundene Single-Use-Challenge | Replay-/Ablauf-/Bindungstest | `app/api/passkeys/register/*` |
-| Passkey-Attempt-Migration ist betrieblich nicht verifiziert | Fehlende Tabelle oder Constraints verhindern oder schwaechen den Loginpfad | Mittel | Journalisierte Migration als blockierendes Release-Gate ausfuehren | Upgrade-Log und Schemaabfrage fuer Tabelle, Unique Constraint und Fremdschluessel | `drizzle/0004_secure_passkey_auth.sql`, Journal vorhanden; Betriebsnachweis offen |
-| Passkey-Parallelitaet und End-to-End-Fluss nur in In-Memory-/Mock-Tests | Race- oder Integrationsfehler bleiben unentdeckt | Mittel | Reale PostgreSQL-Konkurrenztests und WebAuthn-Staging-E2E ausfuehren | Testprotokoll gegen freizugebenden Commit-SHA | 3 Dateien/10 Tests; kein Live-DB-/WebAuthn-E2E |
+| Passkey-Attempt-Migration ist betrieblich nicht verifiziert; `0004`-Snapshot fehlt | Fehlende Tabelle, Indizes oder Constraints verhindern oder schwaechen den Loginpfad | Mittel | Snapshotabweichung aufloesen und journalisierte Migration als blockierendes Release-Gate ausfuehren | Upgrade-Log und Schemaabfrage fuer Tabelle, Unique Constraint, Fremdschluessel und Indizes | `drizzle/0004_secure_passkey_auth.sql`, Journal vorhanden; Snapshot und Betriebsnachweis offen |
+| Passkey-Parallelitaet und End-to-End-Fluss nur in In-Memory-/Mock-Tests | Race- oder Integrationsfehler bleiben unentdeckt | Mittel | Reale PostgreSQL-Konkurrenztests und WebAuthn-Staging-E2E ausfuehren | Testprotokoll gegen freizugebenden Commit-SHA | 3 Dateien/12 Tests; kein Live-DB-/WebAuthn-E2E |
 | Unsigned SSO-State und Klartext-Client-Secret | Login-CSRF, Secretdiebstahl | Mittel | State/Nonce serverseitig, PKCE, Vault/Feldverschluesselung | SSO-Bedrohungsanalyse und Integrationstest | `app/api/auth/sso/*`, Schema |
 | Verteiltes Rate Limit fehlt und DB-Limit fail-open | Brute Force und Missbrauch | Hoch | Zentraler atomarer Store, fail-safe fuer Auth | Last-/Fehlertest ueber mehrere Instanzen | `middleware.ts`, `lib/rate-limit.ts` |
 | CSP mit `unsafe-eval`/`unsafe-inline` | Erhoehte XSS-Auswirkung | Mittel | Nonce/Hashes und minimale Quellen | Automatischer Header-/CSP-Test | `middleware.ts` |
 | Unvollstaendiger SSRF-Schutz | Zugriff auf interne Dienste/Metadaten | Hoch | DNS-/Redirect-Revalidierung und Egress-Allowlist | SSRF-Testkorpus fuer URLs/Webhooks/Preview | URL- und Webhookvalidierung |
 | Security-Logs nur stdout und teils fail-open | Spaete Erkennung, fehlende Beweise | Hoch | Zentrales SIEM, Alarme, manipulationsgeschuetzte Auditspur | Monatlicher Alarmtest | `lib/security.ts`, `lib/audit-log.ts` |
-| Schema-Push im Build/Start, Start trotz Fehler | Inkonsistentes oder unautorisiertes Schema | Mittel | Separates blockierendes Migrations-Gate mit Backup | Releaseprotokoll und Schema-Drift-Check | Upgrade-/Entrypoint-Skripte |
+| Schema-Push im Build/Start ohne Stagingnachweis | Inkonsistentes oder unautorisiertes Schema trotz nun fehlerschliessendem Start | Mittel | Separates blockierendes Migrations-Gate mit Backup | Releaseprotokoll und Schema-Drift-Check | Upgrade-Schema-Push ist Pflicht, Entrypoint verweigert Start bei Bootstrapfehler; Stagingnachweis offen |
 | Neun moderate Audit-Findings | Build-/Laufzeitkompromittierung | Mittel | Advisory-spezifisch patchen oder befristet akzeptieren | Monatliches SCA und Fristenkontrolle | Audits vom 20.07.2026 |
 | Kein nachgewiesenes Backup/Restore | Dauerhafter Datenverlust | Mittel | Verschluesselte Backups und Restore-Test | Jaehrlicher Restore-Nachweis | Klaerungsbeduerftig; Owner Betrieb |
 | CI baut ohne Test/Lint/Security-Scan | Fehlerhafte oder unsichere Images | Hoch | Blockierende Quality Gates | Branchschutz und gruene Checks | Docker-Workflow |
@@ -217,4 +217,5 @@ Richtlinienverstoesse werden als Sicherheitsereignis registriert. Ueberfaellige 
 | Datum | Autor/Rolle | Aenderung | Anlass |
 |---|---|---|---|
 | 20.07.2026 | Compliance-Dokumentation | Ersterstellung der vollstaendigen Sicherheitsrichtlinie mit Ist/Soll-Abgleich und technischen Restrisiken | Fehlende interne Sicherheitsrichtlinie |
-| 20.07.2026 | Compliance-Dokumentation | Passkey-Login auf dedizierte Attempt-Tabelle, parallele Ceremonies, atomaren NextAuth-Verbrauch, registrierte Migration und 10 Tests aktualisiert; Betriebs-/E2E-Evidenz bleibt offen | Reviewfixes bis Commit `6618792` |
+| 20.07.2026 | Compliance-Dokumentation | Passkey-Login auf dedizierte Attempt-Tabelle, parallele Ceremonies, atomaren NextAuth-Verbrauch, registrierte Migration und damaligen Teststand aktualisiert; Betriebs-/E2E-Evidenz bleibt offen | Reviewfixes bis Commit `6618792` |
+| 20.07.2026 | Compliance-Dokumentation | Startlimit, Purge bei jedem Start, Ablaufindizes, monotone Zähler, 12 Tests, Pflicht-Schema-Push und fehlerschliessenden Containerstart aufgenommen; reale DB-/WebAuthn-/Staging-Evidenz und `0004_snapshot.json` bleiben offen | Finales Hardening bis Commit `8611a8d` |

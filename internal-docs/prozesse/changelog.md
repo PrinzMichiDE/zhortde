@@ -2,9 +2,9 @@
 
 ## Einleitung
 
-Dieser Änderungsnachweis beschreibt Anlass, Umsetzung, Auswirkung, Prüfung, Freigabebedingungen und Rückfallvorgehen der Daily Evolution vom 2026-07-20. Maßgeblicher technischer Repository-Stand ist Commit `6618792` auf `cursor/daily-evolution-pipeline-fe2a`; Vergleichsbasis ist `origin/main` bei `7e3b5fc`.
+Dieser Änderungsnachweis beschreibt Anlass, Umsetzung, Auswirkung, Prüfung, Freigabebedingungen und Rückfallvorgehen der Daily Evolution vom 2026-07-20. Maßgeblicher technischer Repository-Stand ist Commit `8611a8d` auf `cursor/daily-evolution-pipeline-fe2a`; Vergleichsbasis ist `origin/main` bei `7e3b5fc`.
 
-Der Change beseitigt einen kritischen Kontoübernahmeweg in der Passkey-Anmeldung, ergänzt einen Regressionstest-Harness mit zehn Authentifizierungstests in drei Dateien, führt eine idempotente und journalisierte Datenbankmigration für dedizierte Authentifizierungsversuche ein und aktualisiert sicherheitsrelevante Laufzeitabhängigkeiten. Nicht belegte Freigabe- und Betriebsangaben werden als **klaerungsbeduerftige Information** behandelt und erhalten eine verantwortliche Kontrolle.
+Der Change beseitigt einen kritischen Kontoübernahmeweg in der Passkey-Anmeldung, ergänzt einen Regressionstest-Harness mit zwölf Authentifizierungstests in drei Dateien, begrenzt Starts datenbankgestützt, bereinigt abgelaufene Attempts bei jedem Start, schützt monotone Authenticator-Zähler und härtet Schema-Bootstrap sowie Containerstart fehlerschließend. Nicht belegte Freigabe- und Betriebsangaben werden als **klaerungsbeduerftige Information** behandelt und erhalten eine verantwortliche Kontrolle.
 
 ## Geltungsbereich
 
@@ -15,8 +15,10 @@ Im Change enthalten sind:
 - NextAuth-Credentials-Provider in `lib/auth/config.ts`;
 - WebAuthn-Verifikation in `lib/passkeys.ts`;
 - kanonischer Dienst `lib/auth/passkey-auth-attempt.ts` für Challenge, Abschluss und Tokenverbrauch; die früheren getrennten Challenge- und Token-Dienste entfallen;
-- zehn Tests in drei `*.test.ts`-Dateien einschließlich der NextAuth-Credentials-Grenze und das neue npm-Skript `test`;
-- neue Tabelle `passkey_auth_attempts` im Drizzle-Schema und in der journalisierten Migration `drizzle/0004_secure_passkey_auth.sql`; die vier Passkey-Zustandsspalten in `users` entfallen;
+- zwölf Tests in drei `*.test.ts`-Dateien einschließlich der NextAuth-Credentials-Grenze und das neue npm-Skript `test`;
+- neue Tabelle `passkey_auth_attempts` mit Challenge- und Token-Ablaufindizes im Drizzle-Schema und in der journalisierten Migration `drizzle/0004_secure_passkey_auth.sql`; die vier Passkey-Zustandsspalten in `users` entfallen;
+- datenbankgestütztes Startlimit `passkey_auth_start` mit zehn Anfragen je Client-IP und fünf Minuten, Bereinigung abgelaufener Attempts bei jedem Start sowie monotone Zähleraktualisierung über SQL `GREATEST`;
+- verpflichtender Schema-Push in `scripts/upgrade.js` und verweigerter Containerstart bei fehlgeschlagenem Schema-Bootstrap;
 - `package.json` und `package-lock.json`, insbesondere `drizzle-orm` `0.45.2`.
 
 Nicht enthalten sind funktionale Änderungen an Passwort-, SSO- oder Passkey-Registrierungsabläufen. Ebenfalls nicht nachgewiesen sind Staging-/Produktivmigration, Deployment, realer Authenticator-Test und formale Freigabe. Diese Angaben sind **klaerungsbeduerftige Information**; Change Owner und Betrieb/Release müssen sie vor der Produktivsetzung schließen.
@@ -25,7 +27,7 @@ Nicht enthalten sind funktionale Änderungen an Passwort-, SSO- oder Passkey-Reg
 
 | Begriff | Bedeutung |
 |---|---|
-| Daily Evolution | Die zusammengehörigen Sicherheits-, Dokumentations- und Reviewcommits bis `6618792` vom 2026-07-20. |
+| Daily Evolution | Die zusammengehörigen Sicherheits-, Dokumentations- und Reviewcommits bis `8611a8d` vom 2026-07-20. |
 | Challenge | Kurzlebiger, serverseitig in einer eigenen Attempt-Zeile gespeicherter WebAuthn-Prüfwert mit fünf Minuten Gültigkeit, adressiert durch eine zufällige opake Ceremony-ID. |
 | Passkey-Login-Token | Nach erfolgreicher WebAuthn-Prüfung ausgegebener Zufallswert; serverseitig nur als SHA-256-Hash für zwei Minuten gespeichert. |
 | Single Use | Ein erfolgreicher WebAuthn-Nachweis schließt genau einen Attempt atomar ab; NextAuth löscht beim Tokenverbrauch genau die passende Attempt-Zeile. Wiederverwendung wird abgelehnt. |
@@ -55,10 +57,12 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 
 | Änderung | Begründung | Auswirkung | Komponenten |
 |---|---|---|---|
-| Servergespeicherte Passkey-Challenge | Die bisher vom Client zurückgesendete Challenge war kein belastbarer serverseitiger Vertrauensanker; ein einzelner Zustand am Benutzer würde konkurrierende Anmeldungen überschreiben. | Jeder Start legt eine eigene fünf Minuten gültige Attempt-Zeile unter einer zufälligen opaken `ceremonyId` an. Lesen vor der WebAuthn-Prüfung verbraucht die Challenge nicht; erst danach schließt ein bedingtes Update genau einen Attempt atomar ab. | `lib/passkeys.ts`, `lib/auth/passkey-auth-attempt.ts`, beide Auth-API-Routen, `components/passkey-login.tsx` |
+| Servergespeicherte Passkey-Challenge | Die bisher vom Client zurückgesendete Challenge war kein belastbarer serverseitiger Vertrauensanker; ein einzelner Zustand am Benutzer würde konkurrierende Anmeldungen überschreiben. | Jeder Start wird je Client-IP datenbankgestützt auf zehn Anfragen in fünf Minuten begrenzt, löscht abgelaufene Attempts und legt eine eigene fünf Minuten gültige Attempt-Zeile unter einer zufälligen opaken `ceremonyId` an. Lesen vor der WebAuthn-Prüfung verbraucht die Challenge nicht; erst danach schließt ein bedingtes Update genau einen Attempt atomar ab. | `lib/rate-limit.ts`, `lib/passkeys.ts`, `lib/auth/passkey-auth-attempt.ts`, beide Auth-API-Routen, `components/passkey-login.tsx` |
 | Gehashter Einmal-Login-Token | Der frühere statische Marker `authenticated` erlaubte dem Credentials-Provider die Anmeldung allein anhand einer vorhandenen E-Mail-Adresse. | Verify stellt nach erfolgreichem WebAuthn einen zufälligen 32-Byte-Token aus und speichert nur dessen Hash für zwei Minuten in derselben Attempt-Zeile. NextAuth akzeptiert nur Benutzer, Hash und nicht abgelaufene Frist und löscht die passende Zeile atomar. | `lib/auth/passkey-auth-attempt.ts`, `lib/auth/config.ts`, Verify-Route, Passkey-Client |
-| Regressionstest-Harness | Sicherheitsverträge mussten reproduzierbar gegen Rückfälle geschützt werden. | Neues `npm test` über Vitest; zehn Tests in drei Dateien prüfen getrennte parallele Challenges, Lesen vor Beweis, Bindung und Ablauf, atomaren Abschluss, Token-Hashing, statischen Altmarker, Ablauf, Einmaligkeit und die NextAuth-Credentials-Grenze. | `package.json`, `package-lock.json`, `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts` |
-| Dedizierte Datenbankänderung | Challenge und Token benötigen serverseitige, benutzergebundene Persistenz, ohne konkurrierende Ceremonies in einer Benutzerzeile zu vermischen. | `CREATE TABLE IF NOT EXISTS` legt `passkey_auth_attempts` mit opaker Primär-ID, Benutzer-Fremdschlüssel, Challenge-/Token-Feldern und Unique Constraint für Token-Hashes an. Migration `0004` ist im Drizzle-Journal registriert. | `lib/db/schema.ts`, `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json` |
+| Regressionstest-Harness | Sicherheitsverträge mussten reproduzierbar gegen Rückfälle geschützt werden. | Neues `npm test` über Vitest; zwölf Tests in drei Dateien prüfen getrennte parallele Challenges, Lesen vor Beweis, Bindung, Ablauf und Startbereinigung, atomaren Abschluss, Token-Hashing, statischen Altmarker, Einmaligkeit und die NextAuth-Credentials-Grenze. | `package.json`, `package-lock.json`, `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts` |
+| Dedizierte Datenbankänderung | Challenge und Token benötigen serverseitige, benutzergebundene Persistenz, ohne konkurrierende Ceremonies in einer Benutzerzeile zu vermischen. | `CREATE TABLE IF NOT EXISTS` legt `passkey_auth_attempts` mit opaker Primär-ID, Benutzer-Fremdschlüssel, Challenge-/Token-Feldern, Unique Constraint für Token-Hashes und Indizes auf beide Ablaufspalten an. Migration `0004` ist im Drizzle-Journal registriert; `drizzle/meta/0004_snapshot.json` fehlt weiterhin. | `lib/db/schema.ts`, `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json` |
+| Monotone Authenticator-Zähler | Parallele erfolgreiche Prüfungen dürfen einen bereits höheren gespeicherten Signaturzähler nicht zurücksetzen. | Das Zähler-Update schreibt per SQL `GREATEST` nur den höheren Wert und aktualisiert zugleich `last_used_at`. | `lib/passkeys.ts` |
+| Fehlerschließender Schema-Bootstrap | Ein optionaler Schema-Push oder Weiterstart nach Bootstrapfehler kann inkompatiblen Anwendungscode starten. | `scripts/upgrade.js` führt `npm run db:push` verpflichtend aus; `scripts/docker-entrypoint.js` beendet den Container vor `server.js`, wenn `ensure-database.js` fehlschlägt. | `scripts/upgrade.js`, `scripts/docker-entrypoint.js` |
 | Sicherheitsaktualisierung der Abhängigkeiten | Der vorherige Lockfile-Stand enthielt bekannte hohe Befunde, darunter `drizzle-orm` vor dem SQL-Identifier-Fix. | `drizzle-orm` wurde von `0.44.7` auf `0.45.2` angehoben und der Abhängigkeitsgraph neu aufgelöst. Der vollständige npm-Audit-Stand sank von 21 Befunden, davon 7 hoch, auf 9 moderate Befunde. | `package.json`, `package-lock.json` |
 
 ### Schnittstellenänderungen
@@ -73,24 +77,24 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 
 | Prüfung | Ergebnis vom 2026-07-20 | Bewertung |
 |---|---|---|
-| `npm test` | Bestanden: 3 Testdateien, 10 Tests, 0 Fehler | Fokussierte Dienst- und NextAuth-Boundary-Regressionstests erfolgreich. |
+| `npm test` | Bestanden: 3 Testdateien, 12 Tests, 0 Fehler | Fokussierte Dienst- und NextAuth-Boundary-Regressionstests einschließlich Attempt-Bereinigung erfolgreich. |
 | `npm audit --json --package-lock-only` auf `58c06b7^` | 21 Befunde: 1 niedrig, 13 mittel, 7 hoch, 0 kritisch | Reproduzierte Ausgangslage des vollständigen Lockfiles. |
 | `npm audit --json` auf `58c06b7` | 9 Befunde: 9 mittel, 0 hoch, 0 kritisch | Hohe Befunde im aktuellen Graphen beseitigt; moderate Restbefunde offen. |
-| `npm run lint` | Fehlgeschlagen: 17 Fehler, 121 Warnungen; die zehn geänderten TypeScript-Dateien haben 0 Fehler und 1 bereits vorhandene Warnung | Kein grünes repositoryweites Lint-Gate; geänderter Code ist fehlerfrei, die Baseline-Schulden benötigen weiterhin eine Freigabeentscheidung. |
+| `npm run lint` | Fehlgeschlagen: 17 Fehler, 120 Warnungen als vorbestehende Baseline; der Lauf über die geänderten ausführbaren Dateien hat 0 Fehler und 5 Warnungen | Kein grünes repositoryweites Lint-Gate; der geänderte ausführbare Scope ist fehlerfrei, fünf Warnungen und die Baseline-Schulden benötigen weiterhin eine Freigabeentscheidung. |
 | Stagingmigration | **klaerungsbeduerftige Information** | Betrieb/Release muss `npm run upgrade`, Log und Schemaabfrage nachweisen. |
 | WebAuthn-/NextAuth-End-to-End-Test | **klaerungsbeduerftige Information** | Entwicklung führt gemeinsam mit Betrieb einen realen Staging-Smoke-Test aus; Security zeichnet ab. |
-| `npm run build` | Bestanden mit Next.js 16.2.10; Datenbank-Upgrade wurde mangels lokaler `DATABASE_URL` kontrolliert übersprungen | Kompilierung, TypeScript, Seitengenerierung und Bundle erfolgreich; Stagingmigration bleibt separat nachzuweisen. |
+| `npm run build` | Lokal bestanden; Datenbank-Upgrade wurde mangels `DATABASE_URL` kontrolliert übersprungen | Kompilierung, TypeScript, Seitengenerierung und Bundle erfolgreich; damit sind weder Schema-Push noch Stagingmigration nachgewiesen. |
 | Formale Genehmigung | **klaerungsbeduerftige Information** | Change Owner erfasst Freigaberolle, Zeitpunkt und Artefaktreferenz. |
 
 Die Diensttestdateien verwenden In-Memory-Stores; der NextAuth-Test mockt den kanonischen Verbrauchsdienst. Sie belegen Dienstverträge und die Credentials-Verkabelung, aber nicht PostgreSQL-Atomizität unter realer Konkurrenz, die API-Routen oder einen realen Authenticator. Diese Einschränkung ist Bestandteil der Freigabekontrolle.
 
 ### Freigabekriterien
 
-Vor Produktion müssen alle folgenden Punkte erfüllt und gegen Commit `6618792` oder einen nachfolgenden, inhaltlich geprüften Commit referenziert sein:
+Vor Produktion müssen alle folgenden Punkte erfüllt und gegen Commit `8611a8d` oder einen nachfolgenden, inhaltlich geprüften Commit referenziert sein:
 
 1. `npm test` ist ohne Fehler abgeschlossen.
 2. `npm audit --json` weist keine hohen oder kritischen Befunde aus; die neun moderaten Restbefunde sind durch Security akzeptiert oder einer Folgeänderung zugeordnet.
-3. `npm run upgrade` wurde in Staging ausgeführt; Tabelle `passkey_auth_attempts`, Unique Constraint und Fremdschlüssel wurden per Schemaabfrage bestätigt.
+3. `npm run upgrade` wurde in Staging ausgeführt; Tabelle `passkey_auth_attempts`, Unique Constraint, Fremdschlüssel und beide Ablaufindizes wurden per Schemaabfrage bestätigt; der fehlende Drizzle-Snapshot `drizzle/meta/0004_snapshot.json` wurde erzeugt oder als bewusstes, freigegebenes Residuum dokumentiert.
 4. Ein realer Passkey-Login sowie konkurrierende Ceremonies gegen PostgreSQL sind erfolgreich; `authenticated`, ein falscher Token, ein wiederverwendeter Token und ein abgelaufener Token werden abgelehnt.
 5. Der Build ist erfolgreich und das Lint-Ergebnis ist bereinigt oder durch den Change Owner mit Security-Ausnahme dokumentiert.
 6. Deployment-, Monitoring- und namentliche RACI-Angaben liegen als Freigabenachweis vor.
@@ -109,16 +113,16 @@ Der aktuelle Repository-Nachweis erfüllt Punkt 1 und die technische Messung aus
 
 | Artefakt | Referenz | Inhalt |
 |---|---|---|
-| Git-Vergleich | `git diff origin/main...6618792` | Vollständige technische und dokumentarische Änderung auf aktuellem HEAD. |
+| Git-Vergleich | `git diff origin/main...8611a8d` | Vollständige technische und dokumentarische Änderung auf aktuellem HEAD. |
 | Token-Testcommit | `5de8b5a` | Vier Token-Regressionsfälle und Test-Harness. |
 | Challenge-Testcommit | `ba1bf8c` | Drei Challenge-Regressionsfälle. |
 | Authentifizierungsfix | `daa2586` | Serverchallenge, Einmal-Token, API-/Client-/Provider-Anpassung, Schema und Migration. |
 | Importkorrektur | `7ad82b5` | Lauffähige Datenbankimporte in beiden Diensten. |
 | Dependency-Upgrade | `58c06b7` | `drizzle-orm` `0.45.2` und aktualisiertes Lockfile. |
-| Reviewkorrekturen | `ddf3925` bis `6618792` | Dedizierter Attempt-Dienst, parallele Ceremonies, journalisierte Migration und NextAuth-Credentials-Boundary-Test. |
-| Migration | `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json` | Idempotentes `CREATE TABLE IF NOT EXISTS` und registrierter Journal-Eintrag `0004`. |
+| Reviewkorrekturen | `ddf3925` bis `8611a8d` | Dedizierter Attempt-Dienst, parallele Ceremonies, journalisierte Migration, NextAuth-Credentials-Boundary-Test und finales Lifecycle-/Deployment-Hardening. |
+| Migration | `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json` | Idempotentes `CREATE TABLE IF NOT EXISTS`, zwei Ablaufindizes und registrierter Journal-Eintrag `0004`; `drizzle/meta/0004_snapshot.json` fehlt. |
 | Schema | `lib/db/schema.ts` | Drizzle-Abbildung von `passkey_auth_attempts`; keine vier Passkey-Zustandsspalten in `users`. |
-| Regressionstests | `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts` | Zehn bestandene Dienst- und Boundary-Tests. |
+| Regressionstests | `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts` | Zwölf bestandene Dienst- und Boundary-Tests. |
 | Interne Revision | `internal-docs/audits/audit-dokumentation.md` | Kriterien, Stichprobe, Befunde, Abweichungen und Kontrollen. |
 | Externe Änderungsübersicht | `CHANGELOG.md` | Keep-a-Changelog-Eintrag für 2026-07-20. |
 
@@ -129,12 +133,12 @@ Die vollständigen JSON-Ausgaben der npm-Audits und die Kommandoausgaben sind ni
 | Risiko | Auswirkung | Eintrittswahrscheinlichkeit | Massnahme | Kontrolle | Nachweis |
 |---|---|---|---|---|---|
 | Alter statischer Passkey-Marker wird erneut akzeptiert | Kritische Kontoübernahme | Niedrig nach Fix, hoch bei unsicherem Rollback | Serverausgestellten Einmal-Token zwingend prüfen | Negativtest und Security-Freigabe jedes Auth-Rollbacks | Token-Test; `lib/auth/config.ts` |
-| Challenge oder Token wird wiederverwendet oder einer parallelen Ceremony falsch zugeordnet | Replay und unberechtigte Sitzung | Niedrig im Dienstmodell, betrieblich unbestätigt | Opake Attempt-ID, atomarer Abschluss/Löschung und kurze Ablaufzeit | Zehn Regressionstests plus realer PostgreSQL-Parallelitäts- und Staging-Negativtest | `lib/auth/passkey-auth-attempt.ts` und Tests |
+| Challenge oder Token wird wiederverwendet oder einer parallelen Ceremony falsch zugeordnet | Replay und unberechtigte Sitzung | Niedrig im Dienstmodell, betrieblich unbestätigt | Opake Attempt-ID, Startlimit, Bereinigung bei jedem Start, atomarer Abschluss/Löschung und kurze Ablaufzeit | Zwölf Regressionstests plus realer PostgreSQL-Parallelitäts- und Staging-Negativtest | `lib/auth/passkey-auth-attempt.ts`, `lib/rate-limit.ts` und Tests |
 | Attempt-Tabelle fehlt im Zielsystem | Passkey-Anmeldung fällt zur Laufzeit aus | Mittel | Upgrade vor Anwendungscode ausführen | Schemaabfrage und Migrationslog als Deployment-Gate | Migration `0004`; **klaerungsbeduerftige Information** zum Betriebsnachweis |
-| Journalisierte Migration ist operativ nicht verifiziert | Repository- und Zieldatenbankzustand können abweichen | Mittel | Verbindlichen Upgradepfad ausführen und Tabelle/Constraints prüfen | Betrieb dokumentiert tatsächlich verwendeten Mechanismus; Change Owner prüft | `drizzle/meta/_journal.json` enthält `0004`; Betriebsnachweis offen |
+| Journalisierte Migration ist operativ nicht verifiziert und Snapshot `0004` fehlt | Repository-, Drizzle-Metadaten- und Zieldatenbankzustand können abweichen | Mittel | Verbindlichen Upgradepfad ausführen, Tabelle/Constraints/Indizes prüfen und fehlenden Snapshot auflösen | Betrieb dokumentiert tatsächlich verwendeten Mechanismus; Change Owner prüft | `drizzle/meta/_journal.json` enthält `0004`, aber `drizzle/meta/0004_snapshot.json` fehlt; Betriebsnachweis offen |
 | Kein realer WebAuthn-/PostgreSQL-Konkurrenzfluss | Integrations- oder Race-Fehler bleiben unentdeckt | Mittel | Staging-Smoke-Test, reale Parallelitäts- und Negativtests | Security-Abzeichnung gegen Commit-SHA | Testscope und offene Freigabekriterien |
 | Neun moderate Dependency-Befunde verbleiben | Sicherheits- oder Verfügbarkeitsbeeinträchtigung abhängig vom Einsatzpfad | Mittel | Risikobewertung und geplante Folgeaktualisierung | Wiederholter npm-Audit bei jedem Release | Auditstand 9 moderate |
-| Repository-Lint ist rot | Qualitätsfehler werden übersehen oder Gate wird umgangen | Hoch ohne Ausnahmeprozess | Baseline-Fehler beheben oder begründete befristete Ausnahme | Change Owner und Security zeichnen Ausnahme ab; geänderte TypeScript-Dateien bleiben separat fehlerfrei | `npm run lint`: 17 Fehler, 121 Warnungen; Scope-Lint: 0 Fehler, 1 Warnung |
+| Repository-Lint ist rot | Qualitätsfehler werden übersehen oder Gate wird umgangen | Hoch ohne Ausnahmeprozess | Vorbestehende Baseline-Fehler beheben oder begründete befristete Ausnahme | Change Owner und Security zeichnen Ausnahme ab; geänderte ausführbare Dateien bleiben separat fehlerfrei | `npm run lint`: 17 Fehler, 120 Warnungen; Scope-Lint: 0 Fehler, 5 Warnungen |
 | Fehlende Freigabe- oder Rollbackzuordnung | Unkontrolliertes Deployment oder verzögerte Störungsreaktion | Mittel | Namentliche RACI- und Rückfallzuordnung | Kein Produktionsdeployment ohne Freigabeartefakt | **klaerungsbeduerftige Information** mit Change Owner als Kontrolle |
 
 ## Pflegeprozess
@@ -151,4 +155,5 @@ Die vollständigen JSON-Ausgaben der npm-Audits und die Kommandoausgaben sind ni
 | Datum | Autor/Rolle | Aenderung | Anlass |
 |---|---|---|---|
 | 2026-07-20 | Technische Dokumentation / automatisierte Revision | Erstfassung mit Änderungsumfang, Begründung, Wirkung, Tests, Freigabe- und Rollbackkontrollen | Daily Evolution 2026-07-20 |
-| 2026-07-20 | Technische Dokumentation / automatisierte Revision | Nach Reviewfixes auf dedizierte Attempt-Tabelle, parallele Ceremonies, 10 Tests/3 Dateien und journalisierte Migration aktualisiert; Betriebs- und E2E-Nachweise bleiben offen | Reviewfixes bis `6618792` |
+| 2026-07-20 | Technische Dokumentation / automatisierte Revision | Nach Reviewfixes auf dedizierte Attempt-Tabelle, parallele Ceremonies, damaligen Teststand und journalisierte Migration aktualisiert; Betriebs- und E2E-Nachweise bleiben offen | Reviewfixes bis `6618792` |
+| 2026-07-20 | Technische Dokumentation / automatisierte Revision | Auf 12 Tests/3 Dateien, Startlimit 10/5 Minuten, Purge bei jedem Start, Ablaufindizes, monotone Zähler und fehlerschließenden Schema-Bootstrap aktualisiert; realer PostgreSQL-/WebAuthn-/Staging-Nachweis und `0004_snapshot.json` bleiben offen | Finales Hardening bis `8611a8d` |

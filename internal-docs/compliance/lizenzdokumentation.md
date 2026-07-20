@@ -1,6 +1,6 @@
 # Lizenzdokumentation fuer Software und Abhaengigkeiten
 ## Einleitung
-Diese Dokumentation inventarisiert die im Zhort-Repository deklarierten Open-Source-Abhaengigkeiten und beschreibt die daraus folgenden Freigabe- und Nachweispflichten. Primaerquellen sind `package.json` und `package-lock.json` (Lockfile-Version 3) am 20.07.2026; der unveraenderte Paketstand wurde gegen den Repository-HEAD `6618792` abgeglichen.
+Diese Dokumentation inventarisiert die im Zhort-Repository deklarierten Open-Source-Abhaengigkeiten und beschreibt die daraus folgenden Freigabe- und Nachweispflichten. Primaerquellen sind `package.json` und `package-lock.json` (Lockfile-Version 3) am 20.07.2026; der unveraenderte Paketstand wurde gegen den Repository-HEAD `8611a8d` abgeglichen.
 
 Das Repository ist in `package.json` als `private: true` markiert. Das README nennt unter „Lizenz“ lediglich „MIT“. Im Repository wurden keine Dateien `LICENSE`, `COPYING` oder `NOTICE` gefunden. Damit ist weder ein vollstaendiger eigener Lizenztext noch ein auslieferbares Third-Party-Notice-Bundle nachgewiesen. Die README-Angabe allein darf nicht als abgeschlossene Lizenzierung oder als Erfuellung der Hinweispflichten behandelt werden.
 
@@ -183,3 +183,4 @@ Eine Lizenzangabe darf erst als freigegeben gelten, wenn Originaltext und tatsae
 |---|---|---|---|
 | 20.07.2026 | Compliance-Dokumentation | Ersterstellung mit direktem Inventar, Lockfile-Lizenzverteilung, Copyleft- und Auditbewertung | Fehlende interne Lizenzdokumentation |
 | 20.07.2026 | Compliance-Dokumentation | Paketstand gegen Commit `6618792` abgeglichen; keine paket- oder lizenzbezogene Aenderung durch die Passkey-Reviewfixes | Aktualisierung auf aktuellen Repository-HEAD |
+| 20.07.2026 | Compliance-Dokumentation | Unveraenderten Paketstand gegen Commit `8611a8d` abgeglichen; finales Passkey-Hardening aendert keine Paket- oder Lizenzdaten | Aktualisierung auf aktuellen Repository-HEAD |
