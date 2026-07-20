@@ -133,11 +133,7 @@ async function upgrade() {
 
   // 3. Schema-Synchronisation
   logStep('3', 'Schema-Synchronisation');
-  try {
-    await runCommand('npm run db:push', 'Schema-Push', true);
-  } catch (error) {
-    logWarning('Schema-Push übersprungen (möglicherweise bereits aktuell)');
-  }
+  await runCommand('npm run db:push', 'Schema-Push', false);
 
   // 4. Seed-Daten (falls nötig)
   logStep('4', 'Seed-Daten');

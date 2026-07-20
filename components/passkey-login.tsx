@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { Fingerprint, AlertTriangle, Loader2 } from 'lucide-react';
+import type { PasskeyAuthenticationVerifyResponse } from '@/types/passkey-auth';
 
 interface PasskeyLoginProps {
   email: string;
@@ -34,7 +35,7 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
         throw new Error(data.error || 'Failed to start authentication');
       }
 
-      const { options, challenge } = await startResponse.json();
+      const { options, ceremonyId } = await startResponse.json();
 
       // Step 2: Authenticate using browser WebAuthn API
       const credential = await startAuthentication(options);
@@ -46,7 +47,7 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
         body: JSON.stringify({
           email,
           response: credential,
-          challenge,
+          ceremonyId,
         }),
       });
 
@@ -55,12 +56,13 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
         throw new Error(data.error || 'Authentication failed');
       }
 
-      const { user: verifiedUser } = await verifyResponse.json();
+      const { loginToken } =
+        (await verifyResponse.json()) as PasskeyAuthenticationVerifyResponse;
 
       // Step 4: Create NextAuth session using passkey token
       const result = await signIn('credentials', {
         email,
-        passkey_token: 'authenticated', // Custom token to indicate passkey auth
+        passkey_token: loginToken,
         redirect: false,
       });
 
@@ -108,7 +110,7 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
       </Button>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        Use your device's biometric authentication or security key
+        Use your device&apos;s biometric authentication or security key
       </p>
     </div>
   );

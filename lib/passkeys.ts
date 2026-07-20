@@ -22,7 +22,12 @@ import type {
 } from '@simplewebauthn/typescript-types';
 import { db } from './db';
 import { passkeys, users } from './db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
+import {
+  completePasskeyAuthAttempt,
+  getPasskeyAuthChallenge,
+  startPasskeyAuthAttempt,
+} from './auth/passkey-auth-attempt';
 
 // WebAuthn Configuration
 function getRpId(): string {
@@ -162,11 +167,12 @@ export async function getAuthenticationOptions(email: string) {
   };
 
   const options = await generateAuthenticationOptions(opts);
+  const ceremonyId = await startPasskeyAuthAttempt(
+    user.id,
+    options.challenge,
+  );
 
-  return {
-    options,
-    userId: user.id,
-  };
+  return { options, ceremonyId };
 }
 
 /**
@@ -175,7 +181,7 @@ export async function getAuthenticationOptions(email: string) {
 export async function verifyAuthentication(
   email: string,
   response: AuthenticationResponseJSON,
-  expectedChallenge: string
+  ceremonyId: string,
 ) {
   // Find user by email
   const user = await db.query.users.findFirst({
@@ -184,6 +190,14 @@ export async function verifyAuthentication(
 
   if (!user) {
     throw new Error('User not found');
+  }
+
+  const expectedChallenge = await getPasskeyAuthChallenge(
+    ceremonyId,
+    user.id,
+  );
+  if (!expectedChallenge) {
+    throw new Error('Authentication challenge is invalid or expired');
   }
 
   // Find the Passkey used for authentication
@@ -219,12 +233,17 @@ export async function verifyAuthentication(
   await db
     .update(passkeys)
     .set({
-      counter: verification.authenticationInfo.newCounter,
+      counter: sql<number>`GREATEST(${passkeys.counter}, ${verification.authenticationInfo.newCounter})`,
       lastUsedAt: new Date(),
     })
     .where(eq(passkeys.id, passkey.id));
 
-  return user;
+  const loginToken = await completePasskeyAuthAttempt(ceremonyId, user.id);
+  if (!loginToken) {
+    throw new Error('Authentication challenge was already used');
+  }
+
+  return { user, loginToken };
 }
 
 /**
