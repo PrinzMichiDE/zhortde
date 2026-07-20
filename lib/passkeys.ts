@@ -23,6 +23,10 @@ import type {
 import { db } from './db';
 import { passkeys, users } from './db/schema';
 import { eq } from 'drizzle-orm';
+import {
+  consumePasskeyChallenge,
+  savePasskeyChallenge,
+} from './auth/passkey-challenge';
 
 // WebAuthn Configuration
 function getRpId(): string {
@@ -162,6 +166,7 @@ export async function getAuthenticationOptions(email: string) {
   };
 
   const options = await generateAuthenticationOptions(opts);
+  await savePasskeyChallenge(user.id, options.challenge);
 
   return {
     options,
@@ -175,8 +180,12 @@ export async function getAuthenticationOptions(email: string) {
 export async function verifyAuthentication(
   email: string,
   response: AuthenticationResponseJSON,
-  expectedChallenge: string
 ) {
+  const expectedChallenge = await consumePasskeyChallenge(email);
+  if (!expectedChallenge) {
+    throw new Error('Authentication challenge is invalid or expired');
+  }
+
   // Find user by email
   const user = await db.query.users.findFirst({
     where: eq(users.email, email),

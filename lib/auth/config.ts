@@ -5,6 +5,7 @@ import { users } from '@/lib/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { emailSchema, logSecurityEvent } from '@/lib/security';
+import { consumePasskeyLoginToken } from '@/lib/auth/passkey-login-token';
 
 // Session configuration for security
 const SESSION_MAX_AGE = 24 * 60 * 60; // 24 hours
@@ -79,8 +80,6 @@ export const authOptions: NextAuthOptions = {
 
         // 2. Passkey Login
         if (credentials?.passkey_token && credentials?.email) {
-          // Passkey authentication was already verified via API
-          // Just return the user
           const emailResult = emailSchema.safeParse(credentials.email);
           if (!emailResult.success) {
             logSecurityEvent({
@@ -92,9 +91,10 @@ export const authOptions: NextAuthOptions = {
             return null;
           }
 
-          const user = await db.query.users.findFirst({
-            where: eq(users.email, emailResult.data),
-          });
+          const user = await consumePasskeyLoginToken(
+            emailResult.data,
+            credentials.passkey_token,
+          );
 
           if (user) {
             logSecurityEvent({
@@ -115,7 +115,7 @@ export const authOptions: NextAuthOptions = {
           logSecurityEvent({
             type: 'auth_failure',
             ip: clientIp as string,
-            details: { reason: 'user_not_found', email: emailResult.data, method: 'passkey' },
+            details: { reason: 'invalid_passkey_token', email: emailResult.data, method: 'passkey' },
             timestamp: new Date(),
           });
           return null;

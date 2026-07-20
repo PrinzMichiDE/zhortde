@@ -14,6 +14,10 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('user'), // 'user', 'admin'
   ssoLoginToken: text('sso_login_token'),
   ssoLoginExpiresAt: timestamp('sso_login_expires_at'),
+  passkeyLoginTokenHash: text('passkey_login_token_hash'),
+  passkeyLoginExpiresAt: timestamp('passkey_login_expires_at'),
+  passkeyChallenge: text('passkey_challenge'),
+  passkeyChallengeExpiresAt: timestamp('passkey_challenge_expires_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 

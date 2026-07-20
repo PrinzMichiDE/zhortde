@@ -5,28 +5,25 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthentication } from '@/lib/passkeys';
-import { signIn } from 'next-auth/react';
+import { issuePasskeyLoginToken } from '@/lib/auth/passkey-login-token';
 import { z } from 'zod';
 
 const verifySchema = z.object({
   email: z.string().email(),
   response: z.any(), // AuthenticationResponseJSON
-  challenge: z.string(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, response, challenge } = verifySchema.parse(body);
+    const { email, response } = verifySchema.parse(body);
 
-    const user = await verifyAuthentication(email, response, challenge);
+    const user = await verifyAuthentication(email, response);
+    const loginToken = await issuePasskeyLoginToken(user.id);
 
-    // Create session token for NextAuth
-    // In production, you'd want to use NextAuth's signIn function properly
-    // For now, return user data and let client handle session creation
-    
     return NextResponse.json({
       success: true,
+      loginToken,
       user: {
         id: user.id.toString(),
         email: user.email,
