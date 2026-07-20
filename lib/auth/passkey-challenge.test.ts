@@ -1,78 +1,48 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createPasskeyChallengeService,
-  type PasskeyChallengeStore,
-} from './passkey-challenge';
-
-const NOW = new Date('2026-07-20T04:00:00.000Z');
-
-class InMemoryChallengeStore implements PasskeyChallengeStore {
-  saved:
-    | {
-        userId: number;
-        challenge: string;
-        expiresAt: Date;
-      }
-    | undefined;
-
-  async save(
-    userId: number,
-    challenge: string,
-    expiresAt: Date,
-  ): Promise<void> {
-    this.saved = { userId, challenge, expiresAt };
-  }
-
-  async consume(userId: number, now: Date): Promise<string | null> {
-    if (
-      userId !== this.saved?.userId ||
-      !this.saved ||
-      this.saved.expiresAt <= now
-    ) {
-      return null;
-    }
-
-    const challenge = this.saved.challenge;
-    this.saved = undefined;
-    return challenge;
-  }
-}
+import { createFixture, NOW, USER } from './passkey-auth-attempt.test-support';
 
 describe('passkey authentication challenges', () => {
-  it('stores a challenge with a five-minute expiry', async () => {
-    const store = new InMemoryChallengeStore();
-    const service = createPasskeyChallengeService(store, () => NOW);
+  it('stores each challenge as a distinct five-minute attempt', async () => {
+    const { store, service } = createFixture();
 
-    await service.save(7, 'server-generated-challenge');
+    const firstId = await service.start(USER.id, 'first-challenge');
+    const secondId = await service.start(USER.id, 'second-challenge');
 
-    expect(store.saved).toEqual({
-      userId: 7,
-      challenge: 'server-generated-challenge',
-      expiresAt: new Date('2026-07-20T04:05:00.000Z'),
+    expect(firstId).not.toBe(secondId);
+    expect(store.attempts.get(firstId)).toMatchObject({
+      userId: USER.id,
+      challenge: 'first-challenge',
+      challengeExpiresAt: new Date('2026-07-20T04:05:00.000Z'),
     });
+    await expect(
+      service.getChallenge(firstId, USER.id),
+    ).resolves.toBe('first-challenge');
+    await expect(
+      service.getChallenge(secondId, USER.id),
+    ).resolves.toBe('second-challenge');
   });
 
-  it('returns a stored challenge exactly once', async () => {
-    const store = new InMemoryChallengeStore();
-    const service = createPasskeyChallengeService(store, () => NOW);
-    await service.save(7, 'server-generated-challenge');
+  it('does not consume a challenge when it is read for verification', async () => {
+    const { service } = createFixture();
+    const attemptId = await service.start(USER.id, 'server-challenge');
 
-    await expect(service.consume(7)).resolves.toBe(
-      'server-generated-challenge',
-    );
-    await expect(service.consume(7)).resolves.toBeNull();
+    await expect(
+      service.getChallenge(attemptId, USER.id),
+    ).resolves.toBe('server-challenge');
+    await expect(
+      service.getChallenge(attemptId, USER.id),
+    ).resolves.toBe('server-challenge');
   });
 
-  it('rejects an expired challenge', async () => {
-    const store = new InMemoryChallengeStore();
+  it('rejects expired and cross-user attempts', async () => {
     let currentTime = NOW;
-    const service = createPasskeyChallengeService(
-      store,
-      () => currentTime,
-    );
-    await service.save(7, 'server-generated-challenge');
-    currentTime = new Date('2026-07-20T04:05:01.000Z');
+    const { service } = createFixture(() => currentTime);
+    const attemptId = await service.start(USER.id, 'server-challenge');
 
-    await expect(service.consume(7)).resolves.toBeNull();
+    await expect(service.getChallenge(attemptId, 99)).resolves.toBeNull();
+    currentTime = new Date('2026-07-20T04:05:01.000Z');
+    await expect(
+      service.getChallenge(attemptId, USER.id),
+    ).resolves.toBeNull();
   });
 });

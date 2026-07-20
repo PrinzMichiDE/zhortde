@@ -1,104 +1,62 @@
 import { createHash } from 'crypto';
 import { describe, expect, it } from 'vitest';
-import {
-  createPasskeyLoginTokenService,
-  type PasskeyLoginTokenStore,
-  type PasskeyLoginUser,
-} from './passkey-login-token';
-
-const NOW = new Date('2026-07-20T04:00:00.000Z');
-const USER: PasskeyLoginUser = {
-  id: 7,
-  email: 'person@example.com',
-  role: 'user',
-};
-
-class InMemoryTokenStore implements PasskeyLoginTokenStore {
-  saved:
-    | {
-        userId: number;
-        tokenHash: string;
-        expiresAt: Date;
-      }
-    | undefined;
-
-  async save(
-    userId: number,
-    tokenHash: string,
-    expiresAt: Date,
-  ): Promise<void> {
-    this.saved = { userId, tokenHash, expiresAt };
-  }
-
-  async consume(
-    email: string,
-    tokenHash: string,
-    now: Date,
-  ): Promise<PasskeyLoginUser | null> {
-    if (
-      !this.saved ||
-      email !== USER.email ||
-      tokenHash !== this.saved.tokenHash ||
-      this.saved.expiresAt <= now
-    ) {
-      return null;
-    }
-
-    this.saved = undefined;
-    return USER;
-  }
-}
-
-function createFixture(now: () => Date = () => NOW) {
-  const store = new InMemoryTokenStore();
-  const service = createPasskeyLoginTokenService(store, {
-    generateToken: () => 'verified-passkey-token',
-    now,
-  });
-
-  return { store, service };
-}
+import { createFixture, NOW, USER } from './passkey-auth-attempt.test-support';
 
 describe('passkey login tokens', () => {
-  it('stores only a hash of the issued token', async () => {
+  it('completes an attempt once and stores only the token hash', async () => {
     const { store, service } = createFixture();
+    const attemptId = await service.start(USER.id, 'server-challenge');
 
-    const token = await service.issue(USER.id);
+    const token = await service.complete(attemptId, USER.id);
 
-    expect(token).toBe('verified-passkey-token');
-    expect(store.saved).toEqual({
-      userId: USER.id,
-      tokenHash: createHash('sha256')
-        .update('verified-passkey-token')
+    expect(token).toBe('verified-passkey-token-1');
+    expect(store.attempts.get(attemptId)).toMatchObject({
+      challenge: null,
+      challengeExpiresAt: null,
+      loginTokenHash: createHash('sha256')
+        .update('verified-passkey-token-1')
         .digest('hex'),
-      expiresAt: new Date('2026-07-20T04:02:00.000Z'),
+      loginTokenExpiresAt: new Date('2026-07-20T04:02:00.000Z'),
     });
-    expect(store.saved?.tokenHash).not.toBe(token);
+    await expect(service.complete(attemptId, USER.id)).resolves.toBeNull();
   });
 
   it('rejects the former static authenticated marker', async () => {
     const { service } = createFixture();
-    await service.issue(USER.id);
+    const attemptId = await service.start(USER.id, 'server-challenge');
+    await service.complete(attemptId, USER.id);
 
     await expect(
-      service.consume(USER.email, 'authenticated'),
+      service.consumeLoginToken(USER.email, 'authenticated'),
     ).resolves.toBeNull();
   });
 
-  it('accepts a server-issued token exactly once', async () => {
+  it('accepts each completed attempt token exactly once', async () => {
     const { service } = createFixture();
-    const token = await service.issue(USER.id);
+    const firstId = await service.start(USER.id, 'first-challenge');
+    const secondId = await service.start(USER.id, 'second-challenge');
+    const firstToken = await service.complete(firstId, USER.id);
+    const secondToken = await service.complete(secondId, USER.id);
 
-    await expect(service.consume(USER.email, token)).resolves.toEqual(USER);
-    await expect(service.consume(USER.email, token)).resolves.toBeNull();
+    expect(firstToken).toBe('verified-passkey-token-1');
+    expect(secondToken).toBe('verified-passkey-token-2');
+    await expect(
+      service.consumeLoginToken(USER.email, firstToken!),
+    ).resolves.toEqual(USER);
+    await expect(
+      service.consumeLoginToken(USER.email, firstToken!),
+    ).resolves.toBeNull();
   });
 
   it('rejects expired tokens', async () => {
     let currentTime = NOW;
     const { service } = createFixture(() => currentTime);
-    const token = await service.issue(USER.id);
+    const attemptId = await service.start(USER.id, 'server-challenge');
+    const token = await service.complete(attemptId, USER.id);
     currentTime = new Date('2026-07-20T04:02:01.000Z');
 
-    await expect(service.consume(USER.email, token)).resolves.toBeNull();
+    await expect(
+      service.consumeLoginToken(USER.email, token!),
+    ).resolves.toBeNull();
   });
 });
