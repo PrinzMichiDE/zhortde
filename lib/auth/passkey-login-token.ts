@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from 'crypto';
 import { and, eq, gt } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { db } from '../db';
+import { users } from '../db/schema';
 
 const TOKEN_MAX_AGE_MS = 2 * 60 * 1000;
 

@@ -1,6 +1,6 @@
 import { and, eq, gt } from 'drizzle-orm';
-import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { db } from '../db';
+import { users } from '../db/schema';
 
 const CHALLENGE_MAX_AGE_MS = 5 * 60 * 1000;
 
