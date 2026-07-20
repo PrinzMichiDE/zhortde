@@ -1,6 +1,6 @@
 # Informationssicherheitsrichtlinie
 ## Einleitung
-Diese Richtlinie definiert die verbindlichen Sicherheitsanforderungen fuer Entwicklung, Bereitstellung und Betrieb von Zhort. Sie trennt Soll-Vorgaben von nachweisbaren Ist-Kontrollen. Grundlage ist die Repository-Analyse vom 20.07.2026, Commit `58c06b7`.
+Diese Richtlinie definiert die verbindlichen Sicherheitsanforderungen fuer Entwicklung, Bereitstellung und Betrieb von Zhort. Sie trennt Soll-Vorgaben von nachweisbaren Ist-Kontrollen. Grundlage ist die Repository-Analyse vom 20.07.2026, Commit `6618792`.
 
 Die formale Inkraftsetzung und namentliche Freigabe durch die Leitung sind klaerungsbeduerftige Informationen. Owner ist die Leitung; Kontrolle ist eine signierte Richtlinienfreigabe vor Produktivbetrieb und danach mindestens jaehrlich. Bis zur Freigabe dienen die Anforderungen als Mindeststandard fuer Risikobewertung und technische Aenderungen.
 
@@ -79,18 +79,18 @@ Freie Inhalte koennen eine hoehere Schutzklasse enthalten, als das strukturierte
 |---|---|---|
 | Passwort | Mindestens 8 Zeichen mit Komplexitaet; bcrypt Kostenfaktor 12; Timing-Vergleich bei unbekanntem Nutzer | Rate Limit fuer alle Loginpfade, kompromittierte Passwoerter pruefen, sichere Ruecksetzung und MFA fuer Privilegierte. |
 | NextAuth/JWT | 24 Stunden; Cookie `httpOnly`, `sameSite=lax`, Produktion `secure` | Secret mindestens 32 zufaellige Bytes, Rotation und Sessionwiderruf dokumentieren. |
-| Passkey-Login | WebAuthn mit `requireUserVerification`; serverseitige 5-Minuten-Challenge; 32-Byte-Login-Token nur als SHA-256-Hash, 2 Minuten, atomar Single-Use | User-Enumeration reduzieren, Passkey-Endpunkte gesondert rate-limiten, DB-Integrationstests und Cleanup abgelaufener Werte. |
+| Passkey-Login | WebAuthn mit `requireUserVerification`; eigene `passkey_auth_attempts`-Zeile je zufaelliger opaker Ceremony-ID erlaubt parallele Ceremonies; Challenge 5 Minuten und vor Nachweis nur gelesen; atomarer Abschluss genau eines Attempts; 32-Byte-Login-Token nur als SHA-256-Hash, 2 Minuten; NextAuth loescht die passende Zeile atomar | Operative Migration und Tabellenstruktur nachweisen; User-Enumeration reduzieren; Passkey-Endpunkte gesondert rate-limiten; reale PostgreSQL-Konkurrenz-/WebAuthn-E2E-Tests und Cleanup abgelaufener Attempt-Zeilen. |
 | Passkey-Registrierung | Authentisierte Route und WebAuthn-Verifikation | Challenge nicht an den Client als Vertrauensanker zurueckgeben; serverseitig an Nutzer/Session binden, befristen und einmalig verbrauchen. |
 | SSO | Verifizierte Domain, Provider-Codeaustausch, 5-Minuten-Single-Use-Handoff | Kryptografisch zufaelliger, servergebundener OAuth-State/Nonce; Secret-Vault; PKCE wo anwendbar; strikte Issuer-/Providerbindung. |
 
-`drizzle/0004_secure_passkey_auth.sql` ist vor Aktivierung des neuen Passkey-Loginpfads anzuwenden. Migrationserfolg und Rollback muessen pro Umgebung nachgewiesen werden.
+`drizzle/0004_secure_passkey_auth.sql` erstellt `passkey_auth_attempts` mit `CREATE TABLE IF NOT EXISTS` und ist in `drizzle/meta/_journal.json` registriert. Sie ist vor Aktivierung des neuen Passkey-Loginpfads anzuwenden; Migrationserfolg, Tabellen-/Constraint-Struktur und Rollback muessen pro Umgebung nachgewiesen werden.
 
 ### Geheimnis- und Kryptografiemanagement
 - Secrets werden ausschliesslich ueber eine freigegebene Secret-Verwaltung injiziert. `.env`-Dateien mit echten Werten, Secrets in GitHub-Logs und Klartext in Tickets sind verboten.
 - `DATABASE_URL`/`POSTGRES_URL`, `NEXTAUTH_SECRET`, `GOOGLE_SAFE_BROWSING_KEY`, SSO-Secrets, Webhook-Secrets und Registry-Zugaenge sind zu inventarisieren, ohne Werte in Nachweisen abzulegen.
 - Rotation erfolgt bei Verdacht sofort, bei Rollenwechsel und ansonsten nach einer freigegebenen Frist. Fristen und Plattform sind klaerungsbeduerftig; Owner Betrieb.
 - TLS 1.2 oder hoeher ist fuer alle externen und Datenbankverbindungen Pflicht. Der Aufruf von `http://ip-api.com` verletzt diese Vorgabe und ist bis zur Behebung auszusetzen.
-- Kontopasswoerter und Zugriffsschluessel werden mit bcrypt gespeichert. Passkey-Handoff-Token und bestimmte API-Hilfswerte verwenden SHA-256; rohe Login-Tokens werden nicht gespeichert.
+- Kontopasswoerter und Zugriffsschluessel werden mit bcrypt gespeichert. Passkey-Handoff-Token und bestimmte API-Hilfswerte verwenden SHA-256; rohe Login-Tokens werden nicht gespeichert. Passkey-Handoff-Hashes liegen in dedizierten Attempt-Zeilen, die NextAuth beim erfolgreichen Verbrauch atomar loescht.
 - Passwortfreigaben verwenden laut Hilfsbibliothek AES-256-GCM mit PBKDF2-SHA-256 und zufaelligen IV/Salt. Ob die Verschluesselung tatsaechlich ausschliesslich clientseitig stattfindet, muss durch End-to-End-Test und Bundle-Review belegt werden.
 - SSO-Client-Secrets und Webhook-Secrets liegen laut Schema als Text vor. At-rest-Verschluesselung oder anwendungsseitige Feldverschluesselung ist nicht belegt.
 
@@ -169,9 +169,9 @@ Ausnahmen sind nur befristet zulaessig. Erforderlich sind Risiko, Geschaeftsgrun
 
 ## Nachweise und Artefakte
 - `lib/auth/config.ts`, `lib/auth/actions.ts`: Passwort, JWT, Cookies und Handoff-Verfahren.
-- `lib/auth/passkey-challenge.ts`, `lib/auth/passkey-login-token.ts`, `lib/passkeys.ts`: WebAuthn-Challenge und Login-Token.
-- `drizzle/0004_secure_passkey_auth.sql`: neue Passkey-Sicherheitsfelder.
-- `lib/auth/passkey-*.test.ts`: sieben erfolgreiche Tests fuer Ablauf, Hash und Einmalverwendung am 20.07.2026.
+- `lib/auth/passkey-auth-attempt.ts`, `lib/passkeys.ts`: opak adressierte WebAuthn-Ceremonies, atomarer Attempt-Abschluss und Login-Token-Verbrauch.
+- `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json`: dedizierte, journalisierte Tabelle `passkey_auth_attempts`.
+- `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts`: zehn erfolgreiche Tests fuer Parallelitaet, Ablauf, Hash, Einmalverwendung und die NextAuth-Credentials-Grenze am 20.07.2026.
 - `middleware.ts`, `next.config.ts`, `lib/api-security.ts`, `lib/security.ts`, `lib/rate-limit.ts`: Header, CSP, Validierung, Logging und Limits.
 - `lib/db/schema.ts`, `drizzle/*.sql`: Zugriffsdaten, Audit, Loeschbeziehungen und Migrationen.
 - `app/protected/paste/[slug]/page.tsx`, `app/p/[slug]/page.tsx`, `app/p/[slug]/raw/route.ts`, `app/api/auth/sso/*`, `lib/analytics.ts`: dokumentierte offene Risiken.
@@ -186,6 +186,8 @@ Ausnahmen sind nur befristet zulaessig. Erforderlich sind Risiko, Geschaeftsgrun
 | Schutzpasswoerter/Access-Keys in Queryparametern | Geheimnisoffenlegung in Historie/Logs | Mittel | POST-basierte Pruefung und kurzlebiges gebundenes Zugriffstoken | Log-/URL-Test ohne Passwortwerte | Protected-Link-, Paste- und Passwortfreigabe-Flows |
 | P2P-Signalisierung ohne Token-/Access-Key-Pruefung | Manipulation oder Offenlegung von Offer/Answer | Hoch | Signalisierung an Token, Ablauf und Access-Key binden | Negative API-Tests fuer falschen Token, Ablauf und fremde Share-ID | `app/api/p2p/files/[shareId]/route.ts` |
 | Passkey-Registrierung mit clientgelieferter Challenge | Unbefugte Credential-Registrierung | Mittel | Serverseitige, sessiongebundene Single-Use-Challenge | Replay-/Ablauf-/Bindungstest | `app/api/passkeys/register/*` |
+| Passkey-Attempt-Migration ist betrieblich nicht verifiziert | Fehlende Tabelle oder Constraints verhindern oder schwaechen den Loginpfad | Mittel | Journalisierte Migration als blockierendes Release-Gate ausfuehren | Upgrade-Log und Schemaabfrage fuer Tabelle, Unique Constraint und Fremdschluessel | `drizzle/0004_secure_passkey_auth.sql`, Journal vorhanden; Betriebsnachweis offen |
+| Passkey-Parallelitaet und End-to-End-Fluss nur in In-Memory-/Mock-Tests | Race- oder Integrationsfehler bleiben unentdeckt | Mittel | Reale PostgreSQL-Konkurrenztests und WebAuthn-Staging-E2E ausfuehren | Testprotokoll gegen freizugebenden Commit-SHA | 3 Dateien/10 Tests; kein Live-DB-/WebAuthn-E2E |
 | Unsigned SSO-State und Klartext-Client-Secret | Login-CSRF, Secretdiebstahl | Mittel | State/Nonce serverseitig, PKCE, Vault/Feldverschluesselung | SSO-Bedrohungsanalyse und Integrationstest | `app/api/auth/sso/*`, Schema |
 | Verteiltes Rate Limit fehlt und DB-Limit fail-open | Brute Force und Missbrauch | Hoch | Zentraler atomarer Store, fail-safe fuer Auth | Last-/Fehlertest ueber mehrere Instanzen | `middleware.ts`, `lib/rate-limit.ts` |
 | CSP mit `unsafe-eval`/`unsafe-inline` | Erhoehte XSS-Auswirkung | Mittel | Nonce/Hashes und minimale Quellen | Automatischer Header-/CSP-Test | `middleware.ts` |
@@ -215,3 +217,4 @@ Richtlinienverstoesse werden als Sicherheitsereignis registriert. Ueberfaellige 
 | Datum | Autor/Rolle | Aenderung | Anlass |
 |---|---|---|---|
 | 20.07.2026 | Compliance-Dokumentation | Ersterstellung der vollstaendigen Sicherheitsrichtlinie mit Ist/Soll-Abgleich und technischen Restrisiken | Fehlende interne Sicherheitsrichtlinie |
+| 20.07.2026 | Compliance-Dokumentation | Passkey-Login auf dedizierte Attempt-Tabelle, parallele Ceremonies, atomaren NextAuth-Verbrauch, registrierte Migration und 10 Tests aktualisiert; Betriebs-/E2E-Evidenz bleibt offen | Reviewfixes bis Commit `6618792` |

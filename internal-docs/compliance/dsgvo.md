@@ -1,6 +1,6 @@
 # Datenschutzkonzept und DSGVO-Verzeichnis
 ## Einleitung
-Dieses Dokument verbindet das interne Verzeichnis von Verarbeitungstaetigkeiten (VVT), die Datenschutzkontrollen und die nach Repository-Stand erkennbare Lueckenanalyse fuer Zhort. Es basiert auf dem Code- und Datenbankschema vom 20.07.2026, Commit `58c06b7`.
+Dieses Dokument verbindet das interne Verzeichnis von Verarbeitungstaetigkeiten (VVT), die Datenschutzkontrollen und die nach Repository-Stand erkennbare Lueckenanalyse fuer Zhort. Es basiert auf dem Code- und Datenbankschema vom 20.07.2026, Commit `6618792`.
 
 Die oeffentliche Seite `app/datenschutz/page.tsx` beschreibt unter anderem anonymisierte Analytics. Der Code speichert jedoch in `link_clicks` die vollstaendige IP-Adresse und uebermittelt sie in `lib/analytics.ts` ueber HTTP an `ip-api.com`. Diese Abweichung ist materiell: Die oeffentliche Information ist ohne technische Aenderung oder korrigierte Transparenz nicht durch den Code belegt.
 
@@ -54,7 +54,7 @@ R = ausfuehrend, A = rechenschaftspflichtig, C = konsultiert, I = informiert. Na
 |---|---|---|---|---|---|
 | Registrierung und Konto | Nutzer; E-Mail, bcrypt-Passwort-Hash, Rolle, Erstellzeit | Konto und Vertrag/Dienst | Art. 6 Abs. 1 lit. b; Sicherheitsanteile lit. f | Hosting/DB-Anbieter, intern Berechtigte | Bis Admin-Loeschung; Selbstloeschprozess und konkrete Frist sind nicht belegt. FK-Kaskaden loeschen viele Kinddaten. |
 | JWT-Session und Login | Nutzer; E-Mail, User-ID, Rolle, JWT, IP, Erfolgs-/Fehlerdetails | Authentisierung, Missbrauchsschutz | Art. 6 Abs. 1 lit. b und lit. f | NextAuth-Laufzeit, Plattformlogs | JWT maximal 24 Stunden; stdout-Logfristen klaerungsbeduerftig. |
-| Passkeys | Nutzer; Credential-ID, oeffentlicher Schluessel, Counter, Geraetename/-typ, Nutzung, Challenge/Token-Hash | Passwortlose Authentisierung | Art. 6 Abs. 1 lit. b; Sicherheit lit. f | DB-Anbieter | Challenge 5 Minuten nutzbar, Login-Token 2 Minuten nutzbar und bei Erfolg Single-Use; abgelaufene Feldwerte werden nicht nachweisbar zeitgesteuert bereinigt. |
+| Passkeys | Nutzer; Credential-ID, oeffentlicher Schluessel, Counter, Geraetename/-typ, Nutzung sowie pro Auth-Versuch opake Ceremony-ID, User-ID, Challenge, Token-Hash und Ablaufzeiten | Passwortlose Authentisierung | Art. 6 Abs. 1 lit. b; Sicherheit lit. f | DB-Anbieter | Je Loginstart eigene `passkey_auth_attempts`-Zeile; Challenge 5 Minuten nutzbar, Login-Token 2 Minuten nutzbar und bei Erfolg durch Zeilenloeschung Single-Use. Abgelaufene Attempt-Zeilen werden nicht nachweisbar zeitgesteuert bereinigt. |
 | SSO | Organisationsnutzer; Domain, E-Mail, IdP-Profil, Providerkonfiguration, Client-Secret, Kurzzeittoken | Unternehmensanmeldung | Art. 6 Abs. 1 lit. b; gegebenenfalls Vereinbarung mit Organisation | Konfigurierter OIDC/Azure-AD-Provider | Login-Token 5 Minuten nutzbar und bei Erfolg geloescht; abgelaufene Werte, Secrets und Providerfristen klaerungsbeduerftig. |
 | URL-Shortener | Ersteller, Zielseiteninhaber, Klickende; Ziel-URL, Shortcode, Owner-ID, UTM, Schutz-/Ablaufdaten | Linkbereitstellung | Art. 6 Abs. 1 lit. b; anonym lit. f nach Interessenabwaegung | Oeffentlichkeit bei oeffentlichen Links, Hosting/DB, Webhookempfaenger | Optionales Ablaufdatum sperrt Zugriff, loescht Datensatz aber nicht; sonst bis Einzel- oder Kontoloeschung. |
 | Pastebin | Ersteller/Betroffene im Inhalt; Paste-Inhalt, Sprache, Owner-ID, Schutz-/Ablaufdaten | Inhaltsfreigabe | Art. 6 Abs. 1 lit. b; anonym lit. f nach Interessenabwaegung | Oeffentlichkeit bei oeffentlichen Pastes, Hosting/DB | Optionales Ablaufdatum; kein Purge belegt. Die Hauptansicht akzeptiert bei geschuetzten Pastes jedes nichtleere Passwort ohne Hashvergleich; die Raw-Route prueft weder Ablauf noch Passwort. |
@@ -74,8 +74,8 @@ Die folgenden Soll-Fristen sind Kontrollziele und keine Behauptung der aktuellen
 
 | Datenklasse | Nachweisbarer Ist-Stand | Soll-Kontrolle |
 |---|---|---|
-| Passkey-Login-Token | 2 Minuten gueltig, Hash, atomare Einmalverwendung | Abgelaufene Felder spaetestens taeglich physisch bereinigen; Verbrauch protokollieren ohne Token. |
-| Passkey-Login-Challenge | 5 Minuten gueltig, atomare Einmalverwendung | Abgelaufene Felder spaetestens taeglich bereinigen. |
+| Passkey-Auth-Attempt nach erfolgreicher WebAuthn-Pruefung | Token-Hash 2 Minuten gueltig; NextAuth loescht die passende Zeile atomar bei erfolgreichem Verbrauch | Abgelaufene Attempt-Zeilen spaetestens taeglich physisch bereinigen; Verbrauch protokollieren ohne Token. |
+| Passkey-Auth-Attempt vor WebAuthn-Pruefung | Eigene opak adressierte Zeile je Ceremony; Challenge 5 Minuten gueltig, wird vor dem Nachweis nur gelesen und beim atomaren Abschluss entfernt | Abgelaufene Attempt-Zeilen spaetestens taeglich bereinigen. |
 | SSO-Login-Token | 5 Minuten gueltig, nach erfolgreichem Login geloescht | Hash statt Klartext und taegliche Bereinigung abgelaufener Werte. |
 | JWT-Session | 24 Stunden Maximalalter | Keine serverseitige Langzeitspeicherung; Widerrufskonzept fuer kompromittierte Sessions. |
 | Rate-Limit-Daten | Fenster 15 Minuten oder 1 Stunde; anlassbezogene Bereinigung | Globaler taeglicher Purge nach Ende des laengsten Fensters plus kurzer Fehlerpuffer. |
@@ -115,7 +115,7 @@ Anfragen nach Art. 15 bis 22 DSGVO werden zentral registriert, identitaetsgeprue
 | Verfuegbarkeit | Docker, Standalone-Build, DB-Verbindungszeitlimits | Backup, Redundanz, DDoS, RTO/RPO und Restore-Test belegen. |
 | Trennung | `NODE_ENV`, kontobezogene IDs | Getrennte Konten/DBs/Secrets fuer Entwicklung, Test und Produktion belegen; keine Produktivdaten in Tests. |
 | Verschluesselung/Pseudonymisierung | bcrypt, SHA-256-Token/API-Key-Hash, WebAuthn, AES-256-GCM-Payload | At-rest/Backup-Verschluesselung, Secret-Vault und IP-Minimierung belegen; SSO-Secrets nicht im Klartextfeld. |
-| Belastbarkeit und Wirksamkeitspruefung | 7 Passkey-Unit-Tests erfolgreich | CI erzwingt Tests nicht; Datenschutz-, Restore-, Rechte- und Zugriffstests regelmaessig ausfuehren. |
+| Belastbarkeit und Wirksamkeitspruefung | 10 Passkey-Tests in 3 Dateien einschließlich NextAuth-Credentials-Grenze erfolgreich | Keine reale PostgreSQL-Konkurrenz-/WebAuthn-E2E-Pruefung; CI erzwingt Tests nicht; Datenschutz-, Restore-, Rechte- und Zugriffstests regelmaessig ausfuehren. |
 
 ### Auftragsverarbeiter, Empfaenger und Drittlandtransfers
 | Stelle / Kategorie | Nachweisbarer Datenfluss | Rolle/Transferstatus | Erforderliche Kontrolle |
@@ -140,7 +140,7 @@ Vor Produktivfreigabe und vor jeder wesentlichen Erweiterung ist ein dokumentier
 - umfangreiche freie Inhalte, die besondere Kategorien oder hochvertrauliche Daten enthalten koennen;
 - neue Empfaenger oder Drittlandtransfers ohne wirksame Zusatzmassnahmen;
 - Verarbeitung vulnerabler Personengruppen oder erhebliche Skalierung;
-- biometrische Verarbeitung durch den Dienst. Passkeys allein belegen keine serverseitige Biometrieverarbeitung, da das Repository nur Credential-ID, oeffentlichen Schluessel und Metadaten speichert.
+- biometrische Verarbeitung durch den Dienst. Passkeys allein belegen keine serverseitige Biometrieverarbeitung, da der Dienst Credential-Daten und kurzlebigen Ceremony-Zustand, aber keine biometrischen Merkmale speichert.
 
 Ob die Schwelle aktuell erreicht ist, ist wegen fehlender Angaben zu Nutzerzahl, Umfang, Produktivkonfiguration und Empfaengerregionen klaerungsbeduerftige Information. Owner: Datenschutz; Kontrolle: signiertes Screening vor Betrieb. Bis dahin duerfen Voll-IP-Geoanalytics und optionale Trackingfunktionen nicht als datenschutzrechtlich freigegeben gelten.
 
@@ -152,7 +152,7 @@ Ein Incident-Runbook, Meldekanal, Aufsichtsbehoerde, Rufbereitschaft und Uebungs
 ## Nachweise und Artefakte
 - `lib/db/schema.ts`, `drizzle/*.sql`: personenbezogene Datenfelder, Beziehungen und Loeschregeln.
 - `lib/auth/config.ts`, `lib/auth/actions.ts`, `lib/passkeys.ts`: Authentisierungs- und Sessionverarbeitung.
-- `lib/auth/passkey-challenge.ts`, `lib/auth/passkey-login-token.ts`, `drizzle/0004_secure_passkey_auth.sql`: Laufzeiten und Einmalverwendung.
+- `lib/auth/passkey-auth-attempt.ts`, `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json`: opake Attempt-IDs, Laufzeiten, atomarer Abschluss/Verbrauch und journalisierte Tabelle.
 - `app/s/[shortCode]/route.ts`, `lib/analytics.ts`: Klicktracking und Uebermittlung an ip-api.com.
 - `app/protected/paste/[slug]/page.tsx`, `app/p/[slug]/page.tsx`, `app/p/[slug]/raw/route.ts`: das eingegebene Passwort gelangt in die URL, wird in der Hauptansicht nicht verifiziert und in der Raw-Route gar nicht geprueft.
 - `app/api/links/export/route.ts`: nur auf Links beschraenkter Datenexport.
@@ -170,7 +170,7 @@ Ein Incident-Runbook, Meldekanal, Aufsichtsbehoerde, Rufbereitschaft und Uebungs
 | Paste-Passwortschutz ist in Haupt- und Raw-Ansicht unwirksam | Unbefugte Inhaltsweitergabe | Hoch | Serverseitigen Hashvergleich und identische Ablauf-/Ownerpruefung in allen Ansichten erzwingen | Negative Integrationstests mit richtigem, falschem, leerem und abgelaufenem Passwort | Paste-Page-, Protected- und Raw-Routen |
 | Link-/Paste-Passwoerter und Freigabe-Access-Keys werden als Queryparameter uebergeben | Offenlegung in Browserhistorie, Logs oder Telemetrie | Mittel | Geheimnis per POST pruefen und kurzlebiges, gebundenes Zugriffstoken verwenden | Test, dass keine Geheimnisse in URLs/Logs erscheinen | Protected-Seiten, Link-/Paste- und Passwortfreigabe-Routen |
 | P2P-Signalisierung ohne Token-/Access-Key-/Ablaufpruefung | Offenlegung oder Manipulation von Verbindungsmetadaten | Hoch | Signalisierungszugriff an Token, Access-Key und Gueltigkeit binden | Negative API-Tests und Auditereignis | `app/api/p2p/files/[shareId]/route.ts` |
-| Ablaufdaten fuehren nicht zur Loeschung | Verstoss gegen Speicherbegrenzung | Hoch | Zentralen Purge fuer alle ablaufbaren Tabellen implementieren | Taeglicher Lauf, Alarm und monatliche Stichprobe | Schema/Routes; kein Purge gefunden |
+| Ablaufdaten einschliesslich abgelaufener `passkey_auth_attempts` fuehren nicht zur Loeschung | Verstoss gegen Speicherbegrenzung | Hoch | Zentralen Purge fuer alle ablaufbaren Tabellen implementieren | Taeglicher Lauf, Alarm und monatliche Stichprobe | Schema/Routes; erfolgreicher Passkey-Tokenverbrauch loescht eine Zeile, allgemeiner Purge fehlt |
 | Unvollstaendiger Betroffenenauszug | Verletzung Art. 15/20 | Hoch | Gesamt-Export und manuellen Uebergangsprozess einrichten | Jaehrliche Probeauskunft | Nur Linkexport vorhanden |
 | Ungeklaerte Auftragsverarbeiter/Transfers | Art.-28-/Kapitel-V-Verstoss | Hoch | Anbieterregister, AVV, SCC/TIA und Subprozessoren freigeben | Lieferanten-Gate vor Datenfluss | Repository belegt keine Vertraege |
 | SSO-Secrets im Klartextfeld | Zugangsdatenoffenlegung | Mittel | Vault oder anwendungsseitige Feldverschluesselung, Rotation | Secret-Inventar und Rotationstest | `sso_domains.client_secret` |
@@ -197,3 +197,4 @@ Produktive Konfiguration und Vertraege muessen als separate, zugriffsgeschuetzte
 | Datum | Autor/Rolle | Aenderung | Anlass |
 |---|---|---|---|
 | 20.07.2026 | Compliance-Dokumentation | Ersterstellung mit VVT, Rechtsgrundlagen, Loeschung, Rechten, TOM, Empfaengern, Transfers und DSFA-Schwelle | Fehlendes internes Datenschutzkonzept |
+| 20.07.2026 | Compliance-Dokumentation | Passkey-Verarbeitung nach Reviewfixes auf dedizierte Attempt-Zeilen, 10 Tests und registrierte Migration aktualisiert; operative Migration und reale DB-/WebAuthn-Pruefung bleiben offen | Reviewfixes bis Commit `6618792` |

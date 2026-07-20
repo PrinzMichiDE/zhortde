@@ -1,6 +1,6 @@
 # Architekturübersicht Zhort
 ## Einleitung
-Dieses Dokument beschreibt die im Repository nachweisbare Architektur der Anwendung Zhort zum Stand des Commits `58c06b7` auf dem Branch `cursor/daily-evolution-pipeline-fe2a` am 20.07.2026. Zhort ist eine monolithische Next.js-Anwendung mit App Router für URL-Kürzung, Pastebin, Link-Analyse, Team- und Enterprise-Funktionen, verschlüsselte Passwortfreigaben, WebRTC-Dateifreigaben sowie browser- und API-basierte Nutzung.
+Dieses Dokument beschreibt die im Repository nachweisbare Architektur der Anwendung Zhort zum Stand des Commits `6618792` auf dem Branch `cursor/daily-evolution-pipeline-fe2a` am 20.07.2026. Zhort ist eine monolithische Next.js-Anwendung mit App Router für URL-Kürzung, Pastebin, Link-Analyse, Team- und Enterprise-Funktionen, verschlüsselte Passwortfreigaben, WebRTC-Dateifreigaben sowie browser- und API-basierte Nutzung.
 
 Die Aussagen beruhen auf Quellcode, Schema, SQL-Migrationen, Tests und Deployment-Dateien. Ein Zugriff auf produktive Laufzeitkonfiguration, Datenbank, Vercel-/Container-Projekt, DNS, Secret Store, Monitoring, Backups oder Auftragsverarbeitungsverträge war nicht Bestandteil des Repositorys. Solche Punkte sind ausdrücklich als **klärungsbedürftige Information** gekennzeichnet und dürfen nicht aus Repository-Dokumentation als produktiv umgesetzt abgeleitet werden.
 
@@ -9,7 +9,7 @@ Erfasst sind:
 
 - die Next.js-16-/React-19-Anwendung mit 38 `page.tsx`-Seiten, 71 Route-Dateien mit 117 HTTP-Handlern und 36 React-Komponenten;
 - App-Router-Oberflächen, Route Handler, Server Actions, Middleware, Authentifizierung und Autorisierung;
-- PostgreSQL-Zugriff über Drizzle ORM/Postgres.js, 42 im TypeScript-Schema definierte Tabellen sowie SQL-Migrationen `0000` bis `0004`;
+- PostgreSQL-Zugriff über Drizzle ORM/Postgres.js, 43 im TypeScript-Schema definierte Tabellen sowie SQL-Migrationen `0000` bis `0004`;
 - die Bereitstellungsvarianten Vercel und OCI-/Docker-Container einschließlich GitHub-Actions-Image-Build;
 - externe HTTP-, DNS-, OIDC-, WebAuthn- und WebRTC-Schnittstellen;
 - Datenflüsse, Sicherheits- und Vertrauensgrenzen sowie der neue Passkey-Zustandsfluss.
@@ -24,8 +24,9 @@ Nicht als umgesetzt bestätigt sind produktive Topologie, Verfügbarkeit, Skalie
 | Server Action | Direkt aus einer React-Anwendung aufgerufene serverseitige Funktion; hier insbesondere die Registrierung in `lib/auth/actions.ts`. |
 | NextAuth-Sitzung | JWT-basierte Sitzung mit maximal 24 Stunden Laufzeit, transportiert in einem HttpOnly-/SameSite-Lax-Cookie. |
 | Passkey | WebAuthn-Credential aus Credential-ID, öffentlichem Schlüssel, Signaturzähler und Gerätemetadaten. Private Schlüssel verbleiben beim Authenticator. |
-| Passkey-Challenge | Zufälliger, fünf Minuten gültiger WebAuthn-Anmeldezustand in den Spalten `users.passkey_challenge*`; atomar einmalig verbraucht. |
-| Passkey-Login-Token | Nach erfolgreicher WebAuthn-Prüfung erzeugter 32-Byte-Zwischentoken. Nur SHA-256-Hash und Ablaufzeit werden für zwei Minuten in PostgreSQL gehalten; der Token wird einmalig gegen eine NextAuth-Sitzung getauscht. |
+| Passkey-Ceremony-ID | Zufälliger opaker 32-Byte-Wert in Base64url-Darstellung, der genau eine Zeile in `passkey_auth_attempts` adressiert und parallele Anmelde-Ceremonies desselben Benutzers trennt. |
+| Passkey-Challenge | Fünf Minuten gültiger WebAuthn-Anmeldezustand in einer eigenen Attempt-Zeile. Er wird vor dem WebAuthn-Nachweis nur gelesen und erst beim atomaren Abschluss genau dieses Versuchs entfernt. |
+| Passkey-Login-Token | Nach erfolgreicher WebAuthn-Prüfung erzeugter 32-Byte-Zwischentoken. Nur SHA-256-Hash und Ablaufzeit werden für zwei Minuten in derselben Attempt-Zeile gehalten; NextAuth tauscht ihn einmalig gegen eine Sitzung und löscht die passende Zeile atomar. |
 | API-Schlüssel | Mit Präfix `zhort_` ausgegebener Schlüssel; in PostgreSQL liegt ein bcrypt-Hash, der Klartext wird nur bei Erstellung zurückgegeben. |
 | Vertrauensgrenze | Übergang zwischen Sicherheitsdomänen, an dem Identität, Eingaben, Transport und Datenfreigabe erneut geprüft werden müssen. |
 | Relying Party (RP) | WebAuthn-Anwendung; RP-ID aus `WEBAUTHN_RP_ID` oder Host von `NEXTAUTH_URL`, Origin aus `NEXTAUTH_URL`. |
@@ -93,18 +94,18 @@ Nachweisbare Entscheidungen und Annahmen:
 Die maßgebliche Zugriffskontrolle liegt in jedem serverseitigen Datenzugriff. Das Dashboard-Layout selbst führt keine Sitzungsprüfung aus; nur ein Teil der Dashboard-Seiten prüft serverseitig, andere verwenden Client-Sitzungen oder verlassen sich auf die zugehörigen APIs. Diese Uneinheitlichkeit ist eine relevante Kontrollgrenze.
 
 ### Datenhaltung und Schema
-`lib/db/schema.ts` definiert 42 PostgreSQL-Tabellen. Sie lassen sich wie folgt gruppieren:
+`lib/db/schema.ts` definiert 43 PostgreSQL-Tabellen. Sie lassen sich wie folgt gruppieren:
 
-- **Identität und Zugriff:** `users`, `passkeys`, `api_keys`, `sso_domains`, `sso_domain_admins`.
+- **Identität und Zugriff:** `users`, `passkeys`, `passkey_auth_attempts`, `api_keys`, `sso_domains`, `sso_domain_admins`.
 - **Kerninhalte:** `links`, `pastes`, `shared_passwords`, `p2p_file_shares`, `bio_profiles`, `bio_links`.
 - **Link-Erweiterungen:** `smart_redirects`, `link_masking`, `link_tags`, `link_schedules`, `link_variants`, `link_previews`, `tracking_pixels`, `link_comments`, `link_history`, `link_collections`, `link_health_checks`, `quick_actions`.
 - **Analyse und Schutz:** `stats`, `blocked_domains`, `rate_limits`, `link_clicks`, `audit_logs`.
 - **Teams und Enterprise:** `teams`, `team_members`, `team_links`, `custom_domains`, `custom_redirect_pages`, `usage_tracking`, `ip_whitelist`, `scheduled_reports`, `approval_workflows`, `link_approvals`, `link_templates`, `team_activity_feed`, `archived_links`.
 - **Webhook-Integration:** `webhooks`.
 
-Fremdschlüssel verwenden überwiegend `ON DELETE CASCADE`; ausgewählte Historienbezüge nutzen `SET NULL`. Mehrere komplexe oder flexible Werte werden als JSON-Text und nicht als `jsonb` gespeichert. `users.password_hash` ist optional, damit Passkey-only-Nutzer möglich sind. SSO-Client-Secrets und Webhook-Secrets liegen nach Schema als Klartext vor; API-Schlüssel, Passwörter und Zugriffsschlüssel werden gehasht.
+Fremdschlüssel verwenden überwiegend `ON DELETE CASCADE`; ausgewählte Historienbezüge nutzen `SET NULL`. Mehrere komplexe oder flexible Werte werden als JSON-Text und nicht als `jsonb` gespeichert. `users.password_hash` ist optional, damit Passkey-only-Nutzer möglich sind. Kurzlebiger Passkey-Loginzustand liegt nicht in `users`, sondern in `passkey_auth_attempts` mit opaker Text-Primär-ID, Benutzer-Fremdschlüssel, Challenge-/Token-Feldern und eindeutigem Login-Token-Hash. SSO-Client-Secrets und Webhook-Secrets liegen nach Schema als Klartext vor; API-Schlüssel, Passwörter und Zugriffsschlüssel werden gehasht.
 
-SQL-Migrationen `0000` bis `0003` sind im Drizzle-Journal registriert. Das TypeScript-Schema ist umfangreicher als diese Migrationen; Deployment-Skripte gleichen es zusätzlich per `drizzle-kit push` ab. Die Datei `0004_secure_passkey_auth.sql` ergänzt vier nullable Spalten für Passkey-Challenge und Passkey-Login-Token, ist aber im Journal `drizzle/meta/_journal.json` nicht eingetragen. Der eigene Laufzeit-Migrator liest alle alphabetisch sortierten `.sql`-Dateien unabhängig vom Journal, während ein standardmäßiger `drizzle-kit migrate`-Nachweis für `0004` aus dem Journal nicht ableitbar ist.
+SQL-Migrationen `0000` bis `0004` sind im Drizzle-Journal registriert. Das TypeScript-Schema ist umfangreicher als diese Migrationen; Deployment-Skripte gleichen es zusätzlich per `drizzle-kit push` ab. Die Datei `0004_secure_passkey_auth.sql` legt `passkey_auth_attempts` mit `CREATE TABLE IF NOT EXISTS`, Unique Constraint auf `login_token_hash` und kaskadierendem Benutzer-Fremdschlüssel an; `drizzle/meta/_journal.json` enthält den Tag `0004_secure_passkey_auth`. Der eigene Laufzeit-Migrator liest alle alphabetisch sortierten `.sql`-Dateien unabhängig vom Journal. Weder die Journalregistrierung noch die Repository-SQL-Datei belegen jedoch, dass die Migration in Staging oder Produktion ausgeführt und das Zielschema geprüft wurde.
 
 ### Zentrale Datenflüsse
 #### Link anlegen und weiterleiten
@@ -126,18 +127,18 @@ Bei Passwortanmeldung prüft NextAuth den bcrypt-Hash; bei Erfolg werden ID und 
 SSO-Konfiguration einschließlich `client_secret` liegt in PostgreSQL. Der `state`-Parameter ist lediglich Base64-kodiertes JSON und im Code weder signiert noch an eine Sitzung gebunden. Dynamisch gespeicherte Token-/UserInfo-URLs überschreiten die externe Vertrauensgrenze.
 
 ### Neuer Passkey-Authentifizierungszustand
-Der sichere Handoff wurde in Commit `daa2586` eingeführt und durch die Commits `5de8b5a` und `ba1bf8c` testseitig definiert:
+Der sichere Handoff wurde in Commit `daa2586` eingeführt und durch die Reviewfixes bis `6618792` auf einen dedizierten, konkurrierende Ceremonies unterstützenden Attempt-Zustand weiterentwickelt:
 
 1. Der Client sendet die E-Mail an `POST /api/passkeys/authenticate/start`.
-2. Der Server lädt Benutzer und erlaubte Credential-IDs, erzeugt eine WebAuthn-Challenge und speichert Challenge plus Ablaufzeit fünf Minuten in `users`.
-3. Der Browser ruft den lokalen/platformgebundenen Authenticator über SimpleWebAuthn auf; biometrische Daten und privater Schlüssel verlassen den Authenticator nicht.
-4. Der Client sendet die signierte Assertion an `POST /api/passkeys/authenticate/verify`.
-5. Der Server liest und löscht die Challenge atomar unter Prüfung von E-Mail, Wert und Ablauf; danach prüft SimpleWebAuthn Origin, RP-ID, öffentliche Credential-Daten, Zähler und zwingende User Verification.
-6. Bei Erfolg aktualisiert der Server Signaturzähler und `last_used_at`, erzeugt 32 Zufallsbytes und speichert ausschließlich deren SHA-256-Hash mit einer Ablaufzeit von zwei Minuten.
+2. Der Server lädt Benutzer und erlaubte Credential-IDs, erzeugt eine WebAuthn-Challenge sowie mit `randomBytes(32)` eine opake Base64url-Ceremony-ID und speichert Challenge plus Fünf-Minuten-Ablauf in einer neuen `passkey_auth_attempts`-Zeile. Weitere Starts desselben Benutzers erzeugen unabhängige Zeilen.
+3. Die Startantwort liefert `options` und `ceremonyId`. Der Browser ruft den lokalen/platformgebundenen Authenticator über SimpleWebAuthn auf; biometrische Daten und privater Schlüssel verlassen den Authenticator nicht.
+4. Der Client sendet E-Mail, signierte Assertion und `ceremonyId` an `POST /api/passkeys/authenticate/verify`.
+5. Der Server liest die zu Ceremony-ID und Benutzer passende, nicht abgelaufene Challenge, ohne sie zu verändern. Danach prüft SimpleWebAuthn Origin, RP-ID, öffentliche Credential-Daten, Zähler und zwingende User Verification.
+6. Bei erfolgreichem WebAuthn-Nachweis aktualisiert der Server Signaturzähler und `last_used_at`. Ein bedingtes `UPDATE ... RETURNING` schließt dann genau den passenden, noch nicht abgeschlossenen und nicht abgelaufenen Attempt atomar ab: Challenge und Challenge-Ablauf werden geleert, ausschließlich der SHA-256-Hash eines neuen 32-Byte-Tokens und dessen Zwei-Minuten-Ablauf werden gesetzt. Ein zweiter Abschluss desselben Attempts schlägt fehl.
 7. Der Klartext-Zwischentoken wird einmal an den Browser geliefert und per `signIn('credentials', { email, passkey_token })` an NextAuth übergeben.
-8. NextAuth verbraucht Hash und Ablauf atomar genau einmal und erstellt danach das normale 24-Stunden-JWT. Der frühere statische Marker `authenticated` wird abgewiesen.
+8. NextAuth ermittelt den Benutzer über die validierte E-Mail und verbraucht Hash und Ablauf atomar mit `DELETE ... RETURNING` auf der passenden Attempt-Zeile. Nur bei erfolgreicher Löschung entsteht das normale 24-Stunden-JWT; Wiederverwendung und der frühere statische Marker `authenticated` werden abgewiesen.
 
-Die Migration `0004_secure_passkey_auth.sql` stellt die vier Zustandsfelder bereit. Vor einem Rollout muss deren tatsächliche Anwendung belegt werden. Außerdem nutzt die Passkey-Registrierung einen anderen Zustandspfad: Die Registrierungs-Challenge wird an den Client zurückgegeben und bei der Verifikation vom Client wieder eingereicht, statt aus einem serverseitigen Einmalspeicher gelesen zu werden. Dieser Unterschied ist sicherheitsrelevant und darf nicht mit dem abgesicherten Anmeldefluss gleichgesetzt werden.
+Die Migration `0004_secure_passkey_auth.sql` stellt die dedizierte Attempt-Tabelle bereit und ist im Drizzle-Journal registriert. Vor einem Rollout muss ihre tatsächliche Anwendung einschließlich Tabelle, Unique Constraint und Fremdschlüssel belegt werden. Die zehn Tests in drei Dateien prüfen den Dienstzustand und die NextAuth-Credentials-Grenze, aber keine reale PostgreSQL-Atomizität unter Konkurrenz und keinen Live-WebAuthn-End-to-End-Fluss; daraus folgt keine Produktionsvalidierung. Außerdem nutzt die Passkey-Registrierung einen anderen Zustandspfad: Die Registrierungs-Challenge wird an den Client zurückgegeben und bei der Verifikation vom Client wieder eingereicht, statt aus einem serverseitigen Einmalspeicher gelesen zu werden. Dieser Unterschied ist sicherheitsrelevant und darf nicht mit dem abgesicherten Anmeldefluss gleichgesetzt werden.
 
 ### Externe Schnittstellen und Dienste
 | Gegenstelle | Richtung | Zweck/Daten | Konfiguration oder Nachweis |
@@ -169,10 +170,10 @@ GitHub Actions baut auf Pull Requests ein Linux/AMD64-Image und veröffentlicht 
 | `app/` | 38 Seiten, 71 Route-Dateien und 117 HTTP-Handler; tatsächliche Oberflächen und Schnittstellen |
 | `components/` | 36 UI-, Dashboard-, Provider- und Passkey-Komponenten |
 | `lib/auth/config.ts`, `types/next-auth.d.ts` | Credentials-Provider, JWT-Sitzung, Rollen-/ID-Claims und Cookie-Einstellungen |
-| `lib/passkeys.ts`, `lib/auth/passkey-challenge.ts`, `lib/auth/passkey-login-token.ts` | WebAuthn-Prüfung und serverseitige Einmalzustände |
-| `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts` | Tests für Ablauf, Hashspeicherung, einmaligen Verbrauch und Abweisung des statischen Markers |
-| `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json` | Passkey-Zustandsmigration und nachweisbare Journal-Abweichung |
-| `lib/db/schema.ts` | 42 Tabellen, Felder, Beziehungen und Löschregeln |
+| `lib/passkeys.ts`, `lib/auth/passkey-auth-attempt.ts` | WebAuthn-Prüfung, opake Ceremony-IDs, atomarer Attempt-Abschluss und Tokenverbrauch |
+| `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts` | 10 Tests für parallele Challenges, Ablauf, Hashspeicherung, einmaligen Verbrauch, Abweisung des statischen Markers und NextAuth-Credentials-Grenze |
+| `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json` | `CREATE TABLE` für `passkey_auth_attempts` und registrierter Journal-Eintrag; operative Anwendung nicht belegt |
+| `lib/db/schema.ts` | 43 Tabellen, Felder, Beziehungen und Löschregeln |
 | `lib/db/index.ts`, `lib/db/ensure-schema.ts`, `lib/db/sql-migrate.ts` | Connection Pool, Laufzeit-Schemaabgleich und SQL-Anwendung |
 | `middleware.ts`, `next.config.ts`, `lib/api-security.ts`, `lib/rate-limit.ts` | Sicherheitsheader, Anfrageprüfung, Sitzungshelper und zwei Rate-Limit-Mechanismen |
 | `app/api/links/route.ts`, `app/s/[shortCode]/route.ts` | Linkerstellung, Blocklist, Persistenz, Redirect, Analytics und Webhooks |
@@ -180,7 +181,7 @@ GitHub Actions baut auf Pull Requests ein Linux/AMD64-Image und veröffentlicht 
 | `lib/blocklist.ts`, `lib/db/blocklist-service.ts`, `lib/phishing-check.ts`, `lib/analytics.ts`, `lib/webhooks.ts`, `lib/link-preview.ts` | externe HTTP-Datenflüsse |
 | `Dockerfile`, `scripts/docker-entrypoint.js`, `instrumentation.ts`, `vercel.json`, `.github/workflows/docker-image.yml` | Build-, Start-, Schema- und Image-Bereitstellungspfade |
 | `internal-docs/architektur/architektur.drawio` | unkomprimiertes Systemkontext-/Komponenten-/Datenflussdiagramm mit Vertrauensgrenzen |
-| Git-Commits `daa2586`, `ba1bf8c`, `5de8b5a` | Einführung und Regressionstests des neuen Passkey-Handoffs |
+| Git-Commits `daa2586`, `ddf3925` bis `6618792` | Einführung, Vereinheitlichung und Reviewkorrekturen des Passkey-Handoffs einschließlich paralleler Ceremonies |
 
 Repository-Anleitungen wie `README.md`, `SECURITY.md` und `VERCEL_DEPLOYMENT.md` wurden nur ergänzend betrachtet, da sie teilweise von der Implementierung abweichen, etwa Next.js 14 statt 16 oder pauschale Aussagen über Schutz und Betrieb.
 
@@ -188,11 +189,12 @@ Repository-Anleitungen wie `README.md`, `SECURITY.md` und `VERCEL_DEPLOYMENT.md`
 | Risiko | Auswirkung | Eintrittswahrscheinlichkeit | Massnahme | Kontrolle | Nachweis |
 |---|---|---|---|---|---|
 | Produktive Betreiber, Datenbankanbieter, Secret Store, TLS, Backup, Aufbewahrung und Monitoring sind repository-seitig unbekannt. | Fehlende Verantwortlichkeit und nicht prüfbarer Schutz/Restore. | Hoch | Betriebsverantwortliche namentlich zuweisen und Umgebungs-/Dateninventar genehmigen. | Freigabesperre ohne aktuelles Betriebsblatt, Restore-Test und Monitoring-Nachweis. | Fehlende Owner-/Infra-Dateien; nur Vercel-/Docker-Konfiguration vorhanden. |
-| `0004` fehlt im Drizzle-Journal, während eigener SQL-Laufzeitpfad sie unabhängig anwendet. | Unterschiedliche Schema-Stände je Deployment-Werkzeug; Passkey-Login kann ausfallen. | Hoch | Eine kanonische, transaktionale Migrationskette festlegen und `0004` darin registrieren. | Deployment prüft vor Aktivierung die vier Spalten und protokolliert Migrationsversion/Checksumme. | `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json`, `lib/db/sql-migrate.ts`. |
+| `0004` ist im Drizzle-Journal registriert, seine Ausführung im Zielsystem ist aber nicht nachgewiesen. | Fehlende Attempt-Tabelle oder Constraints lassen den Passkey-Login ausfallen oder vom geprüften Modell abweichen. | Hoch | Die kanonische Migrationskette vor Aktivierung in einer produktionsnahen Umgebung ausführen. | Deployment prüft Tabelle, Unique Constraint, Fremdschlüssel, Migrationsversion und Checksumme und archiviert das Protokoll. | `drizzle/0004_secure_passkey_auth.sql`, `drizzle/meta/_journal.json`; Betriebsnachweis offen. |
 | Schema wird per Build, Containerstart, Instrumentation und erstem API-Aufruf verändert; Start erfolgt teilweise trotz Fehler. | Race Conditions, Teilmigrationen und Betrieb mit inkompatiblem Schema. | Mittel | Migration als einmaligen, fehlerschließenden Release-Schritt ausführen; App-Prozess nur nach erfolgreichem Check starten. | Readiness-Prüfung gegen erwartete Schema-Version und Rollback-Probe. | `prebuild`, `upgrade.js`, `docker-entrypoint.js`, `ensure-schema.ts`. |
 | Middleware-Rate-Limit und MCP-Sitzungen liegen im Prozessspeicher. | Umgehung oder Verlust bei mehreren Instanzen, Cold Starts und Skalierung. | Hoch | Verteilten Zustand in PostgreSQL/Redis mit atomaren Operationen verwenden. | Mehrinstanz-Test und Metrik für globale Grenzwertverletzungen. | `middleware.ts`, `app/api/mcp/route.ts`. |
 | Datenbank-Rate-Limit und Blocklist/Safe-Browsing arbeiten bei Fehlern fail open. | Missbrauch oder Weiterleitung schädlicher Domains bei Störung. | Mittel | Schutzfehler für risikoreiche Schreib-/Zugriffswege fail closed behandeln oder kontrollierten Degradationsmodus definieren. | Alarm auf Schutzdienstfehler; Chaos-Test mit nicht verfügbarer DB/API. | `lib/rate-limit.ts`, `lib/blocklist.ts`, `lib/phishing-check.ts`. |
 | Passkey-Registrierung vertraut einer vom Client zurückgesendeten Challenge; nur der Login nutzt serverseitigen Einmalzustand. | Manipulierbarer Registrierungszustand und fehlende Replay-Bindung. | Hoch | Registrierungs-Challenge serverseitig, nutzergebunden, kurzlebig und atomar einmalig speichern. | Negativtests für fremde, abgelaufene und wiederverwendete Registrierungs-Challenges. | `components/passkey-register.tsx`, `app/api/passkeys/register/verify/route.ts`, `lib/passkeys.ts`. |
+| Passkey-Login-Parallelität und atomare Datenbankoperationen sind nur durch In-Memory-/Mock-Tests modelliert. | Race- oder Integrationsfehler können trotz 10 grüner Tests unentdeckt bleiben. | Mittel | Gleichzeitige Starts, Abschlüsse und Tokenverbräuche gegen reale PostgreSQL-Transaktionen sowie einen Live-WebAuthn-Stagingfluss testen. | Release-Gate verlangt DB-Konkurrenz- und WebAuthn-E2E-Protokoll gegen Commit-SHA. | Drei Testdateien/10 Tests; kein realer PostgreSQL-/WebAuthn-E2E-Nachweis. |
 | Passkey-/SSO-Start unterscheidet Benutzer-, Domain- und Credential-Zustände in Antworten. | E-Mail-/Account-Enumeration. | Mittel | Einheitliche Antworten und vergleichbare Laufzeit; Details nur intern protokollieren. | Automatisierter Enumerationstest und Rate-Limit auf alle Passkey-Endpunkte. | `authenticate/start`, `getAuthenticationOptions`, `auth/sso/check`. |
 | SSO-`state` ist nicht signiert/sitzungsgebunden; OIDC-Endpunkte sind dynamische URLs; Client-Secrets liegen im Klartext. | Login-CSRF, Konfigurationsmanipulation, SSRF und Secret-Offenlegung. | Hoch | Signierten Einmal-State/PKCE nutzen, Issuer/Endpoints erlaubnislisten, Secrets verschlüsselt in Secret Store halten. | OIDC-Negativtests, Egress-Regeln, Secret-Rotation und DB-Auslesetest. | `app/api/auth/sso/check/route.ts`, `callback/route.ts`, `sso_domains`. |
 | Vorschau, Health Checks und Webhooks rufen benutzerbestimmte URLs ohne durchgängige private-IP-/Redirect-Prüfung auf. | SSRF in interne Dienste oder Metadaten-Endpunkte. | Hoch | DNS-Auflösung und alle Redirects gegen private/link-local/netzinterne Bereiche prüfen; Egress-Proxy/Allowlist einsetzen. | SSRF-Testkatalog einschließlich DNS-Rebinding und Redirect-Ketten. | `lib/link-preview.ts`, `lib/user-features.ts`, `lib/webhooks.ts`. |
@@ -218,3 +220,4 @@ Repository-Anleitungen wie `README.md`, `SECURITY.md` und `VERCEL_DEPLOYMENT.md`
 | Datum | Autor/Rolle | Aenderung | Anlass |
 |---|---|---|---|
 | 20.07.2026 | Automatisierte Repository-Analyse / Dokumentation | Ersterstellung der auditfähigen Architekturübersicht und des draw.io-Diagramms auf Basis von Commit `58c06b7`; neuer Passkey-Zustandsfluss und Migration `0004` aufgenommen. | Angeforderte Architektur- und Kontrolltransparenz für den aktuellen Repository-Stand. |
+| 20.07.2026 | Automatisierte Repository-Analyse / Dokumentation | Passkey-Fluss nach Reviewfixes auf `passkey_auth_attempts`, parallele opak adressierte Ceremonies, atomaren Abschluss/Verbrauch, 10 Tests und journalisierte Migration aktualisiert; operative und Live-E2E-Nachweise bleiben offen. | Reviewfixes bis Commit `6618792`. |

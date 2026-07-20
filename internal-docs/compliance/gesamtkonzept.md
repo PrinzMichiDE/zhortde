@@ -2,7 +2,7 @@
 ## Einleitung
 Dieses Dokument beschreibt das strategische Compliance-, Datenschutz- und Informationssicherheitsmodell fuer Zhort. Die Anwendung ist ein internetexponierter URL-Shortener und Pastebin auf Next.js 16 mit PostgreSQL und Drizzle ORM. Sie bietet anonyme sowie kontogebundene Inhalte, Link-Analytics, Teams, API-Schluessel, Webhooks, SSO, Passkeys, verschluesselte Passwortfreigaben und P2P-Dateifreigaben.
 
-Die Bestandsaufnahme basiert auf dem Repository-Stand vom 20.07.2026, Commit `58c06b7`, insbesondere `package.json`, `package-lock.json`, `lib/db/schema.ts`, den API-Routen, `middleware.ts`, `next.config.ts`, `Dockerfile`, `.github/workflows/docker-image.yml` und den Migrationen `drizzle/0000_*.sql` bis `drizzle/0004_secure_passkey_auth.sql`. Aussagen ueber Produktivkonfiguration, Vertraege oder gelebte Prozesse werden nur getroffen, wenn Repository-Nachweise vorliegen.
+Die Bestandsaufnahme basiert auf dem Repository-Stand vom 20.07.2026, Commit `6618792`, insbesondere `package.json`, `package-lock.json`, `lib/db/schema.ts`, den API-Routen, `middleware.ts`, `next.config.ts`, `Dockerfile`, `.github/workflows/docker-image.yml` und den Migrationen `drizzle/0000_*.sql` bis `drizzle/0004_secure_passkey_auth.sql`. Aussagen ueber Produktivkonfiguration, Vertraege oder gelebte Prozesse werden nur getroffen, wenn Repository-Nachweise vorliegen.
 
 Das Konzept ist keine Behauptung einer ISO-27001-Zertifizierung. Es bildet den nachweisbaren Ist-Stand, verbindliche Soll-Kontrollen und klaerungsbeduerftige Betriebsinformationen getrennt ab.
 
@@ -76,7 +76,7 @@ Die folgenden Grenzen sind die Soll-Risikoappetit-Erklaerung; ihre formale Freig
 | Quelle | Ziel | Daten | Zweck | Nachweisbare Kontrollen | Offener Punkt |
 |---|---|---|---|---|---|
 | Browser | Next.js-App/API | URL, Paste, E-Mail, Passwort, Session, Metadaten | Dienstbereitstellung | Zod-Validierung in zentralen Routen, Header/CSP, HTTPS-HSTS-Sollheader, Rate Limits | CSP erlaubt `unsafe-inline` und `unsafe-eval`; CSRF-Nutzung ausserhalb NextAuth ist nicht belegt. |
-| Next.js | PostgreSQL | Konten, Hashes, Links, Pastes, Klickdaten, Teams, Tokens, Auditdaten | Persistenz | Drizzle-Abfragen, Fremdschluessel, bcrypt/SHA-256 je Anwendungsfall | Verschluesselung ruhender Daten und DB-TLS sind betrieblich nicht belegt. |
+| Next.js | PostgreSQL | Konten, Passkey-Auth-Versuche, Hashes, Links, Pastes, Klickdaten, Teams, Tokens, Auditdaten | Persistenz | Drizzle-Abfragen, Fremdschluessel, bcrypt/SHA-256 je Anwendungsfall | Verschluesselung ruhender Daten, DB-TLS und operative Anwendung der Attempt-Tabellenmigration sind nicht belegt. |
 | Redirect-Route | ip-api.com | Vollstaendige Client-IP | Geo-Analytics | Fehler werden abgefangen | `lib/analytics.ts` nutzt HTTP; Rechtsgrundlage, Vertrag, Empfaengerstandort und IP-Anonymisierung sind nicht belegt. |
 | Linkanlage | Google Safe Browsing | Vollstaendige Ziel-URL | Phishingpruefung | Optionaler API-Key, Fehlerbehandlung | Kontrolle arbeitet bei fehlendem Key oder Fehler fail-open. |
 | Blocklist-Service | jsDelivr/Hagezi | Abrufmetadaten | Domainblockliste | Tagesintervall im Code, DB-Cache | Produktive Aktualisierung und Verfuegbarkeitsmonitoring sind nicht belegt. |
@@ -91,7 +91,7 @@ Die folgenden Grenzen sind die Soll-Risikoappetit-Erklaerung; ihre formale Freig
 ### Authentisierungsmodell
 - NextAuth verwendet Credentials und JWT-Sessions mit 24 Stunden Maximalalter; das Session-Cookie ist `httpOnly`, `sameSite=lax` und in Produktion `secure`.
 - Kontopasswoerter werden mit bcrypt Kostenfaktor 12 gespeichert. API-Schluessel werden zufaellig erzeugt, nur einmal im Klartext ausgegeben und als bcrypt-Hash gespeichert.
-- Passkey-Authentisierung speichert die servergenerierte Challenge fuer fuenf Minuten in PostgreSQL und verbraucht sie atomar. Nach erfolgreicher WebAuthn-Pruefung wird ein zufaelliges 32-Byte-Login-Token ausgegeben, nur dessen SHA-256-Hash gespeichert, nach zwei Minuten verworfen und atomar einmalig verbraucht. Migration: `drizzle/0004_secure_passkey_auth.sql`.
+- Passkey-Authentisierung legt je Start eine eigene `passkey_auth_attempts`-Zeile unter einer zufaelligen opaken Ceremony-ID an; so koennen mehrere Ceremonies desselben Nutzers parallel bestehen. Die Challenge ist fuenf Minuten gueltig und wird vor der WebAuthn-Pruefung nur gelesen. Nach erfolgreichem Nachweis schliesst ein bedingtes Update genau einen Attempt atomar ab, stellt einen zufaelligen 32-Byte-Login-Token aus und speichert nur dessen SHA-256-Hash fuer zwei Minuten. NextAuth verbraucht ihn durch atomare Loeschung der passenden Attempt-Zeile. Migration: `drizzle/0004_secure_passkey_auth.sql`, registriert in `drizzle/meta/_journal.json`.
 - Die Passkey-Registrierung uebergibt die Challenge derzeit an den Client und nimmt sie bei der Verifikation wieder vom Client entgegen. Das ist nicht dieselbe serverseitige Challenge-Kontrolle wie beim Login und bleibt ein offenes Sicherheitsrisiko.
 - SSO-Login-Tokens sind fuenf Minuten gueltig und werden nach erfolgreicher NextAuth-Anmeldung geloescht. Die vorgelagerte OIDC-State- und Secret-Behandlung ist nur teilweise abgesichert.
 
@@ -99,7 +99,7 @@ Die folgenden Grenzen sind die Soll-Risikoappetit-Erklaerung; ihre formale Freig
 | Phase | Verbindliche Aktivitaet | Aktueller Repository-Nachweis | Klaerungsbeduerftige Information und Kontrolle |
 |---|---|---|---|
 | Planen | Schutzbedarf, VVT, Bedrohungs- und DSFA-Schwellenpruefung | Diese Dokumentenreihe, Schema und Datenflussanalyse | Freigabe durch Leitung/Datenschutz; Nachweis je Release mit neuer Verarbeitung. |
-| Entwickeln | Review, Tests, Geheimnisfreiheit, Migration | Git-Historie; Vitest-Tests fuer Passkey-Challenge und Login-Token | Branchschutz, Reviewer-Regeln und Secret-Scanning; Owner Entwicklung, quartalsweiser Nachweis. |
+| Entwickeln | Review, Tests, Geheimnisfreiheit, Migration | Git-Historie; zehn Vitest-Tests in drei Dateien fuer Passkey-Attempts, Login-Token und NextAuth-Credentials-Grenze | Reale PostgreSQL-Konkurrenz-/WebAuthn-E2E-Tests, Branchschutz, Reviewer-Regeln und Secret-Scanning; Owner Entwicklung, quartalsweiser Nachweis. |
 | Bauen | Lockfile-basierter Build, SCA, Lint, Test, Artefaktscan | `npm ci` im Dockerfile; ein Docker-Workflow | Quality Gates fehlen im Workflow; Owner Entwicklung, Kontrolle je Pull Request. |
 | Bereitstellen | Genehmigtes Release, Migration, Rollback | `prebuild`, Upgrade-Skripte, Docker-Entrypoint | Produktiver Freigabe- und Rollbacknachweis; Owner Betrieb, je Release. |
 | Betreiben | Monitoring, Backup, Restore, Kapazitaet, Zugriffskontrolle | Prozesslogs, DB-Audittabellen, Rate Limits | SIEM, Alerting, Backup, RTO/RPO, Zugriffsreviews; Owner Betrieb/Informationssicherheit. |
@@ -120,8 +120,8 @@ Die folgenden Grenzen sind die Soll-Risikoappetit-Erklaerung; ihre formale Freig
 - `package.json`, `package-lock.json`: Next.js 16, direkte und transitive Abhaengigkeiten, reproduzierbare Versionen.
 - `lib/db/schema.ts`, `drizzle/*.sql`: Datenkategorien, Beziehungen, Loeschkaskaden, Authentisierungsfelder und Migrationen.
 - `lib/auth/config.ts`, `lib/auth/actions.ts`: JWT-Session, Credentials, SSO- und Passkey-Handoff, bcrypt.
-- `lib/auth/passkey-challenge.ts`, `lib/auth/passkey-login-token.ts`: fuenfminuetige Single-Use-Challenge und zweiminuetiges gehashtes Single-Use-Token.
-- `lib/auth/passkey-*.test.ts`: sieben erfolgreiche Vitest-Tests am 20.07.2026 fuer Ablauf, Hashing und Einmalverwendung.
+- `lib/auth/passkey-auth-attempt.ts`: opak adressierte fuenfminuetige Challenges, atomarer Attempt-Abschluss und zweiminuetiges gehashtes Login-Token mit atomarer Zeilenloeschung.
+- `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts`: zehn erfolgreiche Vitest-Tests am 20.07.2026 fuer Parallelitaet, Ablauf, Hashing, Einmalverwendung und die NextAuth-Credentials-Grenze.
 - `middleware.ts`, `next.config.ts`, `lib/api-security.ts`, `lib/rate-limit.ts`: Header, CSP, Eingabepruefung und Rate Limits.
 - `app/s/[shortCode]/route.ts`, `lib/analytics.ts`, `lib/webhooks.ts`: Redirect-, Analytics- und Empfaenger-Datenfluesse.
 - `app/protected/paste/[slug]/page.tsx`, `app/p/[slug]/page.tsx`, `app/p/[slug]/raw/route.ts`: belegte Luecken im Paste-Passwort- und Ablaufsschutz.
@@ -142,7 +142,7 @@ Die folgenden Grenzen sind die Soll-Risikoappetit-Erklaerung; ihre formale Freig
 | SSO-State und Client-Secret unzureichend geschuetzt | Login-CSRF, Secret-Offenlegung | Mittel | Signierter/zufaelliger State mit Serverbindung; Secret-Vault oder Feldverschluesselung | SSO-Sicherheitsreview vor Aktivierung | `app/api/auth/sso/*`, `lib/db/schema.ts` |
 | Paste-Passwortschutz verifiziert den Hash nicht bzw. fehlt in Raw | Unbefugte Offenlegung vertraulicher Inhalte | Hoch | Serverseitigen Hashvergleich und konsistente Ablauf-/Ownerkontrollen implementieren | Negative End-to-End-Tests fuer alle Paste-Ansichten | Paste-Page-, Protected- und Raw-Routen |
 | P2P-Signalisierung prueft Token, Access-Key und Ablauf nicht | Manipulation oder Offenlegung von Verbindungsmetadaten | Hoch | Signalisierung serverseitig an alle drei Kontrollen binden | Negative API-Tests und Auditereignis | `app/api/p2p/files/[shareId]/route.ts` |
-| Abgelaufene Daten werden nicht nachweisbar physisch geloescht | Ueberlange Speicherung | Hoch | Geplanter Purge mit referenzieller Loeschung und Protokoll | Taeglicher Job, Fehleralarm, monatliche Stichprobe | Nur Zugriffssperren im Code; Purge nicht belegt |
+| Abgelaufene Daten einschliesslich `passkey_auth_attempts` werden nicht nachweisbar physisch geloescht | Ueberlange Speicherung | Hoch | Geplanter Purge mit referenzieller Loeschung und Protokoll | Taeglicher Job, Fehleralarm, monatliche Stichprobe | Gueltigkeitspruefungen und erfolgreiche Token-Loeschung im Code; allgemeiner Purge nicht belegt |
 | Rollen sind nicht namentlich zugeordnet | Kontrollen bleiben ohne Verantwortliche | Hoch | Rollenregister freigeben | Quartalsweise Rezertifizierung | Klaerungsbeduerftig; Owner Leitung |
 
 ## Pflegeprozess
@@ -163,3 +163,4 @@ Abweichungen duerfen nicht durch Formulierungen als implementiert dargestellt we
 | Datum | Autor/Rolle | Aenderung | Anlass |
 |---|---|---|---|
 | 20.07.2026 | Compliance-Dokumentation | Ersterstellung auf Basis einer Repository- und Lockfile-Analyse; Ist/Soll-Trennung, Datenfluesse, Operating Model und Risikogrenzen aufgenommen | Fehlende interne Compliance-Dokumentation |
+| 20.07.2026 | Compliance-Dokumentation | Passkey-Architektur nach Reviewfixes auf dedizierte Attempt-Zeilen, parallele Ceremonies, registrierte Migration und 10 Tests aktualisiert; operative und E2E-Nachweise bleiben offen | Reviewfixes bis Commit `6618792` |
