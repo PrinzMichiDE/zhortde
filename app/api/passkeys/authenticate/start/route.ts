@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email } = startSchema.parse(body);
 
-    const { options } = await getAuthenticationOptions(email);
+    const options = await getAuthenticationOptions(email);
 
     return NextResponse.json({
       options,

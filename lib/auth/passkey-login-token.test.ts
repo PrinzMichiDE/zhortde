@@ -22,15 +22,12 @@ class InMemoryTokenStore implements PasskeyLoginTokenStore {
       }
     | undefined;
 
-  consumed = false;
-
   async save(
     userId: number,
     tokenHash: string,
     expiresAt: Date,
   ): Promise<void> {
     this.saved = { userId, tokenHash, expiresAt };
-    this.consumed = false;
   }
 
   async consume(
@@ -39,7 +36,6 @@ class InMemoryTokenStore implements PasskeyLoginTokenStore {
     now: Date,
   ): Promise<PasskeyLoginUser | null> {
     if (
-      this.consumed ||
       !this.saved ||
       email !== USER.email ||
       tokenHash !== this.saved.tokenHash ||
@@ -48,18 +44,24 @@ class InMemoryTokenStore implements PasskeyLoginTokenStore {
       return null;
     }
 
-    this.consumed = true;
+    this.saved = undefined;
     return USER;
   }
 }
 
+function createFixture(now: () => Date = () => NOW) {
+  const store = new InMemoryTokenStore();
+  const service = createPasskeyLoginTokenService(store, {
+    generateToken: () => 'verified-passkey-token',
+    now,
+  });
+
+  return { store, service };
+}
+
 describe('passkey login tokens', () => {
   it('stores only a hash of the issued token', async () => {
-    const store = new InMemoryTokenStore();
-    const service = createPasskeyLoginTokenService(store, {
-      generateToken: () => 'verified-passkey-token',
-      now: () => NOW,
-    });
+    const { store, service } = createFixture();
 
     const token = await service.issue(USER.id);
 
@@ -75,11 +77,7 @@ describe('passkey login tokens', () => {
   });
 
   it('rejects the former static authenticated marker', async () => {
-    const store = new InMemoryTokenStore();
-    const service = createPasskeyLoginTokenService(store, {
-      generateToken: () => 'verified-passkey-token',
-      now: () => NOW,
-    });
+    const { service } = createFixture();
     await service.issue(USER.id);
 
     await expect(
@@ -88,11 +86,7 @@ describe('passkey login tokens', () => {
   });
 
   it('accepts a server-issued token exactly once', async () => {
-    const store = new InMemoryTokenStore();
-    const service = createPasskeyLoginTokenService(store, {
-      generateToken: () => 'verified-passkey-token',
-      now: () => NOW,
-    });
+    const { service } = createFixture();
     const token = await service.issue(USER.id);
 
     await expect(service.consume(USER.email, token)).resolves.toEqual(USER);
@@ -100,12 +94,8 @@ describe('passkey login tokens', () => {
   });
 
   it('rejects expired tokens', async () => {
-    const store = new InMemoryTokenStore();
     let currentTime = NOW;
-    const service = createPasskeyLoginTokenService(store, {
-      generateToken: () => 'verified-passkey-token',
-      now: () => currentTime,
-    });
+    const { service } = createFixture(() => currentTime);
     const token = await service.issue(USER.id);
     currentTime = new Date('2026-07-20T04:02:01.000Z');
 

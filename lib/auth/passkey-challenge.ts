@@ -6,7 +6,7 @@ const CHALLENGE_MAX_AGE_MS = 5 * 60 * 1000;
 
 export interface PasskeyChallengeStore {
   save(userId: number, challenge: string, expiresAt: Date): Promise<void>;
-  consume(email: string, now: Date): Promise<string | null>;
+  consume(userId: number, now: Date): Promise<string | null>;
 }
 
 export function createPasskeyChallengeService(
@@ -19,8 +19,8 @@ export function createPasskeyChallengeService(
       return store.save(userId, challenge, expiresAt);
     },
 
-    consume(email: string): Promise<string | null> {
-      return store.consume(email, now());
+    consume(userId: number): Promise<string | null> {
+      return store.consume(userId, now());
     },
   };
 }
@@ -36,10 +36,10 @@ const databaseChallengeStore: PasskeyChallengeStore = {
       .where(eq(users.id, userId));
   },
 
-  async consume(email, now) {
+  async consume(userId, now) {
     const user = await db.query.users.findFirst({
       where: and(
-        eq(users.email, email),
+        eq(users.id, userId),
         gt(users.passkeyChallengeExpiresAt, now),
       ),
       columns: {
@@ -83,6 +83,6 @@ export function savePasskeyChallenge(
   return passkeyChallengeService.save(userId, challenge);
 }
 
-export function consumePasskeyChallenge(email: string): Promise<string | null> {
-  return passkeyChallengeService.consume(email);
+export function consumePasskeyChallenge(userId: number): Promise<string | null> {
+  return passkeyChallengeService.consume(userId);
 }

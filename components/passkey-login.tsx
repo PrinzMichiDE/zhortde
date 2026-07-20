@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Alert } from '@/components/ui/alert';
 import { Fingerprint, AlertTriangle, Loader2 } from 'lucide-react';
+import type { PasskeyAuthenticationVerifyResponse } from '@/types/passkey-auth';
 
 interface PasskeyLoginProps {
   email: string;
@@ -54,7 +55,8 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
         throw new Error(data.error || 'Authentication failed');
       }
 
-      const { loginToken } = await verifyResponse.json();
+      const { loginToken } =
+        (await verifyResponse.json()) as PasskeyAuthenticationVerifyResponse;
 
       // Step 4: Create NextAuth session using passkey token
       const result = await signIn('credentials', {

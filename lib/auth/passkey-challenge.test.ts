@@ -23,9 +23,9 @@ class InMemoryChallengeStore implements PasskeyChallengeStore {
     this.saved = { userId, challenge, expiresAt };
   }
 
-  async consume(email: string, now: Date): Promise<string | null> {
+  async consume(userId: number, now: Date): Promise<string | null> {
     if (
-      email !== 'person@example.com' ||
+      userId !== this.saved?.userId ||
       !this.saved ||
       this.saved.expiresAt <= now
     ) {
@@ -57,12 +57,10 @@ describe('passkey authentication challenges', () => {
     const service = createPasskeyChallengeService(store, () => NOW);
     await service.save(7, 'server-generated-challenge');
 
-    await expect(service.consume('person@example.com')).resolves.toBe(
+    await expect(service.consume(7)).resolves.toBe(
       'server-generated-challenge',
     );
-    await expect(
-      service.consume('person@example.com'),
-    ).resolves.toBeNull();
+    await expect(service.consume(7)).resolves.toBeNull();
   });
 
   it('rejects an expired challenge', async () => {
@@ -75,8 +73,6 @@ describe('passkey authentication challenges', () => {
     await service.save(7, 'server-generated-challenge');
     currentTime = new Date('2026-07-20T04:05:01.000Z');
 
-    await expect(
-      service.consume('person@example.com'),
-    ).resolves.toBeNull();
+    await expect(service.consume(7)).resolves.toBeNull();
   });
 });

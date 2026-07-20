@@ -1,15 +1,15 @@
-import { createHash, randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 import { and, eq, gt } from 'drizzle-orm';
 import { db } from '../db';
 import { users } from '../db/schema';
+import { sha256 } from '../security';
 
 const TOKEN_MAX_AGE_MS = 2 * 60 * 1000;
 
-export interface PasskeyLoginUser {
-  id: number;
-  email: string;
-  role: string;
-}
+export type PasskeyLoginUser = Pick<
+  typeof users.$inferSelect,
+  'id' | 'email' | 'role'
+>;
 
 export interface PasskeyLoginTokenStore {
   save(userId: number, tokenHash: string, expiresAt: Date): Promise<void>;
@@ -25,10 +25,6 @@ interface PasskeyLoginTokenServiceOptions {
   now: () => Date;
 }
 
-function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
-}
-
 export function createPasskeyLoginTokenService(
   store: PasskeyLoginTokenStore,
   options: PasskeyLoginTokenServiceOptions,
@@ -37,12 +33,12 @@ export function createPasskeyLoginTokenService(
     async issue(userId: number): Promise<string> {
       const token = options.generateToken();
       const expiresAt = new Date(options.now().getTime() + TOKEN_MAX_AGE_MS);
-      await store.save(userId, hashToken(token), expiresAt);
+      await store.save(userId, sha256(token), expiresAt);
       return token;
     },
 
     consume(email: string, token: string): Promise<PasskeyLoginUser | null> {
-      return store.consume(email, hashToken(token), options.now());
+      return store.consume(email, sha256(token), options.now());
     },
   };
 }

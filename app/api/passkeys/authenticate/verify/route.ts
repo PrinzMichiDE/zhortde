@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthentication } from '@/lib/passkeys';
 import { issuePasskeyLoginToken } from '@/lib/auth/passkey-login-token';
 import { z } from 'zod';
+import type { PasskeyAuthenticationVerifyResponse } from '@/types/passkey-auth';
 
 const verifySchema = z.object({
   email: z.string().email(),
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     const user = await verifyAuthentication(email, response);
     const loginToken = await issuePasskeyLoginToken(user.id);
 
-    return NextResponse.json({
+    const responseBody: PasskeyAuthenticationVerifyResponse = {
       success: true,
       loginToken,
       user: {
@@ -29,7 +30,9 @@ export async function POST(request: NextRequest) {
         email: user.email,
         role: user.role,
       },
-    });
+    };
+
+    return NextResponse.json(responseBody);
   } catch (error) {
     console.error('Verify passkey authentication error:', error);
     return NextResponse.json(

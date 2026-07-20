@@ -168,10 +168,7 @@ export async function getAuthenticationOptions(email: string) {
   const options = await generateAuthenticationOptions(opts);
   await savePasskeyChallenge(user.id, options.challenge);
 
-  return {
-    options,
-    userId: user.id,
-  };
+  return options;
 }
 
 /**
@@ -181,11 +178,6 @@ export async function verifyAuthentication(
   email: string,
   response: AuthenticationResponseJSON,
 ) {
-  const expectedChallenge = await consumePasskeyChallenge(email);
-  if (!expectedChallenge) {
-    throw new Error('Authentication challenge is invalid or expired');
-  }
-
   // Find user by email
   const user = await db.query.users.findFirst({
     where: eq(users.email, email),
@@ -193,6 +185,11 @@ export async function verifyAuthentication(
 
   if (!user) {
     throw new Error('User not found');
+  }
+
+  const expectedChallenge = await consumePasskeyChallenge(user.id);
+  if (!expectedChallenge) {
+    throw new Error('Authentication challenge is invalid or expired');
   }
 
   // Find the Passkey used for authentication
