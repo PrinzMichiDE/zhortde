@@ -1,5 +1,5 @@
 import { randomBytes } from 'crypto';
-import { and, eq, gt, isNotNull } from 'drizzle-orm';
+import { and, eq, gt, isNotNull, lte, or } from 'drizzle-orm';
 import { db } from '../db';
 import { passkeyAuthAttempts, users } from '../db/schema';
 import { sha256 } from '../security';
@@ -22,6 +22,7 @@ export interface PasskeyAuthAttemptRecord {
 }
 
 export interface PasskeyAuthAttemptStore {
+  deleteExpired(now: Date): Promise<void>;
   create(attempt: PasskeyAuthAttemptRecord): Promise<void>;
   getChallenge(
     attemptId: string,
@@ -54,10 +55,12 @@ export function createPasskeyAuthAttemptService(
 ) {
   return {
     async start(userId: number, challenge: string): Promise<string> {
+      const now = options.now();
       const attemptId = options.generateAttemptId();
       const challengeExpiresAt = new Date(
-        options.now().getTime() + CHALLENGE_MAX_AGE_MS,
+        now.getTime() + CHALLENGE_MAX_AGE_MS,
       );
+      await store.deleteExpired(now);
       await store.create({
         id: attemptId,
         userId,
@@ -101,6 +104,23 @@ export function createPasskeyAuthAttemptService(
 }
 
 const databaseAttemptStore: PasskeyAuthAttemptStore = {
+  async deleteExpired(now) {
+    await db
+      .delete(passkeyAuthAttempts)
+      .where(
+        or(
+          and(
+            isNotNull(passkeyAuthAttempts.challengeExpiresAt),
+            lte(passkeyAuthAttempts.challengeExpiresAt, now),
+          ),
+          and(
+            isNotNull(passkeyAuthAttempts.loginTokenExpiresAt),
+            lte(passkeyAuthAttempts.loginTokenExpiresAt, now),
+          ),
+        ),
+      );
+  },
+
   async create(attempt) {
     await db.insert(passkeyAuthAttempts).values(attempt);
   },

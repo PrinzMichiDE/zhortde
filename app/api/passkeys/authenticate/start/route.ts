@@ -6,6 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticationOptions } from '@/lib/passkeys';
 import { z } from 'zod';
+import {
+  checkRateLimit,
+  getClientIp,
+  getRateLimitHeaders,
+} from '@/lib/rate-limit';
 
 const startSchema = z.object({
   email: z.string().email(),
@@ -13,6 +18,18 @@ const startSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const clientIp = getClientIp(request);
+    const rateLimit = await checkRateLimit(clientIp, 'passkey_auth_start');
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        { error: 'Too many passkey authentication attempts' },
+        {
+          status: 429,
+          headers: getRateLimitHeaders(rateLimit),
+        },
+      );
+    }
+
     const body = await request.json();
     const { email } = startSchema.parse(body);
 

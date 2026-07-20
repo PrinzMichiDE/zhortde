@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS "passkey_auth_attempts" (
 	CONSTRAINT "passkey_auth_attempts_login_token_hash_unique" UNIQUE("login_token_hash")
 );
 --> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "passkey_auth_attempts_challenge_expires_idx" ON "passkey_auth_attempts" USING btree ("challenge_expires_at");
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "passkey_auth_attempts_token_expires_idx" ON "passkey_auth_attempts" USING btree ("login_token_expires_at");
+--> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "passkey_auth_attempts" ADD CONSTRAINT "passkey_auth_attempts_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE cascade ON UPDATE no action;
 EXCEPTION

@@ -32,6 +32,10 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 5,
   },
+  passkey_auth_start: {
+    windowMs: 5 * 60 * 1000,
+    maxRequests: 10,
+  },
 };
 
 export type RateLimitResult = {

@@ -22,7 +22,7 @@ import type {
 } from '@simplewebauthn/typescript-types';
 import { db } from './db';
 import { passkeys, users } from './db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import {
   completePasskeyAuthAttempt,
   getPasskeyAuthChallenge,
@@ -233,7 +233,7 @@ export async function verifyAuthentication(
   await db
     .update(passkeys)
     .set({
-      counter: verification.authenticationInfo.newCounter,
+      counter: sql<number>`GREATEST(${passkeys.counter}, ${verification.authenticationInfo.newCounter})`,
       lastUsedAt: new Date(),
     })
     .where(eq(passkeys.id, passkey.id));

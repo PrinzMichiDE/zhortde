@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, boolean, timestamp, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const stats = pgTable('stats', {
@@ -17,15 +17,22 @@ export const users = pgTable('users', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
-export const passkeyAuthAttempts = pgTable('passkey_auth_attempts', {
-  id: text('id').primaryKey(),
-  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  challenge: text('challenge'),
-  challengeExpiresAt: timestamp('challenge_expires_at'),
-  loginTokenHash: text('login_token_hash').unique(),
-  loginTokenExpiresAt: timestamp('login_token_expires_at'),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+export const passkeyAuthAttempts = pgTable(
+  'passkey_auth_attempts',
+  {
+    id: text('id').primaryKey(),
+    userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    challenge: text('challenge'),
+    challengeExpiresAt: timestamp('challenge_expires_at'),
+    loginTokenHash: text('login_token_hash').unique(),
+    loginTokenExpiresAt: timestamp('login_token_expires_at'),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [
+    index('passkey_auth_attempts_challenge_expires_idx').on(table.challengeExpiresAt),
+    index('passkey_auth_attempts_token_expires_idx').on(table.loginTokenExpiresAt),
+  ],
+);
 
 // 🔐 Passkeys (WebAuthn Credentials)
 export const passkeys = pgTable('passkeys', {

@@ -14,8 +14,9 @@ if (process.env.SKIP_DB_ENSURE !== '1') {
     execSync('node scripts/ensure-database.js', { stdio: 'inherit' });
   } catch {
     console.error(
-      '⚠️  Database schema bootstrap failed. Starting server anyway — schema will sync on the first API request.',
+      '❌ Database schema bootstrap failed. Refusing to start with an unknown schema state.',
     );
+    process.exit(1);
   }
 } else {
   console.warn('⚠️  SKIP_DB_ENSURE=1 — skipping database schema bootstrap.');
