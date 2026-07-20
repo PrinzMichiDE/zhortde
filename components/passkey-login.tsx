@@ -107,7 +107,7 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
       </Button>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        Use your device's biometric authentication or security key
+        Use your device&apos;s biometric authentication or security key
       </p>
     </div>
   );
