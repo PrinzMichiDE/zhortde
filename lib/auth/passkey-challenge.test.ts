@@ -45,4 +45,16 @@ describe('passkey authentication challenges', () => {
       service.getChallenge(attemptId, USER.id),
     ).resolves.toBeNull();
   });
+
+  it('cleans expired attempts before starting a new ceremony', async () => {
+    let currentTime = NOW;
+    const { store, service } = createFixture(() => currentTime);
+    const expiredId = await service.start(USER.id, 'expired-challenge');
+    currentTime = new Date('2026-07-20T04:05:01.000Z');
+
+    await service.start(USER.id, 'new-challenge');
+
+    expect(store.attempts.has(expiredId)).toBe(false);
+    expect(store.attempts.size).toBe(1);
+  });
 });

@@ -41,11 +41,34 @@ describe('passkey login tokens', () => {
     expect(firstToken).toBe('verified-passkey-token-1');
     expect(secondToken).toBe('verified-passkey-token-2');
     await expect(
+      service.consumeLoginToken('other@example.com', firstToken!),
+    ).resolves.toBeNull();
+    await expect(
       service.consumeLoginToken(USER.email, firstToken!),
     ).resolves.toEqual(USER);
     await expect(
       service.consumeLoginToken(USER.email, firstToken!),
     ).resolves.toBeNull();
+    await expect(
+      service.consumeLoginToken(USER.email, secondToken!),
+    ).resolves.toEqual(USER);
+    await expect(
+      service.consumeLoginToken(USER.email, secondToken!),
+    ).resolves.toBeNull();
+  });
+
+  it('rejects cross-user and expired attempt completion', async () => {
+    let currentTime = NOW;
+    const { service } = createFixture(() => currentTime);
+    const attemptId = await service.start(USER.id, 'server-challenge');
+
+    await expect(service.complete(attemptId, 99)).resolves.toBeNull();
+    currentTime = new Date('2026-07-20T04:02:01.000Z');
+    await expect(service.complete(attemptId, USER.id)).resolves.toBe(
+      'verified-passkey-token-2',
+    );
+    currentTime = new Date('2026-07-20T04:05:01.000Z');
+    await expect(service.complete(attemptId, USER.id)).resolves.toBeNull();
   });
 
   it('rejects expired tokens', async () => {

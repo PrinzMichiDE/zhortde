@@ -15,6 +15,20 @@ export const USER: PasskeyLoginUser = {
 export class InMemoryAttemptStore implements PasskeyAuthAttemptStore {
   attempts = new Map<string, PasskeyAuthAttemptRecord>();
 
+  async deleteExpired(now: Date): Promise<void> {
+    for (const [attemptId, attempt] of this.attempts) {
+      const challengeExpired =
+        attempt.challengeExpiresAt !== null &&
+        attempt.challengeExpiresAt <= now;
+      const tokenExpired =
+        attempt.loginTokenExpiresAt !== null &&
+        attempt.loginTokenExpiresAt <= now;
+      if (challengeExpired || tokenExpired) {
+        this.attempts.delete(attemptId);
+      }
+    }
+  }
+
   async create(attempt: PasskeyAuthAttemptRecord): Promise<void> {
     this.attempts.set(attempt.id, attempt);
   }
