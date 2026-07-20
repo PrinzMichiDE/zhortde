@@ -5,7 +5,7 @@ import { users } from '@/lib/db/schema';
 import { eq, and, gt } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { emailSchema, logSecurityEvent } from '@/lib/security';
-import { consumePasskeyLoginToken } from '@/lib/auth/passkey-login-token';
+import { consumePasskeyLoginToken } from '@/lib/auth/passkey-auth-attempt';
 
 // Session configuration for security
 const SESSION_MAX_AGE = 24 * 60 * 60; // 24 hours

@@ -24,9 +24,10 @@ import { db } from './db';
 import { passkeys, users } from './db/schema';
 import { eq } from 'drizzle-orm';
 import {
-  consumePasskeyChallenge,
-  savePasskeyChallenge,
-} from './auth/passkey-challenge';
+  completePasskeyAuthAttempt,
+  getPasskeyAuthChallenge,
+  startPasskeyAuthAttempt,
+} from './auth/passkey-auth-attempt';
 
 // WebAuthn Configuration
 function getRpId(): string {
@@ -166,9 +167,12 @@ export async function getAuthenticationOptions(email: string) {
   };
 
   const options = await generateAuthenticationOptions(opts);
-  await savePasskeyChallenge(user.id, options.challenge);
+  const ceremonyId = await startPasskeyAuthAttempt(
+    user.id,
+    options.challenge,
+  );
 
-  return options;
+  return { options, ceremonyId };
 }
 
 /**
@@ -177,6 +181,7 @@ export async function getAuthenticationOptions(email: string) {
 export async function verifyAuthentication(
   email: string,
   response: AuthenticationResponseJSON,
+  ceremonyId: string,
 ) {
   // Find user by email
   const user = await db.query.users.findFirst({
@@ -187,7 +192,10 @@ export async function verifyAuthentication(
     throw new Error('User not found');
   }
 
-  const expectedChallenge = await consumePasskeyChallenge(user.id);
+  const expectedChallenge = await getPasskeyAuthChallenge(
+    ceremonyId,
+    user.id,
+  );
   if (!expectedChallenge) {
     throw new Error('Authentication challenge is invalid or expired');
   }
@@ -230,7 +238,12 @@ export async function verifyAuthentication(
     })
     .where(eq(passkeys.id, passkey.id));
 
-  return user;
+  const loginToken = await completePasskeyAuthAttempt(ceremonyId, user.id);
+  if (!loginToken) {
+    throw new Error('Authentication challenge was already used');
+  }
+
+  return { user, loginToken };
 }
 
 /**

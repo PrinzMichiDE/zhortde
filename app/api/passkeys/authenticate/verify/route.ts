@@ -5,22 +5,25 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAuthentication } from '@/lib/passkeys';
-import { issuePasskeyLoginToken } from '@/lib/auth/passkey-login-token';
 import { z } from 'zod';
 import type { PasskeyAuthenticationVerifyResponse } from '@/types/passkey-auth';
 
 const verifySchema = z.object({
   email: z.string().email(),
   response: z.any(), // AuthenticationResponseJSON
+  ceremonyId: z.string().min(32).max(128),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email, response } = verifySchema.parse(body);
+    const { email, response, ceremonyId } = verifySchema.parse(body);
 
-    const user = await verifyAuthentication(email, response);
-    const loginToken = await issuePasskeyLoginToken(user.id);
+    const { user, loginToken } = await verifyAuthentication(
+      email,
+      response,
+      ceremonyId,
+    );
 
     const responseBody: PasskeyAuthenticationVerifyResponse = {
       success: true,

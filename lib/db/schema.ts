@@ -14,10 +14,16 @@ export const users = pgTable('users', {
   role: text('role').notNull().default('user'), // 'user', 'admin'
   ssoLoginToken: text('sso_login_token'),
   ssoLoginExpiresAt: timestamp('sso_login_expires_at'),
-  passkeyLoginTokenHash: text('passkey_login_token_hash'),
-  passkeyLoginExpiresAt: timestamp('passkey_login_expires_at'),
-  passkeyChallenge: text('passkey_challenge'),
-  passkeyChallengeExpiresAt: timestamp('passkey_challenge_expires_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const passkeyAuthAttempts = pgTable('passkey_auth_attempts', {
+  id: text('id').primaryKey(),
+  userId: integer('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  challenge: text('challenge'),
+  challengeExpiresAt: timestamp('challenge_expires_at'),
+  loginTokenHash: text('login_token_hash').unique(),
+  loginTokenExpiresAt: timestamp('login_token_expires_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -706,6 +712,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   sharedPasswords: many(sharedPasswords),
   p2pFileShares: many(p2pFileShares),
   passkeys: many(passkeys),
+  passkeyAuthAttempts: many(passkeyAuthAttempts),
+}));
+
+export const passkeyAuthAttemptsRelations = relations(passkeyAuthAttempts, ({ one }) => ({
+  user: one(users, {
+    fields: [passkeyAuthAttempts.userId],
+    references: [users.id],
+  }),
 }));
 
 export const passkeysRelations = relations(passkeys, ({ one }) => ({

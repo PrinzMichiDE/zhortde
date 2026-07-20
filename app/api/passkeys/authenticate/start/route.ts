@@ -16,10 +16,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email } = startSchema.parse(body);
 
-    const options = await getAuthenticationOptions(email);
+    const { options, ceremonyId } = await getAuthenticationOptions(email);
 
     return NextResponse.json({
       options,
+      ceremonyId,
     });
   } catch (error) {
     console.error('Start passkey authentication error:', error);

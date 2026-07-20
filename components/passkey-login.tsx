@@ -35,7 +35,7 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
         throw new Error(data.error || 'Failed to start authentication');
       }
 
-      const { options } = await startResponse.json();
+      const { options, ceremonyId } = await startResponse.json();
 
       // Step 2: Authenticate using browser WebAuthn API
       const credential = await startAuthentication(options);
@@ -47,6 +47,7 @@ export function PasskeyLogin({ email, onSuccess, onError }: PasskeyLoginProps) {
         body: JSON.stringify({
           email,
           response: credential,
+          ceremonyId,
         }),
       });
 
