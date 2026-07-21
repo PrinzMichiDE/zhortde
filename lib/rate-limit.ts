@@ -1,56 +1,83 @@
 import { db } from './db';
 import { rateLimits } from './db/schema';
-import { and, eq, gte, lt } from 'drizzle-orm';
+import { and, eq, gte, lt, sql } from 'drizzle-orm';
 
 export type RateLimitConfig = {
   windowMs: number; // Time window in milliseconds
   maxRequests: number; // Max requests per window
+  failureMode: 'fail-open' | 'fail-closed';
 };
 
 // Rate limit configurations
-export const RATE_LIMITS: Record<string, RateLimitConfig> = {
+export const RATE_LIMITS = {
   // Anonymous users (by IP)
   create_link_anonymous: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 10,
+    failureMode: 'fail-open',
   },
   create_paste_anonymous: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 5,
+    failureMode: 'fail-open',
   },
   // Authenticated users (by user ID)
   create_link_authenticated: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 50,
+    failureMode: 'fail-open',
   },
   create_paste_authenticated: {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 20,
+    failureMode: 'fail-open',
   },
   // Link access attempts (for password-protected links)
   access_protected_link: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 5,
+    failureMode: 'fail-open',
+  },
+  access_protected_paste: {
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 5,
+    failureMode: 'fail-closed',
   },
   passkey_auth_start: {
     windowMs: 5 * 60 * 1000,
     maxRequests: 10,
+    failureMode: 'fail-open',
   },
-};
+} satisfies Record<string, RateLimitConfig>;
 
-export type RateLimitResult = {
-  success: boolean;
+export type RateLimitAction = keyof typeof RATE_LIMITS;
+
+type RateLimitResultBase = {
   limit: number;
   remaining: number;
   reset: Date;
 };
+
+export type RateLimitResult =
+  | (RateLimitResultBase & {
+      status: 'allowed';
+      success: true;
+    })
+  | (RateLimitResultBase & {
+      status: 'limited';
+      success: false;
+    })
+  | (RateLimitResultBase & {
+      status: 'unavailable';
+      success: false;
+    });
 
 /**
  * Check and enforce rate limiting for a given identifier and action
  */
 export async function checkRateLimit(
   identifier: string,
-  action: string
+  action: RateLimitAction
 ): Promise<RateLimitResult> {
   const config = RATE_LIMITS[action];
   
@@ -58,66 +85,85 @@ export async function checkRateLimit(
     throw new Error(`Unknown rate limit action: ${action}`);
   }
 
-  const windowStart = new Date(Date.now() - config.windowMs);
-
   try {
-    // Clean up old records first (optional, for DB hygiene)
-    await db
-      .delete(rateLimits)
-      .where(
-        and(
-          eq(rateLimits.identifier, identifier),
-          eq(rateLimits.action, action),
-          lt(rateLimits.windowStart, windowStart)
-        )
+    return await db.transaction(async (tx): Promise<RateLimitResult> => {
+      const lockKey = JSON.stringify([action, identifier]);
+      await tx.execute(
+        sql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`,
       );
 
-    // Count requests in current window
-    const existing = await db
-      .select()
-      .from(rateLimits)
-      .where(
-        and(
-          eq(rateLimits.identifier, identifier),
-          eq(rateLimits.action, action),
-          gte(rateLimits.windowStart, windowStart)
-        )
-      );
+      const now = new Date();
+      const windowStart = new Date(now.getTime() - config.windowMs);
 
-    const currentCount = existing.reduce((sum, record) => sum + record.count, 0);
+      // Keep cleanup, counting, the decision, and recording under the same
+      // transaction-scoped per-key lock so concurrent instances serialize.
+      await tx
+        .delete(rateLimits)
+        .where(
+          and(
+            eq(rateLimits.identifier, identifier),
+            eq(rateLimits.action, action),
+            lt(rateLimits.windowStart, windowStart),
+          ),
+        );
 
-    if (currentCount >= config.maxRequests) {
-      // Rate limit exceeded
-      const oldestRecord = existing.sort(
-        (a, b) => a.windowStart.getTime() - b.windowStart.getTime()
-      )[0];
+      const existing = await tx
+        .select()
+        .from(rateLimits)
+        .where(
+          and(
+            eq(rateLimits.identifier, identifier),
+            eq(rateLimits.action, action),
+            gte(rateLimits.windowStart, windowStart),
+          ),
+        );
+
+      const currentCount = existing.reduce((sum, record) => sum + record.count, 0);
+
+      if (currentCount >= config.maxRequests) {
+        const oldestRecord = existing.sort(
+          (a, b) => a.windowStart.getTime() - b.windowStart.getTime(),
+        )[0];
+
+        return {
+          status: 'limited',
+          success: false,
+          limit: config.maxRequests,
+          remaining: 0,
+          reset: new Date(oldestRecord.windowStart.getTime() + config.windowMs),
+        };
+      }
+
+      await tx.insert(rateLimits).values({
+        identifier,
+        action,
+        count: 1,
+        windowStart: now,
+      });
 
       return {
+        status: 'allowed',
+        success: true,
+        limit: config.maxRequests,
+        remaining: config.maxRequests - currentCount - 1,
+        reset: new Date(now.getTime() + config.windowMs),
+      };
+    }, { isolationLevel: 'read committed' });
+  } catch (error) {
+    console.error('Rate limit check error:', error);
+
+    if (config.failureMode === 'fail-closed') {
+      return {
+        status: 'unavailable',
         success: false,
         limit: config.maxRequests,
         remaining: 0,
-        reset: new Date(oldestRecord.windowStart.getTime() + config.windowMs),
+        reset: new Date(Date.now() + config.windowMs),
       };
     }
 
-    // Record this request
-    await db.insert(rateLimits).values({
-      identifier,
-      action,
-      count: 1,
-      windowStart: new Date(),
-    });
-
     return {
-      success: true,
-      limit: config.maxRequests,
-      remaining: config.maxRequests - currentCount - 1,
-      reset: new Date(Date.now() + config.windowMs),
-    };
-  } catch (error) {
-    console.error('Rate limit check error:', error);
-    // On error, allow the request (fail open)
-    return {
+      status: 'allowed',
       success: true,
       limit: config.maxRequests,
       remaining: config.maxRequests,
