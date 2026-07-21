@@ -86,7 +86,7 @@ describe('paste page access', () => {
     const props = {
       params: Promise.resolve({ slug: 'secret' }),
       searchParams: Promise.resolve({ password: 'anything' }),
-    } as unknown as Parameters<typeof PastePage>[0];
+    };
 
     await expect(PastePage(props)).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/protected/paste/secret');

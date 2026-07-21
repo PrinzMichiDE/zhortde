@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { pastes } from '@/lib/db/schema';
+import { isProduction } from '@/lib/env';
 import {
   createPasteAccessToken,
   getPasteAccessCookiePath,
@@ -29,13 +30,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { slug } = await params;
     const paste = await db.query.pastes.findFirst({
       where: eq(pastes.slug, slug),
+      columns: {
+        expiresAt: true,
+        passwordHash: true,
+      },
     });
 
     if (!paste) {
       return NextResponse.json({ error: 'Paste nicht gefunden' }, { status: 404 });
     }
 
-    if (paste.expiresAt && isExpired(paste.expiresAt)) {
+    if (isExpired(paste.expiresAt)) {
       return NextResponse.json({ error: 'Dieses Paste ist abgelaufen' }, { status: 410 });
     }
 
@@ -81,17 +86,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Falsches Passwort' }, { status: 401 });
     }
 
+    const pastePath = getPasteAccessCookiePath(slug);
     const response = NextResponse.json({
       success: true,
-      redirectTo: `/p/${encodeURIComponent(slug)}`,
+      redirectTo: pastePath,
     });
     response.cookies.set({
       name: PASTE_ACCESS_COOKIE,
       value: createPasteAccessToken(slug, paste.passwordHash),
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction(),
       sameSite: 'lax',
-      path: getPasteAccessCookiePath(slug),
+      path: pastePath,
       maxAge: PASTE_ACCESS_TTL_SECONDS,
     });
 

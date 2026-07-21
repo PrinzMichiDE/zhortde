@@ -8,7 +8,7 @@ export type RateLimitConfig = {
 };
 
 // Rate limit configurations
-export const RATE_LIMITS: Record<string, RateLimitConfig> = {
+export const RATE_LIMITS = {
   // Anonymous users (by IP)
   create_link_anonymous: {
     windowMs: 60 * 60 * 1000, // 1 hour
@@ -40,7 +40,9 @@ export const RATE_LIMITS: Record<string, RateLimitConfig> = {
     windowMs: 5 * 60 * 1000,
     maxRequests: 10,
   },
-};
+} satisfies Record<string, RateLimitConfig>;
+
+export type RateLimitAction = keyof typeof RATE_LIMITS;
 
 export type RateLimitResult = {
   success: boolean;
@@ -54,7 +56,7 @@ export type RateLimitResult = {
  */
 export async function checkRateLimit(
   identifier: string,
-  action: string
+  action: RateLimitAction
 ): Promise<RateLimitResult> {
   const config = RATE_LIMITS[action];
   

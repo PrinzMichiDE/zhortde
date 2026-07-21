@@ -27,7 +27,6 @@ export default function ProtectedPastePage() {
         `/api/pastes/${encodeURIComponent(slug)}/unlock`,
         {
           method: 'POST',
-          credentials: 'same-origin',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -42,7 +41,6 @@ export default function ProtectedPastePage() {
       }
 
       router.replace(result.redirectTo);
-      router.refresh();
     } catch {
       setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
     } finally {

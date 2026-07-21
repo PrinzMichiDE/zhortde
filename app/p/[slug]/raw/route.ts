@@ -30,7 +30,7 @@ export async function GET(
       return new NextResponse('Paste nicht gefunden', { status: 404 });
     }
 
-    if (paste.expiresAt && isExpired(paste.expiresAt)) {
+    if (isExpired(paste.expiresAt)) {
       return new NextResponse('Dieses Paste ist abgelaufen', { status: 410 });
     }
 
