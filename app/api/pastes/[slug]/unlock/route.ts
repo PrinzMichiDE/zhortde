@@ -56,6 +56,13 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'access_protected_paste',
     );
 
+    if (rateLimitResult.status === 'unavailable') {
+      return NextResponse.json(
+        { error: 'Passwortprüfung ist vorübergehend nicht verfügbar' },
+        { status: 503 },
+      );
+    }
+
     if (!rateLimitResult.success) {
       return NextResponse.json(
         { error: 'Zu viele fehlgeschlagene Versuche. Bitte versuchen Sie es später erneut.' },

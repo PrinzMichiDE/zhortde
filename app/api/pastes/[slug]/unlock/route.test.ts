@@ -42,6 +42,7 @@ vi.mock('@/lib/rate-limit', () => ({
 const context = { params: Promise.resolve({ slug: 'secret' }) };
 const accessSecret = 'test-secret-with-at-least-thirty-two-characters';
 const rateLimitSuccess = {
+  status: 'allowed',
   success: true,
   limit: 5,
   remaining: 4,
@@ -122,6 +123,7 @@ describe('paste unlock endpoint', () => {
   it('rate limits password guesses before verification', async () => {
     checkRateLimit.mockResolvedValue({
       ...rateLimitSuccess,
+      status: 'limited',
       success: false,
       remaining: 0,
     });
@@ -134,5 +136,22 @@ describe('paste unlock endpoint', () => {
       '192.0.2.1:secret',
       'access_protected_paste',
     );
+  });
+
+  it('returns 503 without verifying a password when rate limiting is unavailable', async () => {
+    checkRateLimit.mockResolvedValue({
+      ...rateLimitSuccess,
+      status: 'unavailable',
+      success: false,
+      remaining: 0,
+    });
+
+    const response = await POST(request(), context);
+
+    expect(response.status).toBe(503);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Passwortprüfung ist vorübergehend nicht verfügbar',
+    });
+    expect(verifyPassword).not.toHaveBeenCalled();
   });
 });
