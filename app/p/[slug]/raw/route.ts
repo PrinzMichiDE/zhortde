@@ -1,9 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { pastes } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getServerSession } from 'next-auth';
+import { NextRequest, NextResponse } from 'next/server';
 import { authOptions } from '@/lib/auth/config';
+import { db } from '@/lib/db';
+import { pastes } from '@/lib/db/schema';
+import {
+  PASTE_ACCESS_COOKIE,
+  verifyPasteAccessToken,
+} from '@/lib/paste-access';
+import { isExpired } from '@/lib/password-protection';
 
 interface RouteParams {
   params: Promise<{ slug: string }>;
@@ -25,11 +30,26 @@ export async function GET(
       return new NextResponse('Paste nicht gefunden', { status: 404 });
     }
 
+    if (paste.expiresAt && isExpired(paste.expiresAt)) {
+      return new NextResponse('Dieses Paste ist abgelaufen', { status: 410 });
+    }
+
     // Prüfe, ob der Benutzer Zugriff hat
     if (!paste.isPublic) {
       if (!session || paste.userId !== parseInt(session.user.id)) {
         return new NextResponse('Keine Berechtigung', { status: 403 });
       }
+    }
+
+    if (
+      paste.passwordHash &&
+      !verifyPasteAccessToken(
+        request.cookies.get(PASTE_ACCESS_COOKIE)?.value,
+        slug,
+        paste.passwordHash,
+      )
+    ) {
+      return new NextResponse('Passwort erforderlich', { status: 401 });
     }
 
     // Gib den reinen Text zurück
@@ -38,6 +58,8 @@ export async function GET(
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Content-Disposition': `inline; filename="${slug}.txt"`,
+        'Cache-Control': 'private, no-store',
+        'X-Content-Type-Options': 'nosniff',
       },
     });
   } catch (error) {

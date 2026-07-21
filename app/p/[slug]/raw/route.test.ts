@@ -1,5 +1,9 @@
 import { NextRequest } from 'next/server';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  createPasteAccessToken,
+  PASTE_ACCESS_COOKIE,
+} from '@/lib/paste-access';
 import { GET } from './route';
 
 const { findPaste, getSession } = vi.hoisted(() => ({
@@ -25,14 +29,26 @@ vi.mock('@/lib/auth/config', () => ({
   authOptions: {},
 }));
 
-const request = () => new NextRequest('https://zhort.de/p/secret/raw');
+const request = (accessToken?: string) => new NextRequest(
+  'https://zhort.de/p/secret/raw',
+  accessToken
+    ? { headers: { cookie: `${PASTE_ACCESS_COOKIE}=${accessToken}` } }
+    : undefined,
+);
 const context = { params: Promise.resolve({ slug: 'secret' }) };
+const passwordHash = 'stored-password-hash';
+const accessSecret = 'test-secret-with-at-least-thirty-two-characters';
 
 describe('raw paste access', () => {
   beforeEach(() => {
     findPaste.mockReset();
     getSession.mockReset();
     getSession.mockResolvedValue(null);
+    vi.stubEnv('NEXTAUTH_SECRET', accessSecret);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('does not disclose a password-protected paste without verified access', async () => {
@@ -41,7 +57,7 @@ describe('raw paste access', () => {
       content: 'confidential content',
       userId: null,
       isPublic: true,
-      passwordHash: 'stored-password-hash',
+      passwordHash,
       expiresAt: null,
     });
 
@@ -81,5 +97,27 @@ describe('raw paste access', () => {
 
     expect(response.status).toBe(200);
     await expect(response.text()).resolves.toBe('public content');
+  });
+
+  it('returns protected content after a valid server-issued access grant', async () => {
+    findPaste.mockResolvedValue({
+      slug: 'secret',
+      content: 'confidential content',
+      userId: null,
+      isPublic: true,
+      passwordHash,
+      expiresAt: null,
+    });
+    const accessToken = createPasteAccessToken(
+      'secret',
+      passwordHash,
+      accessSecret,
+    );
+
+    const response = await GET(request(accessToken), context);
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('confidential content');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 });

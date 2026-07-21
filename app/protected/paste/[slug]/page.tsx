@@ -4,6 +4,11 @@ import { useState, FormEvent } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { LockClosedIcon } from '@heroicons/react/24/outline';
 
+interface UnlockResponse {
+  error?: string;
+  redirectTo?: string;
+}
+
 export default function ProtectedPastePage() {
   const params = useParams();
   const router = useRouter();
@@ -18,10 +23,29 @@ export default function ProtectedPastePage() {
     setIsLoading(true);
 
     try {
-      // Redirect to paste page with password
-      router.push(`/p/${slug}?password=${encodeURIComponent(password)}`);
-    } catch (err) {
+      const response = await fetch(
+        `/api/pastes/${encodeURIComponent(slug)}/unlock`,
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password }),
+        },
+      );
+      const result = await response.json() as UnlockResponse;
+
+      if (!response.ok || !result.redirectTo) {
+        setError(result.error || 'Das Passwort konnte nicht überprüft werden.');
+        return;
+      }
+
+      router.replace(result.redirectTo);
+      router.refresh();
+    } catch {
       setError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+    } finally {
       setIsLoading(false);
     }
   };
