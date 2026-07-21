@@ -69,7 +69,7 @@ Freie Inhalte koennen eine hoehere Schutzklasse enthalten, als das strukturierte
 ### Identitaets- und Zugriffsmanagement
 - Jede Person nutzt eine eindeutige Identitaet; geteilte Administrationskonten sind unzulaessig.
 - Privilegierte Rollen erfordern MFA, zeitnahe Sperrung bei Rollenende und quartalsweise Rezertifizierung.
-- Anwendungskonten verwenden `user`, `admin` und Teamrollen. Superadmins werden ueber `SUPER_ADMINS` anhand der Session-E-Mail bestimmt. Produktive Werte, Aenderungsfreigaben und Reviews sind klaerungsbeduerftig.
+- Anwendungskonten verwenden `user`, `admin` und Teamrollen. Superadmins werden ueber `SUPER_ADMINS` anhand der Session-E-Mail bestimmt; alle Admin-APIs nutzen seit 2026-07-21 den gemeinsamen Guard `requireSuperAdmin` in `lib/admin-auth.ts` und protokollieren administrative Aktionen in `audit_logs`. Produktive Werte, Aenderungsfreigaben und Reviews sind klaerungsbeduerftig.
 - Autorisierung muss serverseitig erfolgen. Vorhandene Owner-Filter und `requireAuth` sind beizubehalten und durch Negativtests fuer jede Objektart zu belegen.
 - API-Schluessel werden zufaellig erzeugt, nur einmal im Klartext angezeigt, als Hash gespeichert, widerrufbar und nach Moeglichkeit befristet. Schluessel muessen mindestens quartalsweise auf Nutzung und Notwendigkeit geprueft werden.
 - JWT-Sessions haben derzeit 24 Stunden Maximalalter. Fuer kompromittierte Konten ist ein Widerrufs- oder globaler Secret-Rotationsprozess erforderlich; ein feingranulares Widerrufsregister ist nicht belegt.
