@@ -6,7 +6,20 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ## [Unreleased]
 
-Seit dem Stand vom 2026-07-20 sind keine weiteren Änderungen dokumentiert.
+### Security
+
+- Kritischen Vertraulichkeitsfehler bei passwortgeschützten Pastes geschlossen: Haupt- und Raw-Ansicht akzeptieren keine Passwortwerte mehr aus der URL und geben Inhalte nur nach einem serverseitigen bcrypt-Vergleich frei.
+- Nach erfolgreicher Prüfung wird ein auf Paste-Slug und aktuellen Passwort-Hash gebundener, HMAC-SHA-256-signierter HttpOnly-Cookie mit einer Stunde Gültigkeit ausgestellt. Der Cookie ist auf den Pfad des jeweiligen Pastes begrenzt, wird in Produktion nur über HTTPS gesendet und wird bei einer Passwortänderung automatisch ungültig.
+- Die Raw-Ansicht prüft nun zusätzlich den Ablaufzeitpunkt und liefert geschützte Inhalte weder ohne Zugriffsnachweis noch aus abgelaufenen Pastes aus.
+- Passwortversuche für Pastes sind datenbankgestützt auf fünf Anfragen je Client-IP und Paste in 15 Minuten begrenzt.
+
+### Added
+
+- 15 Regressionstests für Paste-Seite, Raw-Route, Unlock-API und kryptografische Zugriffsnachweise ergänzt; die vollständige Suite umfasst nun 27 Tests in sieben Dateien.
+
+### Changed
+
+- Das Passwortformular sendet Zugangsdaten per `POST /api/pastes/[slug]/unlock`; URLs, Browserhistorie und Referrer enthalten kein Paste-Passwort mehr.
 
 ## [2026-07-20]
 

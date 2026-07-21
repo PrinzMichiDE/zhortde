@@ -1,13 +1,13 @@
 # Architekturübersicht Zhort
 ## Einleitung
-Dieses Dokument beschreibt die im Repository nachweisbare Architektur der Anwendung Zhort zum Stand des Commits `8611a8d` auf dem Branch `cursor/daily-evolution-pipeline-fe2a` am 20.07.2026. Zhort ist eine monolithische Next.js-Anwendung mit App Router für URL-Kürzung, Pastebin, Link-Analyse, Team- und Enterprise-Funktionen, verschlüsselte Passwortfreigaben, WebRTC-Dateifreigaben sowie browser- und API-basierte Nutzung.
+Dieses Dokument beschreibt die im Repository nachweisbare Architektur der Anwendung Zhort zum technischen Stand des Commits `44daa90` auf dem Branch `cursor/daily-evolution-pipeline-139f` am 21.07.2026. Zhort ist eine monolithische Next.js-Anwendung mit App Router für URL-Kürzung, Pastebin, Link-Analyse, Team- und Enterprise-Funktionen, verschlüsselte Passwortfreigaben, WebRTC-Dateifreigaben sowie browser- und API-basierte Nutzung.
 
 Die Aussagen beruhen auf Quellcode, Schema, SQL-Migrationen, Tests und Deployment-Dateien. Ein Zugriff auf produktive Laufzeitkonfiguration, Datenbank, Vercel-/Container-Projekt, DNS, Secret Store, Monitoring, Backups oder Auftragsverarbeitungsverträge war nicht Bestandteil des Repositorys. Solche Punkte sind ausdrücklich als **klärungsbedürftige Information** gekennzeichnet und dürfen nicht aus Repository-Dokumentation als produktiv umgesetzt abgeleitet werden.
 
 ## Geltungsbereich
 Erfasst sind:
 
-- die Next.js-16-/React-19-Anwendung mit 38 `page.tsx`-Seiten, 71 Route-Dateien mit 117 HTTP-Handlern und 36 React-Komponenten;
+- die Next.js-16-/React-19-Anwendung mit 38 `page.tsx`-Seiten, 72 Route-Dateien mit 118 HTTP-Handlern und 36 React-Komponenten;
 - App-Router-Oberflächen, Route Handler, Server Actions, Middleware, Authentifizierung und Autorisierung;
 - PostgreSQL-Zugriff über Drizzle ORM/Postgres.js, 43 im TypeScript-Schema definierte Tabellen sowie SQL-Migrationen `0000` bis `0004`;
 - die Bereitstellungsvarianten Vercel und OCI-/Docker-Container einschließlich GitHub-Actions-Image-Build;
@@ -27,6 +27,7 @@ Nicht als umgesetzt bestätigt sind produktive Topologie, Verfügbarkeit, Skalie
 | Passkey-Ceremony-ID | Zufälliger opaker 32-Byte-Wert in Base64url-Darstellung, der genau eine Zeile in `passkey_auth_attempts` adressiert und parallele Anmelde-Ceremonies desselben Benutzers trennt. |
 | Passkey-Challenge | Fünf Minuten gültiger WebAuthn-Anmeldezustand in einer eigenen Attempt-Zeile. Er wird vor dem WebAuthn-Nachweis nur gelesen und erst beim atomaren Abschluss genau dieses Versuchs entfernt. |
 | Passkey-Login-Token | Nach erfolgreicher WebAuthn-Prüfung erzeugter 32-Byte-Zwischentoken. Nur SHA-256-Hash und Ablaufzeit werden für zwei Minuten in derselben Attempt-Zeile gehalten; NextAuth tauscht ihn einmalig gegen eine Sitzung und löscht die passende Zeile atomar. |
+| Paste-Zugriffsnachweis | HMAC-SHA-256-signierter, auf Paste-Slug, aktuellen Passwort-Hash und Ablauf gebundener Wert. Nach erfolgreichem bcrypt-Vergleich liegt er maximal eine Stunde als HttpOnly-/SameSite-Lax-Cookie auf dem Pfad des betroffenen Pastes vor. |
 | API-Schlüssel | Mit Präfix `zhort_` ausgegebener Schlüssel; in PostgreSQL liegt ein bcrypt-Hash, der Klartext wird nur bei Erstellung zurückgegeben. |
 | Vertrauensgrenze | Übergang zwischen Sicherheitsdomänen, an dem Identität, Eingaben, Transport und Datenfreigabe erneut geprüft werden müssen. |
 | Relying Party (RP) | WebAuthn-Anwendung; RP-ID aus `WEBAUTHN_RP_ID` oder Host von `NEXTAUTH_URL`, Origin aus `NEXTAUTH_URL`. |
@@ -62,6 +63,7 @@ Nachweisbare Entscheidungen und Annahmen:
 4. **PostgreSQL als Zustandsanker:** Neben Fachdaten liegen Rate-Limits, WebAuthn-Credentials, kurzlebige Passkey-/SSO-Zustände, WebRTC-Signalisierung, Auditdaten und Statistiken in PostgreSQL.
 5. **Optionale anonyme Nutzung:** Link-, Paste-, Passwortfreigabe-, P2P- und Teile der MCP-Erstellung erlauben anonyme Datensätze; diese erhalten keine `user_id`.
 6. **Laufzeitumgebung:** Der Code kann auf Vercel (`vercel.json`, Region `fra1`) oder als Next.js-Standalone-Container laufen. Welcher Pfad produktiv ist und wer ihn betreibt, ist klärungsbedürftig.
+7. **Stateless Paste Access Grant:** Paste-Passwörter verbleiben ausschließlich im POST-Body der Unlock-Route. Der Server persistiert keinen zusätzlichen Freigabezustand, sondern signiert einen kurzlebigen Nachweis mit `NEXTAUTH_SECRET`; eine Passwortänderung ändert den eingebundenen Hash und widerruft vorhandene Nachweise implizit.
 
 ### Vertrauensgrenzen
 | Grenze | Übergang und Daten | Nachweisbare Kontrollen |
@@ -72,6 +74,7 @@ Nachweisbare Entscheidungen und Annahmen:
 | Next.js → externe Dienste/Zielsysteme | Ziel-URLs, IP-Adressen, OIDC-Codes/Tokens, Webhook-Payloads, DNS-Abfragen | Dienstspezifische Prüfungen, Timeouts teilweise vorhanden, HMAC für Webhooks; Egress-Allowlist und private-IP-Sperre sind nicht durchgängig implementiert. |
 | Deployment/CI → Laufzeit und Datenbank | Image, Migrationen, Secrets | GitHub Actions baut GHCR-Image; Vercel- und Container-Buildpfade vorhanden; tatsächliche Secret-Verwaltung und Freigabekette sind klärungsbedürftig. |
 | Benutzerrolle → Administrationsfunktionen | Benutzer- und Blocklist-Verwaltung | `/admin` und Benutzer-API prüfen E-Mail gegen `SUPER_ADMINS`; die Blocklist-POST-Route verlangt hingegen nur eine beliebige Sitzung. |
+| Browser → geschütztes Paste | Passwort im Unlock-POST; anschließend HttpOnly-Zugriffscookie bei Haupt-/Raw-Aufruf | Zod-Längenprüfung, DB-Rate-Limit 5 Versuche je IP/Paste in 15 Minuten, bcrypt-Vergleich, HMAC-Bindung an Slug/Hash/Ablauf, Cookie `SameSite=Lax`, in Produktion `Secure`, Pfad auf `/p/{slug}` begrenzt. |
 
 ### Komponenten
 #### Präsentation und Client
@@ -85,7 +88,7 @@ Nachweisbare Entscheidungen und Annahmen:
 #### HTTP- und Anwendungslogik
 
 - `/api/links` und Unterrouten verwalten Linkerstellung, Änderungen, Tags, Redirect-Regeln, A/B-Varianten, Maskierung, Pixel, Zeitpläne, Vorschau, Historie, Bulk und Export.
-- `/api/pastes`, `/api/passwords`, `/api/p2p/files` und `/api/bio` verwalten weitere Inhaltsarten.
+- `/api/pastes`, das geschützte Unlock-POST `/api/pastes/[slug]/unlock`, `/api/passwords`, `/api/p2p/files` und `/api/bio` verwalten weitere Inhaltsarten.
 - `/api/analytics`, der Redirect-Handler `/s/[shortCode]` und `lib/analytics.ts` erfassen Hits, IP, User-Agent, Referrer, Geo-, Geräte-, Browser- und Betriebssystemdaten.
 - `/api/user`, `/api/teams`, `/api/enterprise`, `/api/sso` und `/api/admin` bilden benutzer-, team-, unternehmens- und administrative Funktionen ab.
 - `/api/v1/shorten` ist eine öffentliche Schreibschnittstelle; `/api/v1/links` nutzt Bearer-API-Schlüssel. `/api/mcp` bietet SSE und JSON-RPC; Bearer-Authentifizierung ist dort optional und nur einzelne Tools erfordern sie.
@@ -117,7 +120,9 @@ SQL-Migrationen `0000` bis `0004` sind im Drizzle-Journal registriert. Das TypeS
 6. Asynchron werden Klickdaten gespeichert, die IP über `http://ip-api.com` aufgelöst und Webhooks ausgelöst. Der Browser wechselt anschließend in die Vertrauensdomäne der Ziel-URL.
 
 #### Paste, Passwortfreigabe und P2P
-Pastes werden serverseitig gespeichert und können öffentlich, privat, passwortgeschützt oder befristet sein. Bei Passwortfreigaben verschlüsselt der Browser Nutzdaten mit AES-256-GCM und PBKDF2; der Server speichert Ciphertext, Metadaten-Ciphertext, optionalen Schlüsselhash und bcrypt-gehashten Zugriffsschlüssel. Der Zugriffsschlüssel wird derzeit auch als Query-Parameter akzeptiert. Zugriffszähler und Ablauf werden serverseitig geprüft.
+Pastes werden serverseitig gespeichert und können öffentlich, privat, passwortgeschützt oder befristet sein. Für ein geschütztes Paste sendet der Browser das Passwort ausschließlich per `POST /api/pastes/{slug}/unlock`. Nach Rate-Limit, Ablaufprüfung und bcrypt-Vergleich stellt der Server einen maximal eine Stunde gültigen, HMAC-SHA-256-signierten HttpOnly-Cookie aus, der an Slug und aktuellen Passwort-Hash sowie auf `/p/{slug}` gebunden ist. Haupt- und Raw-Ansicht prüfen denselben Nachweis; die Raw-Route prüft zusätzlich den Paste-Ablauf und liefert erfolgreiche Antworten mit `Cache-Control: private, no-store` sowie `X-Content-Type-Options: nosniff`.
+
+Bei Passwortfreigaben verschlüsselt der Browser Nutzdaten mit AES-256-GCM und PBKDF2; der Server speichert Ciphertext, Metadaten-Ciphertext, optionalen Schlüsselhash und bcrypt-gehashten Zugriffsschlüssel. Dieser Zugriffsschlüssel wird weiterhin auch als Query-Parameter akzeptiert. Zugriffszähler und Ablauf werden serverseitig geprüft.
 
 Bei P2P-Freigaben hält PostgreSQL Dateiname, Größe, Hash, Zugriffsschutz, Signalisierungstoken sowie WebRTC-Offer/Answer. Der Dateistrom ist als direkter WebRTC-DataChannel zwischen Browsern implementiert. Google-STUN-Server unterstützen die NAT-Ermittlung; ein TURN-Dienst ist nicht konfiguriert.
 
@@ -167,7 +172,7 @@ GitHub Actions baut auf Pull Requests ein Linux/AMD64-Image und veröffentlicht 
 | Nachweis | Aussage |
 |---|---|
 | `package.json`, `package-lock.json` | Next.js 16, React 19, NextAuth 4, Drizzle/Postgres.js, SimpleWebAuthn und Build-/Migrationsskripte |
-| `app/` | 38 Seiten, 71 Route-Dateien und 117 HTTP-Handler; tatsächliche Oberflächen und Schnittstellen |
+| `app/` | 38 Seiten, 72 Route-Dateien und 118 HTTP-Handler; tatsächliche Oberflächen und Schnittstellen |
 | `components/` | 36 UI-, Dashboard-, Provider- und Passkey-Komponenten |
 | `lib/auth/config.ts`, `types/next-auth.d.ts` | Credentials-Provider, JWT-Sitzung, Rollen-/ID-Claims und Cookie-Einstellungen |
 | `lib/passkeys.ts`, `lib/auth/passkey-auth-attempt.ts` | WebAuthn-Prüfung, opake Ceremony-IDs, atomarer Attempt-Abschluss und Tokenverbrauch |
@@ -177,6 +182,8 @@ GitHub Actions baut auf Pull Requests ein Linux/AMD64-Image und veröffentlicht 
 | `lib/db/index.ts`, `lib/db/ensure-schema.ts`, `lib/db/sql-migrate.ts` | Connection Pool, Laufzeit-Schemaabgleich und SQL-Anwendung |
 | `middleware.ts`, `next.config.ts`, `lib/api-security.ts`, `lib/rate-limit.ts` | Sicherheitsheader, Anfrageprüfung, Sitzungshelper und zwei Rate-Limit-Mechanismen |
 | `app/api/links/route.ts`, `app/s/[shortCode]/route.ts` | Linkerstellung, Blocklist, Persistenz, Redirect, Analytics und Webhooks |
+| `app/api/pastes/[slug]/unlock/route.ts`, `app/p/[slug]/page.tsx`, `app/p/[slug]/raw/route.ts`, `lib/paste-access.ts` | POST-basierter Passwortnachweis, gebundener Zugriffscookie und einheitliche Haupt-/Raw-/Ablaufkontrolle |
+| Vier Paste-Testdateien unter `app/api/pastes/`, `app/p/` und `lib/paste-access.test.ts` | 15 lokale Vertragsfälle; vollständige Suite am 21.07.2026 mit 27/27 Tests bestanden |
 | `app/api/auth/sso/*`, `app/api/sso/*` | SSO-Erkennung, DNS-Claim, OIDC-Codeaustausch und NextAuth-Handoff |
 | `lib/blocklist.ts`, `lib/db/blocklist-service.ts`, `lib/phishing-check.ts`, `lib/analytics.ts`, `lib/webhooks.ts`, `lib/link-preview.ts` | externe HTTP-Datenflüsse |
 | `Dockerfile`, `scripts/docker-entrypoint.js`, `instrumentation.ts`, `vercel.json`, `.github/workflows/docker-image.yml` | Build-, Start-, Schema- und Image-Bereitstellungspfade |
@@ -204,6 +211,7 @@ Repository-Anleitungen wie `README.md`, `SECURITY.md` und `VERCEL_DEPLOYMENT.md`
 | MCP erlaubt ohne gültigen API-Schlüssel Linkerstellung und liefert öffentliche Linkdetails; Sitzungscontroller werden nicht sichtbar bereinigt. | Anonymer Missbrauch, Metadatenexposition und Speicherverbrauch. | Mittel | Schreib-/Statistiktools explizit authentifizieren, Ownership prüfen und Streams bei Abbruch/Timeout entfernen. | MCP-Vertragstests und Lasttest mit abgebrochenen SSE-Verbindungen. | `app/api/mcp/route.ts`. |
 | Access-Counter für Passwort-/P2P-Freigaben wird read-modify-write aktualisiert. | Parallele Zugriffe können Höchstgrenzen überschreiten. | Mittel | Bedingtes atomisches `UPDATE ... WHERE current_accesses < max_accesses RETURNING` verwenden. | Parallelitätstest gegen exakt eingehaltene Obergrenze. | `app/api/passwords/[shareId]/route.ts`, `app/api/p2p/files/[shareId]/route.ts`. |
 | Zugriffsschlüssel werden als Query-Parameter akzeptiert. | Offenlegung in Browserhistorie, Proxy-/Access-Logs und Referrern. | Mittel | Geheimnisse ausschließlich in Request-Body oder geschütztem Header übertragen. | Log- und Browser-Test auf Abwesenheit von Secrets in URLs. | beide Share-GET-Handler und Client-Fetches. |
+| Paste-Zugriffscookies hängen von Verfügbarkeit und Stärke des `NEXTAUTH_SECRET` ab; produktive Cookie-/Proxy-Eigenschaften sind repository-seitig nicht belegt. | Fehlkonfiguration kann Unlock verhindern oder bei schwachem Secret Nachweise angreifbar machen. | Niedrig bei regelkonformer Konfiguration, betrieblich unbestätigt | Mindestens 32 zufällige Bytes, Secret Store und Rotation; Browser-/Proxy-Smoke-Test vor Freigabe. | Cookie-Attribute, URL-/Log-Abwesenheit des Passworts und Rotation gegen Staging prüfen. | `lib/paste-access.ts`, Unlock-Route und 15 Tests; Betriebsnachweis offen. |
 | CSP erlaubt `'unsafe-inline'` und `'unsafe-eval'`; Remote-Bilder sind sehr breit erlaubt. | Erhöhte XSS-/Supply-Chain-Angriffsfläche. | Mittel | Nonce-/Hash-basierte CSP und begrenzte Bild-/Connect-Domänen einführen. | Browser-CSP-Report-Only-Phase und automatisierter Header-Test. | `middleware.ts`, `next.config.ts`. |
 | Sicherheitsereignisse werden nur auf `console` geschrieben; SIEM, Alarmierung und Aufbewahrung sind nicht belegt. | Angriffe werden verspätet oder nicht erkannt; Nachweise fehlen. | Hoch | Strukturierte Logs zentral erfassen, sensible Werte reduzieren und Alarme/Fristen definieren. | Testalarm und regelmäßige Stichprobe von Auth-/Berechtigungsereignissen. | `lib/security.ts`; keine SIEM-Konfiguration im Repository. |
 
@@ -222,3 +230,4 @@ Repository-Anleitungen wie `README.md`, `SECURITY.md` und `VERCEL_DEPLOYMENT.md`
 | 20.07.2026 | Automatisierte Repository-Analyse / Dokumentation | Ersterstellung der auditfähigen Architekturübersicht und des draw.io-Diagramms auf Basis von Commit `58c06b7`; neuer Passkey-Zustandsfluss und Migration `0004` aufgenommen. | Angeforderte Architektur- und Kontrolltransparenz für den aktuellen Repository-Stand. |
 | 20.07.2026 | Automatisierte Repository-Analyse / Dokumentation | Passkey-Fluss nach Reviewfixes auf `passkey_auth_attempts`, parallele opak adressierte Ceremonies, atomaren Abschluss/Verbrauch, damaligen Teststand und journalisierte Migration aktualisiert; operative und Live-E2E-Nachweise bleiben offen. | Reviewfixes bis Commit `6618792`. |
 | 20.07.2026 | Automatisierte Repository-Analyse / Dokumentation | Startlimit, Purge bei jedem Start, Ablaufindizes, monotone Zähler, 12 Tests und fehlerschließenden Schema-Bootstrap aufgenommen; reale DB-/WebAuthn-/Staging-Nachweise und `0004_snapshot.json` bleiben offen. | Finales Hardening bis Commit `8611a8d`. |
+| 21.07.2026 | Automatisierte Repository-Analyse / Dokumentation | Paste-Unlock als POST-basierten, stateless HMAC-Zugriffsfluss mit gebundenem HttpOnly-Cookie, Haupt-/Raw-/Ablaufkontrolle, Rate-Limit und 15 Tests aufgenommen. | Kritischer Paste-Vertraulichkeitsfix bis Commit `44daa90`. |

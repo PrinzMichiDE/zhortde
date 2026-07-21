@@ -2,9 +2,9 @@
 
 ## Einleitung
 
-Dieses Dokument hält die technische Prüfung der Änderungen vom 2026-07-20 nachvollziehbar fest. Prüfungsanlass war eine kritische Schwachstelle im Passkey-Anmeldeablauf: Im vorherigen Stand genügte für den NextAuth-Credentials-Provider eine syntaktisch gültige E-Mail-Adresse zusammen mit einem beliebigen `passkey_token`; der Provider lud den Benutzer allein anhand der E-Mail-Adresse. Der Client verwendete dafür den statischen Wert `authenticated`. Damit war eine Kontoübernahme ohne erfolgreich verifizierten Passkey möglich.
+Dieses Dokument hält die technische Prüfung der Änderungen vom 2026-07-20 und 2026-07-21 nachvollziehbar fest. Prüfungsanlässe waren eine kritische Schwachstelle im Passkey-Anmeldeablauf und ein kritischer Vertraulichkeitsfehler bei passwortgeschützten Pastes. Im Paste-Basisstand genügte jeder nichtleere `password`-Queryparameter, um die Hauptansicht freizugeben; die Raw-Route lieferte geschützte und abgelaufene Inhalte ohne Passwort- beziehungsweise Ablaufprüfung aus.
 
-Die Prüfung basiert auf dem Repository-Zustand des Branches `cursor/daily-evolution-pipeline-fe2a` bei Commit `8611a8d`, dem Vergleich mit `origin/main` bei `7e3b5fc` sowie lokal reproduzierten Prüfkommandos. Aussagen zur Produktion werden nur getroffen, wenn ein Nachweis vorliegt. Fehlende Betriebs-, Freigabe- oder Zuordnungsdaten sind als **klaerungsbeduerftige Information** gekennzeichnet und mit einer verantwortlichen Kontrolle versehen.
+Die Prüfung des aktuellen Paste-Changes basiert auf dem Branch `cursor/daily-evolution-pipeline-139f` bei technischem Commit `44daa90` und `origin/main` bei `3dc67e9`; die Passkey-Evidenz bleibt auf dem darin enthaltenen Stand `8611a8d`. Aussagen zur Produktion werden nur getroffen, wenn ein Nachweis vorliegt. Fehlende Betriebs-, Freigabe- oder Zuordnungsdaten sind als **klaerungsbeduerftige Information** gekennzeichnet und mit einer verantwortlichen Kontrolle versehen.
 
 ## Geltungsbereich
 
@@ -19,6 +19,7 @@ Geprüft wurden:
 - den verpflichtenden Schema-Push im Upgrade und den fehlerschließenden Docker-Entrypoint;
 - direkte und transitive npm-Abhängigkeiten anhand des Lockfiles und der npm-Advisory-Datenbank;
 - die ursprünglichen Sicherheitscommits sowie die Architektur- und Reviewkorrekturen bis `8611a8d`.
+- Paste-Hauptansicht, Raw-Route, neues Unlock-POST, kryptografischer Zugriffsnachweis, Rate-Limit und 15 zugehörige Regressionstests bis `44daa90`.
 
 Nicht als nachgewiesen gelten:
 
@@ -39,6 +40,7 @@ Diese Punkte sind **klaerungsbeduerftige Information**. Der Change Owner muss vo
 | Login-Token | Nach erfolgreicher WebAuthn-Verifikation erzeugter, zufälliger 32-Byte-Wert in Base64url-Darstellung. In der Datenbank wird ausschließlich sein SHA-256-Hash für höchstens zwei Minuten gespeichert. |
 | Einmalverwendung | Atomare Datenbankoperation: Der erfolgreiche Abschluss tauscht genau eine noch gültige Challenge gegen einen Token-Hash; NextAuth löscht beim erfolgreichen Tokenverbrauch genau die passende Attempt-Zeile. |
 | Regressionstest | Automatisierter Test, der sicherheitsrelevante Eigenschaften des Attempt-Dienstes oder der NextAuth-Credentials-Grenze festschreibt. |
+| Paste-Zugriffsnachweis | HMAC-SHA-256-signierter Wert aus Paste-Slug, aktuellem Passwort-Hash und Ablaufzeit. Er wird nach erfolgreichem bcrypt-Vergleich als HttpOnly-/SameSite-Lax-Cookie für maximal eine Stunde und nur auf dem Pfad des betroffenen Pastes ausgestellt. |
 | Idempotente Migration | Im Drizzle-Journal registrierte SQL-Änderung, die `passkey_auth_attempts` mit `CREATE TABLE IF NOT EXISTS`, einem wiederholbar abgesicherten Fremdschlüssel und zwei Ablaufindizes anlegt; der zugehörige Snapshot `drizzle/meta/0004_snapshot.json` fehlt. |
 | Abweichung | Festgestellte Lücke zwischen Prüfkriterium und vorhandenem Nachweis oder Implementierungsstand. |
 | Nachweis | Reproduzierbarer Repository-Pfad, Commit, Diff oder protokolliertes Prüfergebnis. |
@@ -70,6 +72,7 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 5. **Sind die zentralen Sicherheitsverträge automatisiert geprüft?** Kriterium: positiver Pfad, Ablauf, Einmalverwendung, Hashspeicherung und Ablehnung des alten statischen Markers.
 6. **Wurden bekannte hoch eingestufte Abhängigkeitsbefunde reduziert?** Kriterium: reproduzierbarer Vergleich desselben Lockfile-Scopes vor und nach dem Upgrade.
 7. **Sind Migration, End-to-End-Verhalten und Freigabe betrieblich nachgewiesen?** Kriterium: Staging-Protokoll, Schemaabfrage, realer Passkey-Smoke-Test, Freigabevermerk und Rückfallentscheidung.
+8. **Bleiben geschützte oder abgelaufene Pastes über alle Darstellungen vertraulich?** Kriterium: Kein Passwort in URL/Query, serverseitiger bcrypt-Vergleich, gebundener und ablaufender HttpOnly-Nachweis, identische Haupt-/Raw-Kontrolle sowie begrenzte Fehlversuche.
 
 ### Stichprobe
 
@@ -90,6 +93,7 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 - Die Migration `drizzle/0004_secure_passkey_auth.sql` erstellt `passkey_auth_attempts` mit `CREATE TABLE IF NOT EXISTS`, Unique Constraint, Fremdschlüssel und Indizes auf `challenge_expires_at` und `login_token_expires_at`; `drizzle/meta/_journal.json` registriert `0004_secure_passkey_auth`, aber `drizzle/meta/0004_snapshot.json` fehlt.
 - `scripts/upgrade.js` führt den Schema-Push verpflichtend aus. Der Docker-Entrypoint startet `server.js` nicht, wenn `scripts/ensure-database.js` fehlschlägt.
 - `drizzle-orm` wurde von `0.44.7` auf `0.45.2` aktualisiert; das Lockfile wurde mit aktuellen transitiven Versionen neu aufgelöst.
+- `POST /api/pastes/[slug]/unlock` validiert und begrenzt Passwortversuche, vergleicht den gespeicherten bcrypt-Hash und setzt nur bei Erfolg einen HMAC-signierten, auf Slug und Passwort-Hash gebundenen HttpOnly-Cookie. Haupt- und Raw-Ansicht akzeptieren keine URL-Passwörter mehr; beide prüfen den Nachweis, und die Raw-Route lehnt abgelaufene Inhalte mit HTTP 410 ab.
 
 ### Aktuelle Befunde, Abweichungen und Maßnahmen
 
@@ -103,10 +107,11 @@ RACI: **R** = ausführend verantwortlich, **A** = rechenschaftspflichtig/freigeb
 | A-02 | mittel | Zwölf Tests in drei Dateien prüfen Dienstlogik mit In-Memory-Stores und die NextAuth-Credentials-Grenze mit Mock. API-Routen, atomare PostgreSQL-Operationen unter realer Konkurrenz und ein realer WebAuthn-Ablauf werden nicht integriert getestet. | `lib/auth/passkey-challenge.test.ts`, `lib/auth/passkey-login-token.test.ts`, `lib/auth/config.test.ts`; Testausgabe 3 Dateien/12 Tests. | Vor Produktivfreigabe manuellen Staging-Smoke-Test und Negativtests protokollieren; Entwicklung ergänzt einen realen PostgreSQL-Parallelitäts-/Routen-Integrationstest. | Entwicklung (R), Security (A) |
 | A-03 | mittel | Der Repository-Lintlauf ist nicht freigabefähig: `npm run lint` endet mit 17 Fehlern und 120 Warnungen als vorbestehende Baseline. Der separate Lauf über die geänderten ausführbaren Dateien endet mit 0 Fehlern und 5 Warnungen. | Lintläufe am 2026-07-20. | Verbleibende Baseline-Fehler gegen `origin/main` trennen und bereinigen oder eine dokumentierte Ausnahmeentscheidung treffen; geänderte Pfade weiterhin separat prüfen. | Entwicklung (R), Change Owner (A) |
 | A-04 | offen | Staging-/Produktionsmigration, Deployment, Monitoring und formale Freigabe sind **klaerungsbeduerftige Information**. | Kein entsprechendes Artefakt im geprüften Repository oder Git-Verlauf. | Change Owner fordert Freigabevermerk an; Betrieb/Release archiviert Zeit, Umgebung, Commit-SHA, Migrationslog, Smoke-Test und Rückfallentscheidung. | Change Owner (A), Betrieb/Release (R) |
+| F-05 | kritisch, technisch geschlossen | Passwortgeschützte Pastes waren durch jeden nichtleeren Querywert lesbar; die Raw-Route umging Passwort und Ablauf vollständig. Der aktuelle Code nutzt POST-basierten bcrypt-Nachweis und einen gebundenen HttpOnly-Zugriffscookie für Haupt- und Raw-Ansicht. | Commits `83013a4`, `44daa90`; vier Paste-Testdateien mit 15 Fällen; vollständiger Lauf 7 Dateien/27 Tests. | Vor Produktion Browser-Smoke-Test, Cookie-Attribute, Proxy-/Access-Logs und `NEXTAUTH_SECRET`-Bereitstellung prüfen; verbleibende Query-Secrets anderer Funktionen separat behandeln. | Entwicklung (R), Security (A), Betrieb/Release (C) |
 
 ### Gesamturteil
 
-Die kritische Kontoübernahmeursache ist im aktuellen Code schlüssig beseitigt und durch zwölf fokussierte Tests einschließlich der NextAuth-Credentials-Grenze abgesichert. Startlimit, Purge bei jedem Start, Ablaufindizes, monotone Zähler und fehlerschließender Schema-Bootstrap reduzieren weitere Risiken. Eine uneingeschränkte Produktionsfreigabe lässt sich aus den vorhandenen Artefakten dennoch nicht ableiten: fehlender `0004`-Snapshot, operative Staging-Migrationsverifikation, reale PostgreSQL-Parallelitätsprüfung, realer WebAuthn-End-to-End-Ablauf, Lint-Ausnahme beziehungsweise -Bereinigung und formale Freigabe sind offen. Der technische Stand ist daher **freigabefähig erst nach Erfüllung der Kontrollen A-01 bis A-04**.
+Die kritischen Passkey- und Paste-Ursachen sind im aktuellen Code schlüssig beseitigt. Der Paste-Vertrag ist lokal mit 15 fokussierten Fällen sowie im vollständigen Lauf mit 27/27 Tests, TypeScript und geändertem Scope-Lint abgesichert. Eine uneingeschränkte Produktionsfreigabe lässt sich daraus nicht ableiten: Neben A-01 bis A-04 fehlen ein produktionsnaher Browser-/Cookie-/Proxy-Log-Nachweis und die belegte Bereitstellung eines ausreichend starken `NEXTAUTH_SECRET`.
 
 ## Nachweise und Artefakte
 
@@ -130,6 +135,9 @@ Die kritische Kontoübernahmeursache ist im aktuellen Code schlüssig beseitigt 
 | Lintlauf | `npm run lint` am 2026-07-20 | Repositoryweit fehlgeschlagen mit 17 Fehlern und 120 Warnungen (vorbestehende Baseline); Lint der geänderten ausführbaren Dateien mit 0 Fehlern und 5 Warnungen. |
 | Build | `npm run build` am 2026-07-20 | Lokaler Next.js-Produktionsbuild bestanden; Datenbank-Upgrade mangels `DATABASE_URL` kontrolliert übersprungen, daher kein Migrations- oder Produktionsnachweis. |
 | Änderungsübersicht | `git diff --name-status origin/main...HEAD` | 30 geänderte Pfade einschliesslich Compliance-, Audit- und Architekturartefakten. |
+| Paste-Regressionsnachweis | Commits `83013a4`, `44daa90`; `app/api/pastes/[slug]/unlock/route.test.ts`, `app/p/[slug]/page.test.tsx`, `app/p/[slug]/raw/route.test.ts`, `lib/paste-access.test.ts` | Belegt Ablehnung ohne Nachweis und bei Ablauf, Nichtakzeptanz von URL-Passwörtern, korrektes Unlock, Cookie-Attribute, Manipulations-/Bindungs-/Ablaufprüfung und Rate-Limit. |
+| Aktueller Test- und Qualitätslauf | `npm test`, `npx tsc --noEmit -p tsconfig.json`, Scope-ESLint am 2026-07-21 | 7 Dateien/27 Tests bestanden; TypeScript und alle geänderten ausführbaren Dateien ohne Fehler. |
+| Aktueller SCA-Lauf | `npm audit --audit-level=moderate --json` am 2026-07-21 | 9 moderate, 0 hohe, 0 kritische Befunde; unveränderter dokumentierter Reststand. |
 
 Die npm-Advisory-Datenbank ist zeitabhängig. Für spätere Audits müssen Datum, Commit-SHA, npm-Version und vollständige JSON-Ausgabe gemeinsam archiviert werden. Die hier aufgeführten Zahlen wurden am 2026-07-20 reproduziert.
 
@@ -146,6 +154,7 @@ Die npm-Advisory-Datenbank ist zeitabhängig. Für spätere Audits müssen Datum
 | Verbleibende moderate npm-Befunde | DoS, XSS oder Entwicklungsserver-Risiken abhängig von tatsächlicher Nutzung | Mittel | Befunde risikobasiert bewerten und sichere Upgrades planen | Wiederkehrender `npm audit --json`; keine hohen/kritischen Befunde als Release-Gate | Aktuelles Audit: 9 moderate |
 | Rücksetzen auf den unsicheren Auth-Stand | Erneute kritische Kontoübernahme | Niedrig bei kontrolliertem Release | Sicherheitsfix nicht auf alten statischen Marker zurückrollen; bei Störung Deployment stoppen und sichere Vorversion ohne exponierten Passkey-Zweig wählen | Security muss jeden Auth-Rückfall freigeben | Basisdiff und F-01 |
 | Ungeklärte Freigabe- und Betriebsrollen | Änderungen ohne nachweisbare Genehmigung oder Überwachung | Mittel | Namentliche RACI-Zuordnung vor Produktivsetzung | Change Owner archiviert Freigabe- und Deploymentartefakt | **klaerungsbeduerftige Information**, A-04 |
+| Paste-Zugriffsnachweis wird falsch gebunden, gefälscht oder nach Passwortänderung weiter akzeptiert | Offenlegung vertraulicher Inhalte | Niedrig nach Codefix, produktiv unbestätigt | HMAC an Slug, aktuellen Passwort-Hash und Ablauf binden; HttpOnly, SameSite=Lax, produktiv Secure und Pfadbegrenzung setzen | 15 Regressionstests plus produktionsnaher Browser-/Cookie-Smoke-Test | `lib/paste-access.ts`, Paste-Routen; F-05 |
 
 ## Pflegeprozess
 
@@ -163,3 +172,4 @@ Die npm-Advisory-Datenbank ist zeitabhängig. Für spätere Audits müssen Datum
 | 2026-07-20 | Technische Dokumentation / automatisierte Revision | Erstfassung mit Scope, Kriterien, Stichprobe, Evidenz, Befunden A-01 bis A-04 und Freigabekontrollen | Daily Evolution: kritischer Passkey-Sicherheitsfix, Regressionstests, Migration und Abhängigkeitsaktualisierung |
 | 2026-07-20 | Technische Dokumentation / automatisierte Revision | Architektur nach Reviewkorrekturen auf dedizierte Attempt-Zeilen, damaligen Teststand und registrierte Migration `0004` aktualisiert; operative Migration und reale DB-/WebAuthn-Prüfung bleiben offen | Reviewfixes bis Commit `6618792` |
 | 2026-07-20 | Technische Dokumentation / automatisierte Revision | Auf 12 Tests/3 Dateien, Startlimit 10/5 Minuten, Purge bei jedem Start, Ablaufindizes, monotone Zähler und fehlerschließenden Schema-Bootstrap aktualisiert; reale DB-/WebAuthn-/Staging-Prüfung und `0004_snapshot.json` bleiben offen | Finales Hardening bis Commit `8611a8d` |
+| 2026-07-21 | Technische Dokumentation / automatisierte Revision | Kritischen Paste-Passwort- und Raw-/Ablauf-Bypass als F-05 aufgenommen, technische Schließung und 15 Regressionstests dokumentiert; produktiver Browser-/Cookie-/Proxy-Nachweis bleibt offen | Daily Evolution bis Commit `44daa90` |
