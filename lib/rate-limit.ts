@@ -48,6 +48,11 @@ export const RATE_LIMITS = {
     maxRequests: 10,
     failureMode: 'fail-open',
   },
+  admin_api: {
+    windowMs: 15 * 60 * 1000,
+    maxRequests: 120,
+    failureMode: 'fail-closed',
+  },
 } satisfies Record<string, RateLimitConfig>;
 
 export type RateLimitAction = keyof typeof RATE_LIMITS;
