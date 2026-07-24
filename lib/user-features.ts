@@ -6,6 +6,7 @@ import {
   quickActions
 } from './db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
+import { assertSafeOutboundUrl } from './security';
 
 /**
  * User Features Library
@@ -230,6 +231,8 @@ export async function checkLinkHealth(linkId: number): Promise<{
   const startTime = Date.now();
   
   try {
+    assertSafeOutboundUrl(link.longUrl);
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     

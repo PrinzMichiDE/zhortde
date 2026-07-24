@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { z } from 'zod';
-import { logSecurityEvent } from './security';
+import { logSecurityEvent, urlSchema } from './security';
 
 // ===========================
 // 🔒 SECURE RESPONSE HELPERS
@@ -196,21 +196,12 @@ export const pasteSchema = z.object({
  * Webhook URL validation - must be HTTPS in production
  */
 export const webhookSchema = z.object({
-  url: z
-    .string()
-    .url('Ungültige URL')
-    .max(500, 'URL ist zu lang')
+  url: urlSchema
     .refine((url) => {
-      try {
-        const parsed = new URL(url);
-        // Allow HTTP only in development
-        if (process.env.NODE_ENV === 'production') {
-          return parsed.protocol === 'https:';
-        }
-        return ['http:', 'https:'].includes(parsed.protocol);
-      } catch {
-        return false;
+      if (process.env.NODE_ENV === 'production') {
+        return new URL(url).protocol === 'https:';
       }
+      return true;
     }, 'Webhook-URL muss HTTPS verwenden'),
   events: z
     .array(z.enum([
