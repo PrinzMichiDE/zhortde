@@ -1,6 +1,7 @@
 import { db } from './db';
 import { linkPreviews } from './db/schema';
 import { eq } from 'drizzle-orm';
+import { assertSafeOutboundUrl } from './security';
 
 export interface OpenGraphData {
   title?: string;
@@ -17,6 +18,8 @@ export interface OpenGraphData {
  */
 export async function fetchOpenGraphData(url: string): Promise<OpenGraphData | null> {
   try {
+    assertSafeOutboundUrl(url);
+
     // Use a simple fetch approach - in production, consider using a headless browser
     const response = await fetch(url, {
       headers: {
