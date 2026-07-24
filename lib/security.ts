@@ -62,8 +62,13 @@ export const urlSchema = z
       const parsed = new URL(url);
       const hostname = parsed.hostname.toLowerCase();
       
-      // Block localhost
-      if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1') {
+      // Block localhost and IPv6 loopback (including bracket notation)
+      if (
+        hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1' ||
+        hostname === '[::1]'
+      ) {
         return false;
       }
       
@@ -82,6 +87,25 @@ export const urlSchema = z
       return false;
     }
   }, 'Private oder lokale URLs sind nicht erlaubt');
+
+/**
+ * Returns true when a URL is safe for server-side outbound requests.
+ * Blocks localhost, link-local, and private network destinations (SSRF).
+ */
+export function isSafeOutboundUrl(url: string): boolean {
+  return urlSchema.safeParse(url).success;
+}
+
+/**
+ * Validates a URL before server-side fetch. Throws when the destination is unsafe.
+ */
+export function assertSafeOutboundUrl(url: string): void {
+  const result = urlSchema.safeParse(url);
+  if (!result.success) {
+    const message = result.error.issues[0]?.message ?? 'Unsafe outbound URL';
+    throw new Error(message);
+  }
+}
 
 /**
  * Short code validation
