@@ -8,6 +8,8 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Security
 
+- SSRF-Schutz für serverseitige Outbound-Fetches eingeführt: `lib/outbound-url.ts` blockiert private Netzwerke, Metadata-Endpunkte und unsichere Protokolle. Webhook-Delivery, Link-Health-Checks und Webhook-URL-Validierung nutzen die Prüfung vor jedem Fetch.
+- Passkey-Registrierung bindet WebAuthn-Challenges serverseitig an fünfminütige `passkey_auth_attempts`-Ceremonies (analog zum Login-Flow). Clients senden nur noch `ceremonyId`; clientseitig übergebene Challenges werden nicht mehr akzeptiert.
 - Admin-Blocklist-Endpunkte unter `/api/admin/blocklist` erzwingen nun Super-Admin-RBAC für GET und POST. Zuvor war GET ungeschützt und POST akzeptierte jeden eingeloggten Benutzer.
 - Gemeinsame Super-Admin-Autorisierung in `lib/admin-auth.ts` für alle Admin-APIs eingeführt; Admin-Aktionen werden in `audit_logs` mit Ressourcentyp `admin` protokolliert.
 - Admin-APIs sind datenbankgestützt auf 120 Anfragen je Super-Admin und Client-IP in 15 Minuten begrenzt (`admin_api`); bei Speicherausfall schlagen Anfragen fail-closed mit HTTP 503 fehl.
@@ -18,10 +20,23 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - Admin-Audit-Log unter `/admin/audit` mit paginierter API `/api/admin/audit-logs` für nachvollziehbare Super-Admin-Aktionen.
 - Admin-Navigation zwischen Overview, Users und Audit Log.
 - 14 Regressionstests für Super-Admin-Autorisierung, Admin-API-Rate-Limits, Blocklist-RBAC, Overview-Metriken und Audit-Log-Pagination; die vollständige Suite umfasst nun 45 Tests in zwölf Dateien.
+- 7 Regressionstests für Outbound-URL-SSRF-Schutz, Webhook-Delivery-Blockierung, Passkey-Registrations-Challenge-Verbrauch und servergebundene Ceremonies; die vollständige Suite umfasst nun 52 Tests in 14 Dateien.
 
 ### Changed
 
 - Benutzerlöschungen durch Super-Admins erzeugen Audit-Einträge mit gelöschter E-Mail, Rolle und Client-IP.
+
+## [2026-07-25]
+
+### Security
+
+- SSRF-Schutz für serverseitige Outbound-Fetches (Webhooks, Link-Health-Checks, Webhook-URL-Validierung).
+- Servergebundene Passkey-Registrations-Challenges über `passkey_auth_attempts`.
+
+### Added
+
+- Admin-Operations-Dashboard, Audit-Viewer und Super-Admin-RBAC für Admin-APIs (aus Pipeline 2026-07-23 nachgezogen).
+- 52 Regressionstests in 14 Dateien.
 
 ## [2026-07-21]
 
