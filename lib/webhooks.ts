@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { db } from './db';
 import { webhooks } from './db/schema';
 import { eq } from 'drizzle-orm';
+import { isSafeOutboundUrl } from './outbound-url';
 
 export type WebhookEvent = 'link.created' | 'link.clicked' | 'link.expired' | 'paste.created';
 
@@ -74,6 +75,11 @@ export async function triggerWebhooks(userId: number, event: WebhookEvent, data:
 
     const promises = relevantWebhooks.map(async (webhook) => {
       try {
+        if (!isSafeOutboundUrl(webhook.url)) {
+          console.error(`Webhook ${webhook.id} blocked: unsafe outbound URL`);
+          return;
+        }
+
         const payloadString = JSON.stringify(payload);
         const signature = generateSignature(payloadString, webhook.secret);
 

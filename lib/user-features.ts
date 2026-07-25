@@ -6,6 +6,7 @@ import {
   quickActions
 } from './db/schema';
 import { eq, desc, sql } from 'drizzle-orm';
+import { isSafeOutboundUrl } from './outbound-url';
 
 /**
  * User Features Library
@@ -225,6 +226,28 @@ export async function checkLinkHealth(linkId: number): Promise<{
 
   if (!link) {
     return { status: 'unknown' };
+  }
+
+  if (!isSafeOutboundUrl(link.longUrl)) {
+    await db.insert(linkHealthChecks).values({
+      linkId,
+      status: 'broken',
+      statusCode: null,
+      responseTime: null,
+      errorMessage: 'Outbound URL is not allowed',
+    });
+
+    await db.update(links)
+      .set({
+        healthStatus: 'broken',
+        lastHealthCheck: new Date(),
+      })
+      .where(eq(links.id, linkId));
+
+    return {
+      status: 'broken',
+      errorMessage: 'Outbound URL is not allowed',
+    };
   }
 
   const startTime = Date.now();

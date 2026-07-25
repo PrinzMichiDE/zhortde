@@ -8,6 +8,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { z } from 'zod';
 import { logSecurityEvent } from './security';
+import { isSafeOutboundUrl } from './outbound-url';
 
 // ===========================
 // 🔒 SECURE RESPONSE HELPERS
@@ -211,7 +212,8 @@ export const webhookSchema = z.object({
       } catch {
         return false;
       }
-    }, 'Webhook-URL muss HTTPS verwenden'),
+    }, 'Webhook-URL muss HTTPS verwenden')
+    .refine((url) => isSafeOutboundUrl(url), 'Webhook-URL darf keine internen Adressen verwenden'),
   events: z
     .array(z.enum([
       'link.created',
