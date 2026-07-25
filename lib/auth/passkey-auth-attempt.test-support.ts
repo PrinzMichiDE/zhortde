@@ -100,6 +100,26 @@ export class InMemoryAttemptStore implements PasskeyAuthAttemptStore {
 
     return null;
   }
+
+  async consumeRegistrationChallenge(
+    attemptId: string,
+    userId: number,
+    now: Date,
+  ): Promise<boolean> {
+    const attempt = this.attempts.get(attemptId);
+    if (
+      !attempt ||
+      attempt.userId !== userId ||
+      !attempt.challenge ||
+      !attempt.challengeExpiresAt ||
+      attempt.challengeExpiresAt <= now
+    ) {
+      return false;
+    }
+
+    this.attempts.delete(attemptId);
+    return true;
+  }
 }
 
 export function createFixture(now: () => Date = () => NOW) {

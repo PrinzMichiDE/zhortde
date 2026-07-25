@@ -10,7 +10,7 @@ import { z } from 'zod';
 
 const verifySchema = z.object({
   response: z.any(), // RegistrationResponseJSON
-  challenge: z.string(),
+  ceremonyId: z.string().min(32).max(128),
   deviceName: z.string().optional(),
 });
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const passkey = await verifyRegistration(
       auth.userId,
       validated.response,
-      validated.challenge,
+      validated.ceremonyId,
       validated.deviceName
     );
 

@@ -41,6 +41,11 @@ export interface PasskeyAuthAttemptStore {
     tokenHash: string,
     now: Date,
   ): Promise<PasskeyLoginUser | null>;
+  consumeRegistrationChallenge(
+    attemptId: string,
+    userId: number,
+    now: Date,
+  ): Promise<boolean>;
 }
 
 interface PasskeyAuthAttemptServiceOptions {
@@ -99,6 +104,17 @@ export function createPasskeyAuthAttemptService(
       token: string,
     ): Promise<PasskeyLoginUser | null> {
       return store.consumeLoginToken(email, sha256(token), options.now());
+    },
+
+    consumeRegistrationChallenge(
+      attemptId: string,
+      userId: number,
+    ): Promise<boolean> {
+      return store.consumeRegistrationChallenge(
+        attemptId,
+        userId,
+        options.now(),
+      );
     },
   };
 }
@@ -187,6 +203,22 @@ const databaseAttemptStore: PasskeyAuthAttemptStore = {
 
     return consumed ? user : null;
   },
+
+  async consumeRegistrationChallenge(attemptId, userId, now) {
+    const [consumed] = await db
+      .delete(passkeyAuthAttempts)
+      .where(
+        and(
+          eq(passkeyAuthAttempts.id, attemptId),
+          eq(passkeyAuthAttempts.userId, userId),
+          isNotNull(passkeyAuthAttempts.challenge),
+          gt(passkeyAuthAttempts.challengeExpiresAt, now),
+        ),
+      )
+      .returning({ id: passkeyAuthAttempts.id });
+
+    return Boolean(consumed);
+  },
 };
 
 const passkeyAuthAttemptService = createPasskeyAuthAttemptService(
@@ -224,4 +256,14 @@ export function consumePasskeyLoginToken(
   token: string,
 ): Promise<PasskeyLoginUser | null> {
   return passkeyAuthAttemptService.consumeLoginToken(email, token);
+}
+
+export function consumePasskeyRegistrationChallenge(
+  attemptId: string,
+  userId: number,
+): Promise<boolean> {
+  return passkeyAuthAttemptService.consumeRegistrationChallenge(
+    attemptId,
+    userId,
+  );
 }

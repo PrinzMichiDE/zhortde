@@ -35,7 +35,7 @@ export function PasskeyRegister({ onSuccess, onError }: PasskeyRegisterProps) {
         throw new Error(data.error || 'Failed to start registration');
       }
 
-      const { options, challenge } = await startResponse.json();
+      const { options, ceremonyId } = await startResponse.json();
 
       // Step 2: Create Passkey using browser WebAuthn API
       const credential = await startRegistration(options);
@@ -46,7 +46,7 @@ export function PasskeyRegister({ onSuccess, onError }: PasskeyRegisterProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           response: credential,
-          challenge,
+          ceremonyId,
           deviceName: deviceName || undefined,
         }),
       });
