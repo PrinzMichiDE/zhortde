@@ -11,19 +11,22 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - Admin-Blocklist-Endpunkte unter `/api/admin/blocklist` erzwingen nun Super-Admin-RBAC für GET und POST. Zuvor war GET ungeschützt und POST akzeptierte jeden eingeloggten Benutzer.
 - Gemeinsame Super-Admin-Autorisierung in `lib/admin-auth.ts` für alle Admin-APIs eingeführt; Admin-Aktionen werden in `audit_logs` mit Ressourcentyp `admin` protokolliert.
 - Admin-APIs sind datenbankgestützt auf 120 Anfragen je Super-Admin und Client-IP in 15 Minuten begrenzt (`admin_api`); bei Speicherausfall schlagen Anfragen fail-closed mit HTTP 503 fehl.
+- SSRF-Schutz für serverseitige Outbound-Requests in `lib/outbound-url.ts` eingeführt und auf Webhook-Zustellung, Webhook-Tests, Link-Health-Checks sowie Open-Graph-Vorschau angewendet; private, lokale und Metadaten-IPs werden blockiert.
+- `next-auth` von `4.24.13` auf `4.24.15` aktualisiert, um die kritische Homoglyph-E-Mail-Bypass-Schwachstelle (GHSA-7rqj-j65f-68wh) zu schließen.
 
 ### Added
 
 - Admin-Operations-Dashboard unter `/admin` mit Systemmetriken (Nutzer, Links, Pastes, Rate-Limits, Passkey-Versuche, Blocklist-Status) und manuellem Blocklist-Refresh.
 - Admin-Audit-Log unter `/admin/audit` mit paginierter API `/api/admin/audit-logs` für nachvollziehbare Super-Admin-Aktionen.
 - Admin-Navigation zwischen Overview, Users und Audit Log.
-- 14 Regressionstests für Super-Admin-Autorisierung, Admin-API-Rate-Limits, Blocklist-RBAC, Overview-Metriken und Audit-Log-Pagination; die vollständige Suite umfasst nun 45 Tests in zwölf Dateien.
+- 24 Regressionstests für Super-Admin-Autorisierung, Admin-API-Rate-Limits, Blocklist-RBAC, Overview-Metriken, Audit-Log-Pagination und Outbound-URL-SSRF-Filter; die vollständige Suite umfasst nun 55 Tests in dreizehn Dateien.
 
 ### Changed
 
 - Benutzerlöschungen durch Super-Admins erzeugen Audit-Einträge mit gelöschter E-Mail, Rolle und Client-IP.
+- Webhook-Erstellung validiert Outbound-URLs zusätzlich gegen private und lokale Ziele.
 
-## [2026-07-21]
+## [2026-07-26]
 
 ### Security
 
