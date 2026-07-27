@@ -6,6 +6,7 @@ import { scheduledReports } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { createScheduledReport } from '@/lib/enterprise-features';
+import { assertTeamMembership } from '@/lib/enterprise-team-access';
 
 const reportSchema = z.object({
   teamId: z.number().optional(),
@@ -24,14 +25,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('teamId');
 
     const conditions = [];
     if (teamId) {
-      conditions.push(eq(scheduledReports.teamId, parseInt(teamId, 10)));
+      const teamIdNum = parseInt(teamId, 10);
+      if (Number.isNaN(teamIdNum)) {
+        return NextResponse.json({ error: 'Invalid Team ID' }, { status: 400 });
+      }
+
+      const access = await assertTeamMembership(userId, teamIdNum);
+      if (!access.allowed) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+      }
+
+      conditions.push(eq(scheduledReports.teamId, teamIdNum));
     } else {
-      conditions.push(eq(scheduledReports.userId, parseInt(session.user.id)));
+      conditions.push(eq(scheduledReports.userId, userId));
     }
 
     const reports = await db.query.scheduledReports.findMany({
@@ -59,12 +75,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const data = reportSchema.parse(body);
 
+    if (data.teamId) {
+      const access = await assertTeamMembership(userId, data.teamId);
+      if (!access.allowed) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+      }
+    }
+
     const report = await createScheduledReport({
       ...data,
-      userId: parseInt(session.user.id),
+      userId,
       recipients: data.recipients || [], // Optional recipients - stored but not used for email sending
     });
 

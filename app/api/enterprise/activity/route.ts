@@ -2,11 +2,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { getTeamActivityFeed, markActivityAsRead } from '@/lib/enterprise-features';
+import {
+  assertActivityTeamMembership,
+  assertTeamMembership,
+} from '@/lib/enterprise-team-access';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -18,7 +27,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Team ID required' }, { status: 400 });
     }
 
-    const activities = await getTeamActivityFeed(parseInt(teamId, 10), limit);
+    const teamIdNum = parseInt(teamId, 10);
+    if (Number.isNaN(teamIdNum)) {
+      return NextResponse.json({ error: 'Invalid Team ID' }, { status: 400 });
+    }
+
+    const access = await assertTeamMembership(userId, teamIdNum);
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
+    }
+
+    const activities = await getTeamActivityFeed(teamIdNum, limit);
 
     return NextResponse.json({
       success: true,
@@ -40,11 +59,21 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { activityId } = body;
 
     if (!activityId) {
       return NextResponse.json({ error: 'Activity ID required' }, { status: 400 });
+    }
+
+    const access = await assertActivityTeamMembership(userId, activityId);
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
     await markActivityAsRead(activityId);

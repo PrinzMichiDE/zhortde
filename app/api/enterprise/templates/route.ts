@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { linkTemplates } from '@/lib/db/schema';
 import { eq, or, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { assertTeamMembership } from '@/lib/enterprise-team-access';
 
 const templateSchema = z.object({
   teamId: z.number().optional(),
@@ -24,14 +25,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const teamId = searchParams.get('teamId');
 
     let templates;
     if (teamId) {
+      const teamIdNum = parseInt(teamId, 10);
+      if (Number.isNaN(teamIdNum)) {
+        return NextResponse.json({ error: 'Invalid Team ID' }, { status: 400 });
+      }
+
+      const access = await assertTeamMembership(userId, teamIdNum);
+      if (!access.allowed) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+      }
+
       templates = await db.query.linkTemplates.findMany({
         where: or(
-          eq(linkTemplates.teamId, parseInt(teamId, 10)),
+          eq(linkTemplates.teamId, teamIdNum),
           eq(linkTemplates.isPublic, true)
         ),
         orderBy: (templates, { desc }) => [desc(templates.usageCount)],
@@ -66,12 +82,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const data = templateSchema.parse(body);
 
+    if (data.teamId) {
+      const access = await assertTeamMembership(userId, data.teamId);
+      if (!access.allowed) {
+        return NextResponse.json({ error: access.error }, { status: access.status });
+      }
+    }
+
     const template = await db.insert(linkTemplates).values({
       teamId: data.teamId || null,
-      userId: parseInt(session.user.id),
+      userId,
       name: data.name,
       description: data.description || null,
       longUrl: data.longUrl,

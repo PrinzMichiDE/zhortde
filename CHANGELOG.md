@@ -8,6 +8,8 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Security
 
+- Enterprise-Team-IDOR geschlossen: `/api/enterprise/quota`, `/api/enterprise/activity`, `/api/enterprise/templates` und `/api/enterprise/reports` prüfen nun Team-Mitgliedschaft über `assertTeamMembership` bzw. `assertActivityTeamMembership`, bevor Team-Daten gelesen oder geändert werden.
+- `next-auth` von 4.24.13 auf 4.24.15 aktualisiert (kritische Auth.js-Schwachstellen GHSA-xmf8-cvqr-rfgj und GHSA-7rqj-j65f-68wh).
 - Admin-Blocklist-Endpunkte unter `/api/admin/blocklist` erzwingen nun Super-Admin-RBAC für GET und POST. Zuvor war GET ungeschützt und POST akzeptierte jeden eingeloggten Benutzer.
 - Gemeinsame Super-Admin-Autorisierung in `lib/admin-auth.ts` für alle Admin-APIs eingeführt; Admin-Aktionen werden in `audit_logs` mit Ressourcentyp `admin` protokolliert.
 - Admin-APIs sind datenbankgestützt auf 120 Anfragen je Super-Admin und Client-IP in 15 Minuten begrenzt (`admin_api`); bei Speicherausfall schlagen Anfragen fail-closed mit HTTP 503 fehl.
@@ -18,7 +20,8 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - Admin-Operations-Dashboard unter `/admin` mit Systemmetriken (Nutzer, Links, Pastes, Rate-Limits, Passkey-Versuche, Blocklist-Status) und manuellem Blocklist-Refresh.
 - Admin-Audit-Log unter `/admin/audit` mit paginierter API `/api/admin/audit-logs` für nachvollziehbare Super-Admin-Aktionen.
 - Admin-Navigation zwischen Overview, Users und Audit Log.
-- 14 Regressionstests für Super-Admin-Autorisierung, Admin-API-Rate-Limits, Blocklist-RBAC, Overview-Metriken und Audit-Log-Pagination; die vollständige Suite umfasst nun 51 Tests in dreizehn Dateien.
+- 14 Regressionstests für Super-Admin-Autorisierung, Admin-API-Rate-Limits, Blocklist-RBAC, Overview-Metriken und Audit-Log-Pagination.
+- 13 Regressionstests für Team-Mitgliedschaftsprüfungen und Enterprise-Quota-/Activity-Routen ergänzt; die vollständige Suite umfasst nun 64 Tests in 16 Dateien.
 - 6 Regressionstests für SSRF-Prävention bei Outbound-URLs (`lib/outbound-url.test.ts`).
 
 ### Changed
