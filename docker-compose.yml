@@ -1,0 +1,50 @@
+services:
+  zhortde:
+    image: ghcr.io/prinzmichide/zhortde:latest
+    container_name: zhortde
+    environment:
+      - DATABASE_URL=postgresql://mznhuxmjrpjwxpzq:zhortde_db@zhortde_db:5432/zhortde_db
+      - NEXTAUTH_SECRET=panYvUdV/Ftb45QEIswGazMzpfh0crVLIqxOcg//aAlUJGa+FOHixJvJT3g=
+      - NEXTAUTH_URL=http://localhost:3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.zhort.rule=Host(`zhort.de`)"
+      - "traefik.http.routers.zhort.entrypoints=websecure"
+      - "traefik.http.routers.zhort.tls.certresolver=myresolver"
+      - "traefik.http.services.zhort.loadbalancer.server.port=3000"
+      - "traefik.docker.network=proxy-public"
+    networks:
+      - proxy-public
+      - zhort-internal
+      
+    depends_on:
+      zhortde_db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  zhortde_db:
+    image: postgres:16-alpine
+    container_name: zhortde_db
+    environment:
+      - POSTGRES_USER=mznhuxmjrpjwxpzq
+      - POSTGRES_PASSWORD=zhortde_db
+      - POSTGRES_DB=zhortde_db
+    volumes:
+      - pgdata_zhortde_db2:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d zhortde_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - zhort-internal
+volumes:
+  pgdata_zhortde_db2:
+
+networks:
+  proxy-public:
+    external: true
+  zhort-internal:
+    driver: bridge
+    

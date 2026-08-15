@@ -39,7 +39,7 @@ vi.mock('@/lib/rate-limit', () => ({
   getRateLimitHeaders,
 }));
 
-const context = { params: Promise.resolve({ slug: 'secret' }) };
+const context = { params: Promise.resolve({ id: 'secret' }) };
 const accessSecret = 'test-secret-with-at-least-thirty-two-characters';
 const rateLimitSuccess = {
   status: 'allowed',

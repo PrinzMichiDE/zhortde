@@ -22,12 +22,12 @@ const unlockSchema = z.object({
 });
 
 interface RouteParams {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
-    const { slug } = await params;
+    const { id: slug } = await params;
     const paste = await db.query.pastes.findFirst({
       where: eq(pastes.slug, slug),
       columns: {
