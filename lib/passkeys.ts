@@ -25,6 +25,7 @@ import { passkeys, users } from './db/schema';
 import { eq, sql } from 'drizzle-orm';
 import {
   completePasskeyAuthAttempt,
+  consumePasskeyRegistrationChallenge,
   getPasskeyAuthChallenge,
   startPasskeyAuthAttempt,
 } from './auth/passkey-auth-attempt';
@@ -80,8 +81,9 @@ export async function getRegistrationOptions(userId: number, email: string) {
   };
 
   const options = await generateRegistrationOptions(opts);
+  const ceremonyId = await startPasskeyAuthAttempt(userId, options.challenge);
 
-  return options;
+  return { options, ceremonyId };
 }
 
 /**
@@ -90,9 +92,14 @@ export async function getRegistrationOptions(userId: number, email: string) {
 export async function verifyRegistration(
   userId: number,
   response: RegistrationResponseJSON,
-  expectedChallenge: string,
+  ceremonyId: string,
   deviceName?: string
 ) {
+  const expectedChallenge = await getPasskeyAuthChallenge(ceremonyId, userId);
+  if (!expectedChallenge) {
+    throw new Error('Registration challenge is invalid or expired');
+  }
+
   // Get user's existing passkeys
   const existingPasskeys = await db.query.passkeys.findMany({
     where: eq(passkeys.userId, userId),
@@ -110,6 +117,14 @@ export async function verifyRegistration(
 
   if (!verification.verified || !verification.registrationInfo) {
     throw new Error('Passkey verification failed');
+  }
+
+  const consumed = await consumePasskeyRegistrationChallenge(
+    ceremonyId,
+    userId,
+  );
+  if (!consumed) {
+    throw new Error('Registration challenge was already used');
   }
 
   const { credential: credentialInfo } = verification.registrationInfo;

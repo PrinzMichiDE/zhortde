@@ -57,4 +57,17 @@ describe('passkey authentication challenges', () => {
     expect(store.attempts.has(expiredId)).toBe(false);
     expect(store.attempts.size).toBe(1);
   });
+
+  it('consumes registration challenges exactly once', async () => {
+    const { store, service } = createFixture();
+    const attemptId = await service.start(USER.id, 'registration-challenge');
+
+    await expect(
+      service.consumeRegistrationChallenge(attemptId, USER.id),
+    ).resolves.toBe(true);
+    await expect(
+      service.consumeRegistrationChallenge(attemptId, USER.id),
+    ).resolves.toBe(false);
+    expect(store.attempts.has(attemptId)).toBe(false);
+  });
 });

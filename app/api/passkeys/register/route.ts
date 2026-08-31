@@ -18,7 +18,7 @@ const startRegistrationSchema = z.object({
 
 const verifyRegistrationSchema = z.object({
   response: z.any(), // RegistrationResponseJSON
-  challenge: z.string(),
+  ceremonyId: z.string().min(32).max(128),
   deviceName: z.string().optional(),
 });
 
@@ -47,16 +47,14 @@ export async function POST(
       const body = await request.json();
       const validated = startRegistrationSchema.parse(body);
 
-      const options = await getRegistrationOptions(
+      const { options, ceremonyId } = await getRegistrationOptions(
         auth.userId,
         auth.email
       );
 
-      // Store challenge in session or return it (for demo, we'll return it)
-      // In production, store in Redis or session
       return NextResponse.json({
         options,
-        challenge: options.challenge,
+        ceremonyId,
       });
     } else if (action === 'verify') {
       // Verify registration
@@ -66,7 +64,7 @@ export async function POST(
       const passkey = await verifyRegistration(
         auth.userId,
         validated.response,
-        validated.challenge,
+        validated.ceremonyId,
         validated.deviceName
       );
 

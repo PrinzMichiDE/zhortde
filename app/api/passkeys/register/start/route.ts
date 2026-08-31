@@ -25,14 +25,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const { deviceName } = startSchema.parse(body);
 
-    const options = await getRegistrationOptions(
+    const { options, ceremonyId } = await getRegistrationOptions(
       auth.userId,
       auth.email
     );
 
     return NextResponse.json({
       options,
-      challenge: options.challenge,
+      ceremonyId,
     });
   } catch (error) {
     console.error('Start passkey registration error:', error);

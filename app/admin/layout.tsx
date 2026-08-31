@@ -4,6 +4,7 @@ import { isSuperAdmin } from '@/lib/admin';
 import { redirect } from 'next/navigation';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
+import { AdminNav } from '@/components/admin/admin-nav';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -37,8 +38,9 @@ export default async function AdminLayout({
         <div className="container mx-auto px-4 py-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground">Manage users and system settings</p>
+            <p className="text-muted-foreground">Operational visibility, user management, and audit controls</p>
           </div>
+          <AdminNav />
           {children}
         </div>
       </main>
