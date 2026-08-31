@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { webhooks } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
+import { assertSafeOutboundUrl } from '@/lib/security';
 
 /**
  * POST /api/user/webhooks/[id]/test - Send a test webhook
@@ -57,6 +58,8 @@ export async function POST(
       .createHmac('sha256', webhook.secret)
       .update(payloadString)
       .digest('hex');
+
+    assertSafeOutboundUrl(webhook.url);
 
     // Send webhook
     const response = await fetch(webhook.url, {
