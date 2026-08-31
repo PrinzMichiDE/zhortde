@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import { db } from '@/lib/db';
-import { teams } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
 import { checkTeamQuota } from '@/lib/enterprise';
+import { assertTeamMembership } from '@/lib/enterprise-team-access';
 
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = parseInt(session.user.id, 10);
+    if (Number.isNaN(userId)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -25,13 +28,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid Team ID' }, { status: 400 });
     }
 
-    // Verify user is member of team
-    const team = await db.query.teams.findFirst({
-      where: eq(teams.id, teamIdNum),
-    });
-
-    if (!team) {
-      return NextResponse.json({ error: 'Team not found' }, { status: 404 });
+    const access = await assertTeamMembership(userId, teamIdNum);
+    if (!access.allowed) {
+      return NextResponse.json({ error: access.error }, { status: access.status });
     }
 
     const quota = await checkTeamQuota(teamIdNum);
