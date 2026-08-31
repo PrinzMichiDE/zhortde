@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { webhooks } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import crypto from 'crypto';
+import { assertSafeOutboundUrl, OutboundUrlBlockedError } from '@/lib/outbound-url';
 
 /**
  * POST /api/user/webhooks/[id]/test - Send a test webhook
@@ -57,6 +58,18 @@ export async function POST(
       .createHmac('sha256', webhook.secret)
       .update(payloadString)
       .digest('hex');
+
+    try {
+      assertSafeOutboundUrl(webhook.url);
+    } catch (error) {
+      if (error instanceof OutboundUrlBlockedError) {
+        return NextResponse.json(
+          { error: 'Webhook URL is not allowed for outbound requests' },
+          { status: 400 },
+        );
+      }
+      throw error;
+    }
 
     // Send webhook
     const response = await fetch(webhook.url, {
