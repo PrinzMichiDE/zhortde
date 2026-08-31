@@ -108,7 +108,7 @@ Freie Inhalte koennen eine hoehere Schutzklasse enthalten, als das strukturierte
 ### Browser- und Netzwerksicherheit
 - HSTS, `X-Content-Type-Options`, `X-Frame-Options`, Referrer- und Permissions-Policy sind im Code gesetzt; die Auslieferung ist nach jedem Deployment extern zu testen.
 - Die CSP erlaubt derzeit `unsafe-inline`, `unsafe-eval` und ein externes CDN. Ziel ist nonce-/hashbasierte CSP ohne `unsafe-eval` und mit minimaler Allowlist.
-- Middleware-Rate-Limits sind pro Instanz im Speicher und damit in horizontaler/serverloser Skalierung nicht global. Der Paste-Unlock serialisiert dasselbe Schluesselpaar ueber einen PostgreSQL-Transaktions-Advisory-Lock und arbeitet bei Speicherfehler fail-closed. Der Passkey-Start und die uebrigen DB-Limit-Aktionen bleiben bei Datenbankfehler fail-open. Authentisierungs- und weitere risikoreiche Pfade muessen durch ein verteiltes, fail-safe und beobachtbares Limit geschuetzt werden.
+- Middleware-Rate-Limits sind pro Instanz im Speicher und damit in horizontaler/serverloser Skalierung nicht global. Der Paste-Unlock serialisiert dasselbe Schluesselpaar ueber einen PostgreSQL-Transaktions-Advisory-Lock und arbeitet bei Speicherfehler fail-closed. Super-Admin-APIs unter `/api/admin/*` nutzen die datenbankgestuetzte Aktion `admin_api` (120 Anfragen je Super-Admin und Client-IP in 15 Minuten, fail-closed). Der Passkey-Start und die uebrigen DB-Limit-Aktionen bleiben bei Datenbankfehler fail-open. Authentisierungs- und weitere risikoreiche Pfade muessen durch ein verteiltes, fail-safe und beobachtbares Limit geschuetzt werden.
 - Vertrauenswuerdige Proxyketten fuer `x-forwarded-for` muessen konfiguriert sein; ungepruefte Client-Header duerfen nicht die Sicherheitsidentitaet bestimmen.
 - Egress ist auf benoetigte Ziele zu begrenzen. Der Code kontaktiert unter anderem ip-api.com, Google Safe Browsing, jsDelivr, SSO-Provider, Nutzer-Webhooks und Google-STUN.
 
@@ -177,6 +177,8 @@ Ausnahmen sind nur befristet zulaessig. Erforderlich sind Risiko, Geschaeftsgrun
 - `lib/db/schema.ts`, `drizzle/*.sql`: Zugriffsdaten, Audit, Loeschbeziehungen und Migrationen.
 - `app/protected/paste/[slug]/page.tsx`, `app/api/pastes/[slug]/unlock/route.ts`, `app/p/[slug]/page.tsx`, `app/p/[slug]/raw/route.ts`, `lib/paste-access.ts`: POST-basierter Paste-Passwortnachweis, gebundener HttpOnly-Zugriffscookie, Ablauf- und Raw-Kontrolle.
 - `app/api/pastes/[slug]/unlock/route.test.ts`, `app/p/[slug]/page.test.tsx`, `app/p/[slug]/raw/route.test.ts`, `lib/paste-access.test.ts`: 15 Negativ-, Positiv-, Ablauf-, Manipulations- und Rate-Limit-Regressionstests vom 21.07.2026.
+- `lib/admin-auth.ts`, `lib/admin-audit.ts`, `app/api/admin/overview/route.ts`, `app/api/admin/audit-logs/route.ts`, `app/api/admin/blocklist/route.ts`, `app/admin/page.tsx`, `app/admin/audit/page.tsx`: Super-Admin-RBAC, Audit-Logging und Operations-Dashboard vom 22.07.2026.
+- `lib/admin-auth.test.ts`, `app/api/admin/*/route.test.ts`: 14 Regressionstests fuer Admin-Autorisierung, Rate-Limits und Audit-APIs; vollstaendige Suite 45/45 Tests am 22.07.2026.
 - `app/api/auth/sso/*`, `lib/analytics.ts`: weiterhin dokumentierte offene SSO- und Transport-Risiken.
 - `Dockerfile`, `.github/workflows/docker-image.yml`, `scripts/*upgrade*`, `scripts/docker-entrypoint.js`: Build-, Release- und Migrationskontrollen.
 - `package.json`, `package-lock.json`, Auditlauf vom 20.07.2026: Abhaengigkeits- und Schwachstellennachweise.
