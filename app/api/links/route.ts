@@ -12,6 +12,7 @@ import { hashPassword, calculateExpiration } from '@/lib/password-protection';
 import { triggerWebhooks } from '@/lib/webhooks';
 import { findDuplicateLink } from '@/lib/duplicate-links';
 import { logLinkAction } from '@/lib/audit-log';
+import { logAuditEvent } from '@/lib/enterprise-features';
 import { monetizeUrl } from '@/lib/monetization';
 import { 
   createLinkSchema, 
@@ -260,6 +261,23 @@ export async function POST(request: NextRequest) {
           utmCampaign: validatedInput.utmCampaign 
         },
         isMonetized: longUrl !== validatedInput.longUrl // Log if URL was changed for monetization
+      });
+
+      // Enterprise audit trail
+      logAuditEvent({
+        userId,
+        action: 'link.created',
+        resourceType: 'link',
+        resourceId: newLink[0].id,
+        changes: {
+          longUrl,
+          shortCode: newLink[0].shortCode,
+          isPublic: validatedInput.isPublic,
+          hasPassword: !!validatedInput.password,
+          hasExpiration: !!expiresAt,
+        },
+      }).catch((error) => {
+        console.error('Audit log error:', error);
       });
 
       // Trigger webhooks

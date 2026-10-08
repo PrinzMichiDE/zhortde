@@ -7,6 +7,8 @@ import { eq, and } from 'drizzle-orm';
 import { isUrlBlocked } from '@/lib/blocklist';
 import { logLinkAction, type AuditLogChanges } from '@/lib/audit-log';
 import { monetizeUrl } from '@/lib/monetization';
+import { triggerWebhooks } from '@/lib/webhooks';
+import { logAuditEvent } from '@/lib/enterprise-features';
 
 export async function PATCH(
   request: NextRequest,
@@ -104,6 +106,26 @@ export async function PATCH(
     // Audit Log
     await logLinkAction(linkIdNum, userId, 'updated', changes);
 
+    // Enterprise audit trail
+    logAuditEvent({
+      userId,
+      action: 'link.updated',
+      resourceType: 'link',
+      resourceId: linkIdNum,
+      changes,
+    }).catch((error) => {
+      console.error('Audit log error:', error);
+    });
+
+    // Fire webhook for link.updated
+    triggerWebhooks(userId, 'link.updated', {
+      linkId: linkIdNum,
+      shortCode: updatedLink.shortCode,
+      longUrl: updatedLink.longUrl,
+    }).catch((error) => {
+      console.error('Webhook trigger error:', error);
+    });
+
     return NextResponse.json(updatedLink);
 
   } catch (error) {
@@ -145,6 +167,29 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Audit-Log: audit_logs hält resource_id ohne FK, daher nach dem Löschen sicher
+    logAuditEvent({
+      userId,
+      action: 'link.deleted',
+      resourceType: 'link',
+      resourceId: linkIdNum,
+      changes: {
+        shortCode: result[0].shortCode,
+        longUrl: result[0].longUrl,
+      },
+    }).catch((error) => {
+      console.error('Audit log error:', error);
+    });
+
+    // Webhook-Benachrichtigung für gelöschte Links
+    triggerWebhooks(userId, 'link.deleted', {
+      linkId: linkIdNum,
+      shortCode: result[0].shortCode,
+      longUrl: result[0].longUrl,
+    }).catch((error) => {
+      console.error('Webhook trigger error:', error);
+    });
 
     // Audit Log (Deleted link)
     // Note: Link history is cascaded on delete, so we can't store logs FOR this link easily unless we keep history or soft delete.

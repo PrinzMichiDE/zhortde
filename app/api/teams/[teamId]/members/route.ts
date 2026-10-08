@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { teamMembers, users } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
+import { logAuditEvent } from '@/lib/enterprise-features';
 
 const inviteMemberSchema = z.object({
   email: z.string().email(),
@@ -117,6 +118,17 @@ export async function POST(
       teamId: teamIdNum,
       userId: userToAdd.id,
       role,
+    });
+
+    // Enterprise audit trail
+    logAuditEvent({
+      userId,
+      action: 'team.member.added',
+      resourceType: 'team',
+      resourceId: teamIdNum,
+      changes: { memberUserId: userToAdd.id, role },
+    }).catch((error) => {
+      console.error('Audit log error:', error);
     });
 
     return NextResponse.json({ success: true });

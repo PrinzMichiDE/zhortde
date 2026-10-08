@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { teams, teamMembers } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
+import { logAuditEvent } from '@/lib/enterprise-features';
 
 // Validation schemas
 const createTeamSchema = z.object({
@@ -115,6 +116,17 @@ export async function POST(request: NextRequest) {
       });
 
       return newTeam;
+    });
+
+    // Enterprise audit trail
+    logAuditEvent({
+      userId,
+      action: 'team.created',
+      resourceType: 'team',
+      resourceId: result.id,
+      changes: { name: result.name },
+    }).catch((error) => {
+      console.error('Audit log error:', error);
     });
 
     return NextResponse.json(result, { status: 201 });
