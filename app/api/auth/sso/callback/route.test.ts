@@ -18,13 +18,9 @@ const mockRedirect = vi.fn();
 vi.mock('next/server', () => ({
   NextRequest: class NextRequest {
     constructor(url: string) {
-      Object.assign(this, { url });
-    }
-    nextUrl: URL;
-    get url() { return this.url; }
-    constructor(url: string) {
       this.nextUrl = new URL(url);
     }
+    nextUrl: URL;
   },
   NextResponse: {
     get redirect() { return mockRedirect; },
