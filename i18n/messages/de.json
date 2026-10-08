@@ -294,7 +294,9 @@
     "noTags": "Noch keine Tags",
     "delete": "Löschen",
     "cancel": "Abbrechen",
-    "save": "Speichern"
+    "save": "Speichern",
+    "copiedHint": "(in die Zwischenablage kopiert)",
+    "deleting": "Löschen…"
   },
   "analytics": {
     "title": "Analytics Dashboard",

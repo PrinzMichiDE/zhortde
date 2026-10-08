@@ -294,7 +294,9 @@
     "noTags": "No tags yet",
     "delete": "Delete",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "copiedHint": "(copied to clipboard)",
+    "deleting": "Deleting…"
   },
   "analytics": {
     "title": "Analytics Dashboard",

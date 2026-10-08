@@ -283,7 +283,9 @@
     "noTags": "No tags yet",
     "delete": "Delete",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "copiedHint": "(copied to clipboard)",
+    "deleting": "Deleting…"
   },
   "errors": {
     "notFound": "पेज नहीं मिला",

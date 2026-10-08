@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { TrashIcon, EyeIcon, ClipboardIcon, CheckIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, ShieldCheckIcon, PencilIcon, MegaphoneIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, EyeIcon, ClipboardIcon, CheckIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, ShieldCheckIcon, PencilIcon, MegaphoneIcon, ChatBubbleLeftRightIcon, ShareIcon, TagIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 import { links } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,19 +11,34 @@ import { useTranslations } from 'next-intl';
 
 type LinkType = typeof links.$inferSelect;
 
+export type LinkTag = {
+  id: number;
+  tag: string;
+  color: string | null;
+};
+
 interface LinksListEnhancedProps {
   links: LinkType[];
+  tags?: LinkTag[];
+  linkTags?: Record<number, LinkTag[]>;
 }
 
 type SortOption = 'newest' | 'oldest' | 'clicks-desc' | 'clicks-asc' | 'url-asc' | 'url-desc';
 type FilterStatus = 'all' | 'public' | 'private';
+type QuickFilter = 'all' | 'active' | 'expired' | 'most-clicked';
 
-export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProps) {
+export function LinksListEnhanced({
+  links: initialLinks,
+  tags = [],
+  linkTags = {},
+}: LinksListEnhancedProps) {
   const t = useTranslations('dashboard');
   const [links, setLinks] = useState(initialLinks);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
@@ -35,6 +50,12 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
   const [editingLink, setEditingLink] = useState<LinkType | null>(null);
   const [editForm, setEditForm] = useState({ longUrl: '', isPublic: false, shortCode: '' });
   const [saving, setSaving] = useState(false);
+
+  // Debounce the search input so filtering stays smooth on large lists
+  useEffect(() => {
+    const timeout = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 250);
+    return () => clearTimeout(timeout);
+  }, [searchQuery]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -53,8 +74,8 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
   const filteredLinks = useMemo(() => {
     let filtered = [...links];
 
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
+    if (debouncedQuery) {
+      const query = debouncedQuery.toLowerCase();
       filtered = filtered.filter(link =>
         link.shortCode.toLowerCase().includes(query) ||
         link.longUrl.toLowerCase().includes(query)
@@ -65,6 +86,27 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
       filtered = filtered.filter(link =>
         filterStatus === 'public' ? link.isPublic : !link.isPublic
       );
+    }
+
+    if (quickFilter === 'expired') {
+      const now = Date.now();
+      filtered = filtered.filter(link =>
+        !!link.expiresAt && new Date(link.expiresAt).getTime() < now
+      );
+    } else if (quickFilter === 'active') {
+      const now = Date.now();
+      filtered = filtered.filter(link =>
+        !link.expiresAt || new Date(link.expiresAt).getTime() >= now
+      );
+    } else if (quickFilter === 'most-clicked') {
+      filtered = filtered.sort((a, b) => b.hits - a.hits);
+    }
+
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(link => {
+        const linkTagNames = (linkTags[link.id] ?? []).map(tag => tag.tag);
+        return selectedTags.every(tag => linkTagNames.includes(tag));
+      });
     }
 
     filtered.sort((a, b) => {
@@ -80,7 +122,7 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
     });
 
     return filtered;
-  }, [links, searchQuery, sortBy, filterStatus]);
+  }, [links, debouncedQuery, sortBy, filterStatus, quickFilter, selectedTags, linkTags]);
 
   const handleDelete = async (id: number) => {
     if (!confirm(t('deleteConfirm'))) return;
@@ -146,16 +188,73 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
     setTimeout(() => setCopiedCode(null), 2000);
   };
 
+  const shareLink = async (link: LinkType) => {
+    const baseUrl = window.location.origin;
+    const shortUrl = `${baseUrl}/s/${link.shortCode}`;
+    const shareData = {
+      title: link.longUrl,
+      text: shortUrl,
+      url: shortUrl,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shortUrl);
+        alert(shortUrl + ' ' + t('copiedHint'));
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
+  };
+
+  const exportCsv = () => {
+    const rows = filteredLinks.map(link => ({
+      shortCode: link.shortCode,
+      longUrl: link.longUrl,
+      clicks: link.hits,
+      createdAt: new Date(link.createdAt).toISOString(),
+      expiresAt: link.expiresAt ? new Date(link.expiresAt).toISOString() : '',
+      isPublic: link.isPublic,
+    }));
+
+    const header = ['shortCode', 'longUrl', 'clicks', 'createdAt', 'expiresAt', 'isPublic'];
+    const escape = (value: string | number | boolean) => {
+      const str = String(value);
+      return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+    };
+    const csv = [header.join(','), ...rows.map(row =>
+      header.map(key => escape(row[key as keyof typeof row])).join(',')
+    )].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `zhort-links-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const clearFilters = () => {
     setSearchQuery('');
-    setFilterStatus('all');
     setSelectedTags([]);
+    setFilterStatus('all');
+    setQuickFilter('all');
   };
 
   const toggleMenu = (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setOpenMenuId(openMenuId === id ? null : id);
   };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  const activeFilters = searchQuery !== '' || filterStatus !== 'all' || quickFilter !== 'all' || selectedTags.length > 0;
 
   if (links.length === 0) {
     return (
@@ -186,10 +285,19 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
                className="pl-10"
              />
           </div>
-          <div className="flex gap-2">
-            <Button variant={filterStatus === 'all' ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus('all')}>{t('filterAll')}</Button>
-            <Button variant={filterStatus === 'public' ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus('public')}>{t('public')}</Button>
-            <Button variant={filterStatus === 'private' ? 'default' : 'outline'} size="sm" onClick={() => setFilterStatus('private')}>{t('private')}</Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant={quickFilter === 'most-clicked' ? 'default' : 'outline'} size="sm" onClick={() => setQuickFilter(quickFilter === 'most-clicked' ? 'all' : 'most-clicked')}>
+              {t('filterMostClicked')}
+            </Button>
+            <Button variant={quickFilter === 'active' ? 'default' : 'outline'} size="sm" onClick={() => setQuickFilter(quickFilter === 'active' ? 'all' : 'active')}>
+              {t('filterActive')}
+            </Button>
+            <Button variant={quickFilter === 'expired' ? 'default' : 'outline'} size="sm" onClick={() => setQuickFilter(quickFilter === 'expired' ? 'all' : 'expired')}>
+              {t('filterExpired')}
+            </Button>
+            <div className="hidden md:block h-6 w-px bg-border"></div>
+            <Button variant={filterStatus === 'public' ? 'outline' : 'outline'} size="sm" onClick={() => setFilterStatus(filterStatus === 'public' ? 'all' : 'public')}>{t('public')}</Button>
+            <Button variant={filterStatus === 'private' ? 'outline' : 'outline'} size="sm" onClick={() => setFilterStatus(filterStatus === 'private' ? 'all' : 'private')}>{t('private')}</Button>
           </div>
           <select
             value={sortBy}
@@ -202,12 +310,47 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
             <option value="clicks-asc">{t('sortClicksAsc')}</option>
             <option value="url-asc">{t('sortUrlAsc')}</option>
           </select>
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={filteredLinks.length === 0} title={t('exportLinks')}>
+            <ArrowDownTrayIcon className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">CSV</span>
+          </Button>
           <div className="flex gap-2">
             <Button variant={viewMode === 'table' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('table')}>📊</Button>
             <Button variant={viewMode === 'cards' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('cards')}>🎴</Button>
           </div>
         </div>
-        {(searchQuery || filterStatus !== 'all') && (
+
+        {/* Tag filter chips */}
+        {tags.length > 0 && (
+          <div className="mt-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                <TagIcon className="h-4 w-4" />
+                {t('filterTags')}
+              </span>
+              {tags.map(tag => (
+                <button
+                  key={tag.tag}
+                  onClick={() => toggleTag(tag.tag)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    selectedTags.includes(tag.tag)
+                      ? 'border-primary text-primary bg-primary/10'
+                      : 'border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{ backgroundColor: tag.color || '#6366f1' }}
+                    aria-hidden="true"
+                  />
+                  {tag.tag}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeFilters && (
           <div className="mt-4 flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={clearFilters}>{t('resetFilters')}</Button>
           </div>
@@ -242,6 +385,23 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
                         )}
                       </button>
                     </div>
+                    {/* Tag badges */}
+                    {(linkTags[link.id] ?? []).length > 0 && (
+                      <div className="flex items-center gap-1 mt-1 flex-wrap">
+                        {(linkTags[link.id] ?? []).slice(0, 3).map(tag => (
+                          <span
+                            key={tag.id}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium"
+                            style={{
+                              backgroundColor: `${tag.color || '#6366f1'}22`,
+                              color: tag.color || '#6366f1',
+                            }}
+                          >
+                            {tag.tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-sm text-foreground max-w-xs truncate" title={link.longUrl}>{link.longUrl}</div>
@@ -293,12 +453,19 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
                               <Link href={`/dashboard/links/${link.id}/comments`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <ChatBubbleLeftRightIcon className="h-4 w-4" /> {t('comments')}
                               </Link>
-                              <div className="border-t border-border my-1"></div>
-                              <button 
-                                onClick={() => handleDelete(link.id)}
-                                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              <button
+                                onClick={() => { setOpenMenuId(null); shareLink(link); }}
+                                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                               >
-                                <TrashIcon className="h-4 w-4" /> {t('delete')}
+                                <ShareIcon className="h-4 w-4" /> {t('share')}
+                              </button>
+                              <div className="border-t border-border my-1"></div>
+                              <button
+                                onClick={() => handleDelete(link.id)}
+                                disabled={deleting === link.id}
+                                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-900/20"
+                              >
+                                <TrashIcon className="h-4 w-4" /> {deleting === link.id ? t('deleting') : t('delete')}
                               </button>
                             </div>
                           </div>

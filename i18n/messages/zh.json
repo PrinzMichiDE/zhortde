@@ -282,7 +282,9 @@
     "noTags": "No tags yet",
     "delete": "Delete",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "copiedHint": "（已复制到剪贴板）",
+    "deleting": "删除中…"
   },
   "errors": {
     "notFound": "页面未找到",

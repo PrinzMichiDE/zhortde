@@ -1,6 +1,6 @@
 import { db } from './db';
-import { linkTags } from './db/schema';
-import { eq, and } from 'drizzle-orm';
+import { links, linkTags } from './db/schema';
+import { eq, and, inArray } from 'drizzle-orm';
 
 export const DEFAULT_TAG_COLORS = [
   '#6366f1', // indigo
@@ -77,30 +77,57 @@ export async function updateTagColor(tagId: number, color: string) {
 }
 
 /**
- * Get all unique tags for a user
+ * Get all unique tags for a user across their links.
  */
 export async function getUserTags(userId: number) {
-  // Get all links for user, then get their tags
-  const userLinks = await db.query.links.findMany({
-    where: eq(linkTags.linkId, userId),
-  });
+  const rows = await db
+    .select({
+      id: linkTags.id,
+      tag: linkTags.tag,
+      color: linkTags.color,
+    })
+    .from(linkTags)
+    .innerJoin(links, eq(linkTags.linkId, links.id))
+    .where(eq(links.userId, userId));
 
-  // This is a simplified version - in production, use a proper join
-  const allTags = await db.query.linkTags.findMany();
-  
-  // Filter tags for user's links
-  const linkIds = userLinks.map(l => l.id);
-  const userTags = allTags.filter(t => linkIds.includes(t.linkId));
-  
-  // Get unique tags
-  const uniqueTags = new Map<string, typeof linkTags.$inferSelect>();
-  userTags.forEach(tag => {
-    if (!uniqueTags.has(tag.tag)) {
-      uniqueTags.set(tag.tag, tag);
+  // De-duplicate by tag name, keeping the first occurrence
+  const uniqueTags = new Map<string, { id: number; tag: string; color: string | null }>();
+  rows.forEach((row) => {
+    if (!uniqueTags.has(row.tag)) {
+      uniqueTags.set(row.tag, row);
     }
   });
 
   return Array.from(uniqueTags.values());
+}
+
+/**
+ * Get the tags for a set of links (for the dashboard list).
+ * Returns a map of linkId -> tags so the client can filter by tag.
+ */
+export async function getTagsForLinks(linkIds: number[]) {
+  if (linkIds.length === 0) {
+    return new Map<number, Array<{ id: number; tag: string; color: string | null }>>();
+  }
+
+  const rows = await db
+    .select({
+      id: linkTags.id,
+      linkId: linkTags.linkId,
+      tag: linkTags.tag,
+      color: linkTags.color,
+    })
+    .from(linkTags)
+    .where(inArray(linkTags.linkId, linkIds));
+
+  const map = new Map<number, Array<{ id: number; tag: string; color: string | null }>>();
+  for (const row of rows) {
+    const list = map.get(row.linkId) ?? [];
+    list.push({ id: row.id, tag: row.tag, color: row.color });
+    map.set(row.linkId, list);
+  }
+
+  return map;
 }
 
 /**

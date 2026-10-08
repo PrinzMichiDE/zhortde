@@ -5,6 +5,7 @@ import { db } from '@/lib/db';
 import { links } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { LinksListEnhanced } from '@/components/dashboard/links-list-enhanced';
+import { getUserTags, getTagsForLinks } from '@/lib/link-tags';
 import { getTranslations } from 'next-intl/server';
 import { PageContainer, PageShell, Surface } from '@/components/layout/section';
 import Link from 'next/link';
@@ -25,6 +26,10 @@ export default async function DashboardLinksPage() {
     orderBy: [desc(links.createdAt)],
   });
 
+  // Tag filter chips + per-link badges for the dashboard list
+  const tags = await getUserTags(userId);
+  const tagsByLink = await getTagsForLinks(userLinks.map((l) => l.id));
+
   return (
     <PageShell>
       <PageContainer className="py-8 sm:py-10">
@@ -41,7 +46,11 @@ export default async function DashboardLinksPage() {
         </header>
 
         <Surface elevated className="p-6 sm:p-8">
-          <LinksListEnhanced links={userLinks} />
+          <LinksListEnhanced
+            links={userLinks}
+            tags={tags}
+            linkTags={Object.fromEntries(tagsByLink)}
+          />
         </Surface>
       </PageContainer>
     </PageShell>
