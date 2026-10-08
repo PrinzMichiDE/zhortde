@@ -9,17 +9,17 @@ import {
   WEBHOOK_MAX_ATTEMPTS,
 } from './webhooks';
 
-const { db, rows, updateCalls } = vi.hoisted(() => {
-  type WebhookRow = {
-    id: number;
-    userId: number;
-    url: string;
-    secret: string;
-    events: string;
-    isActive: boolean;
-    lastTriggeredAt: Date | null;
-  };
+type WebhookRow = {
+  id: number;
+  userId: number;
+  url: string;
+  secret: string;
+  events: string;
+  isActive: boolean;
+  lastTriggeredAt: Date | null;
+};
 
+const { db, rows, updateCalls } = vi.hoisted(() => {
   const webhookRows: WebhookRow[] = [];
   const updates: Array<{ id: number; lastTriggeredAt: Date }> = [];
 
