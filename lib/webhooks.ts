@@ -3,7 +3,7 @@ import { db } from './db';
 import { webhooks } from './db/schema';
 import { eq } from 'drizzle-orm';
 
-export type WebhookEvent = 'link.created' | 'link.clicked' | 'link.expired' | 'paste.created';
+export type WebhookEvent = 'link.created' | 'link.clicked' | 'link.expired' | 'link.updated' | 'link.deleted' | 'paste.created';
 
 /**
  * Webhook data types for type safety

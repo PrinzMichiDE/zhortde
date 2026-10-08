@@ -37,6 +37,7 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - Unescape apostrophes in template strings to resolve `react/no-unescaped-entities` ESLint errors.
 - Resolve `react-hooks/set-state-in-effect` by removing synchronous `setState` calls from `useEffect` in `recent-links.tsx`.
 - Replace `any` with `unknown` and `Blob` in type annotations across enterprise and p2p feature modules to resolve `@typescript-eslint/no-explicit-any`.
+- Resolve ~206 TypeScript compilation errors: added missing `pasteTags`/`tags` exports, generated `.d.ts` declarations from `drizzle-orm` `.d.cts` files, and added missing `'link.updated'` / `'link.deleted'` to the `WebhookEvent` type union.
 
 ## [2026-07-20]
 

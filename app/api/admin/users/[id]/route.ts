@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, pastes, links } from '@/lib/db/schema';
 import { isSuperAdmin } from '@/lib/admin';
 import { eq } from 'drizzle-orm';
 
@@ -31,11 +31,18 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
 
+    // Delete associated pastes (which cascade to paste_tags)
+    await db.delete(pastes).where(eq(pastes.userId, userId));
+
+    // Delete associated links
+    await db.delete(links).where(eq(links.userId, userId));
+
+    // Delete the user
     await db.delete(users).where(eq(users.id, userId));
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting user:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Failed to delete user:', error);
+    return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
   }
 }
