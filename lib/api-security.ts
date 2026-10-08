@@ -216,8 +216,10 @@ export const webhookSchema = z.object({
     .array(z.enum([
       'link.created',
       'link.clicked',
+      'link.expired',
       'link.updated',
       'link.deleted',
+      'paste.created',
     ]))
     .min(1, 'Mindestens ein Event ist erforderlich')
     .max(10, 'Zu viele Events'),

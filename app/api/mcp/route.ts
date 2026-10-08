@@ -6,6 +6,7 @@ import { nanoid } from 'nanoid';
 import { isUrlBlocked } from '@/lib/blocklist';
 import { incrementStat } from '@/lib/db/init-stats';
 import { validateApiKey } from '@/lib/api-keys';
+import { triggerWebhooks } from '@/lib/webhooks';
 
 /**
  * MCP Server Implementation (Model Context Protocol)
@@ -235,14 +236,28 @@ async function handleShortenLink(args: unknown, userId: number | null) {
     shortCode = nanoid(8);
   }
 
-  await db.insert(links).values({
-    shortCode,
-    longUrl: url,
-    userId: userId || null,
-    isPublic: true,
-  });
+  const [newLink] = await db
+    .insert(links)
+    .values({
+      shortCode,
+      longUrl: url,
+      userId: userId || null,
+      isPublic: true,
+    })
+    .returning({ id: links.id, shortCode: links.shortCode, longUrl: links.longUrl });
 
   await incrementStat('links');
+
+  // 🔔 Trigger link.created webhooks for authenticated MCP calls
+  if (userId) {
+    triggerWebhooks(userId, 'link.created', {
+      linkId: newLink.id,
+      shortCode: newLink.shortCode,
+      longUrl: newLink.longUrl,
+    }).catch((error) => {
+      console.error('Webhook trigger error:', error);
+    });
+  }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   return {

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { processBulkLinks, parseCSV, parseTextInput, type BulkLinkRequest } from '@/lib/bulk-shortening';
 import { incrementStat } from '@/lib/db/init-stats';
+import { triggerWebhooks } from '@/lib/webhooks';
 
 export async function POST(request: NextRequest) {
   try {
@@ -67,6 +68,21 @@ export async function POST(request: NextRequest) {
     const successCount = results.filter(r => r.success).length;
     if (successCount > 0) {
       await incrementStat('links');
+    }
+
+    // 🔔 Trigger link.created webhooks for authenticated bulk operations
+    if (userId) {
+      for (const result of results) {
+        if (result.success && result.linkId) {
+          triggerWebhooks(userId, 'link.created', {
+            linkId: result.linkId,
+            shortCode: result.shortCode as string,
+            longUrl: result.longUrl,
+          }).catch((error) => {
+            console.error('Webhook trigger error:', error);
+          });
+        }
+      }
     }
 
     return NextResponse.json({

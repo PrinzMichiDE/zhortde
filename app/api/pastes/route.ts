@@ -6,6 +6,7 @@ import { pastes } from '@/lib/db/schema';
 import { nanoid } from 'nanoid';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rate-limit';
 import { hashPassword, calculateExpiration } from '@/lib/password-protection';
+import { triggerWebhooks } from '@/lib/webhooks';
 import { 
   validateBody, 
   pasteSchema, 
@@ -90,6 +91,16 @@ export async function POST(request: NextRequest) {
       passwordHash,
       expiresAt,
     }).returning();
+
+    // 🔔 Trigger webhooks (fire and forget) for authenticated users
+    if (session?.user?.id) {
+      triggerWebhooks(parseInt(session.user.id), 'paste.created', {
+        pasteId: newPaste[0].id,
+        slug: newPaste[0].slug,
+      }).catch((error) => {
+        console.error('Webhook trigger error:', error);
+      });
+    }
 
     return secureResponse(
       {

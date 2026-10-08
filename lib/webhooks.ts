@@ -31,6 +31,23 @@ export type WebhookPayload = {
 };
 
 /**
+ * Delivery guarantees.
+ */
+export const WEBHOOK_MAX_ATTEMPTS = 3;
+export const WEBHOOK_BASE_DELAY_MS = 500;
+
+/**
+ * Build the signed webhook payload. Kept pure so it can be unit-tested.
+ */
+export function buildWebhookPayload(event: WebhookEvent, data: WebhookData): WebhookPayload {
+  return {
+    event,
+    timestamp: new Date().toISOString(),
+    data,
+  };
+}
+
+/**
  * Generate HMAC signature for webhook payload
  */
 function generateSignature(payload: string, secret: string): string {
@@ -38,6 +55,62 @@ function generateSignature(payload: string, secret: string): string {
     .createHmac('sha256', secret)
     .update(payload)
     .digest('hex');
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Deliver a single webhook with exponential backoff retries.
+ *
+ * Returns `true` when the endpoint acknowledged the delivery with a 2xx
+ * response, `false` after all attempts were exhausted.
+ */
+export async function deliverWebhook(
+  webhook: { id: number; url: string; secret: string; event: WebhookEvent },
+  payload: WebhookPayload
+): Promise<boolean> {
+  const payloadString = JSON.stringify(payload);
+  const signature = generateSignature(payloadString, webhook.secret);
+
+  for (let attempt = 1; attempt <= WEBHOOK_MAX_ATTEMPTS; attempt += 1) {
+    try {
+      const response = await fetch(webhook.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Zhort-Signature': signature,
+          'X-Zhort-Event': webhook.event,
+          'User-Agent': 'Zhort-Webhooks/1.0',
+        },
+        body: payloadString,
+      });
+
+      if (response.ok) {
+        return true;
+      }
+
+      console.error(
+        `Webhook ${webhook.id} failed (attempt ${attempt}/${WEBHOOK_MAX_ATTEMPTS}): ` +
+        `${response.status} ${response.statusText}`
+      );
+    } catch (error) {
+      console.error(
+        `Webhook ${webhook.id} error (attempt ${attempt}/${WEBHOOK_MAX_ATTEMPTS}):`,
+        error
+      );
+    }
+
+    // Exponential backoff with slight jitter between attempts
+    if (attempt < WEBHOOK_MAX_ATTEMPTS) {
+      const baseDelay = WEBHOOK_BASE_DELAY_MS * 2 ** (attempt - 1);
+      const jitter = Math.floor(Math.random() * 0.2 * baseDelay);
+      await sleep(baseDelay + jitter);
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -65,40 +138,21 @@ export async function triggerWebhooks(userId: number, event: WebhookEvent, data:
       return;
     }
 
-    // Trigger webhooks in parallel
-    const payload: WebhookPayload = {
-      event,
-      timestamp: new Date().toISOString(),
-      data,
-    };
+    // Build the payload once and deliver to all subscribers with retries
+    const payload = buildWebhookPayload(event, data);
 
     const promises = relevantWebhooks.map(async (webhook) => {
-      try {
-        const payloadString = JSON.stringify(payload);
-        const signature = generateSignature(payloadString, webhook.secret);
+      const delivered = await deliverWebhook(
+        { id: webhook.id, url: webhook.url, secret: webhook.secret, event },
+        payload
+      );
 
-        const response = await fetch(webhook.url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Zhort-Signature': signature,
-            'X-Zhort-Event': event,
-            'User-Agent': 'Zhort-Webhooks/1.0',
-          },
-          body: payloadString,
-        });
-
-        if (response.ok) {
-          // Update last triggered timestamp
-          await db
-            .update(webhooks)
-            .set({ lastTriggeredAt: new Date() })
-            .where(eq(webhooks.id, webhook.id));
-        } else {
-          console.error(`Webhook ${webhook.id} failed: ${response.status} ${response.statusText}`);
-        }
-      } catch (error) {
-        console.error(`Webhook ${webhook.id} error:`, error);
+      if (delivered) {
+        // Update last triggered timestamp
+        await db
+          .update(webhooks)
+          .set({ lastTriggeredAt: new Date() })
+          .where(eq(webhooks.id, webhook.id));
       }
     });
 
@@ -117,10 +171,16 @@ export function verifyWebhookSignature(
   secret: string
 ): boolean {
   const expectedSignature = generateSignature(payload, secret);
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+
+  // `timingSafeEqual` throws when the buffers differ in length, which would
+  // leak timing information to a malformed request. Guard the lengths first.
+  const provided = Buffer.from(signature);
+  const expected = Buffer.from(expectedSignature);
+  if (provided.length !== expected.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(provided, expected);
 }
 
 /**
@@ -129,4 +189,3 @@ export function verifyWebhookSignature(
 export function generateWebhookSecret(): string {
   return crypto.randomBytes(32).toString('hex');
 }
-

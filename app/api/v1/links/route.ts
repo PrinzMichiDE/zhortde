@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { validateApiKey } from '@/lib/api-keys';
 import { nanoid } from 'nanoid';
 import { monetizeUrl } from '@/lib/monetization';
+import { triggerWebhooks } from '@/lib/webhooks';
 
 /**
  * API v1 - Create Link
@@ -92,6 +93,15 @@ export async function POST(request: NextRequest) {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://zhort.app';
     const shortUrl = `${baseUrl}/s/${link.shortCode}`;
+
+    // 🔔 Trigger link.created webhooks for API-key based creation
+    triggerWebhooks(userId, 'link.created', {
+      linkId: link.id,
+      shortCode: link.shortCode,
+      longUrl: link.longUrl,
+    }).catch((error) => {
+      console.error('Webhook trigger error:', error);
+    });
 
     return NextResponse.json({
       id: link.id,

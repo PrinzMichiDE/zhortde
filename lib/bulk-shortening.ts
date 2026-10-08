@@ -17,6 +17,7 @@ export interface BulkLinkResult {
   longUrl: string;
   shortCode?: string;
   shortUrl?: string;
+  linkId?: number;
   error?: string;
 }
 
@@ -125,6 +126,7 @@ async function createLink(
       success: true,
       longUrl: longUrl, // Return the actually stored (monetized) URL
       shortCode: newLink.shortCode,
+      linkId: newLink.id,
       shortUrl: `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/s/${newLink.shortCode}`,
     };
   } catch (error) {
