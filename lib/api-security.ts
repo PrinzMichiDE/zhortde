@@ -226,6 +226,17 @@ export const webhookSchema = z.object({
 });
 
 /**
+ * Link comment / note validation
+ */
+export const linkCommentSchema = z.object({
+  content: z
+    .string()
+    .min(1, 'Kommentar darf nicht leer sein')
+    .max(2000, 'Kommentar ist zu lang'),
+  isInternal: z.boolean().optional(),
+});
+
+/**
  * API key creation validation
  */
 export const apiKeySchema = z.object({

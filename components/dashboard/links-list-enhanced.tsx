@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { TrashIcon, EyeIcon, ClipboardIcon, CheckIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, ShieldCheckIcon, PencilIcon, MegaphoneIcon } from '@heroicons/react/24/outline';
+import { TrashIcon, EyeIcon, ClipboardIcon, CheckIcon, MagnifyingGlassIcon, XMarkIcon, EllipsisVerticalIcon, ChartBarIcon, ClockIcon, CalendarIcon, ShieldCheckIcon, PencilIcon, MegaphoneIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
 import { links } from '@/lib/db/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -289,6 +289,9 @@ export function LinksListEnhanced({ links: initialLinks }: LinksListEnhancedProp
                               </Link>
                               <Link href={`/dashboard/links/${link.id}/pixels`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
                                 <MegaphoneIcon className="h-4 w-4" /> {t('pixels')}
+                              </Link>
+                              <Link href={`/dashboard/links/${link.id}/comments`} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">
+                                <ChatBubbleLeftRightIcon className="h-4 w-4" /> {t('comments')}
                               </Link>
                               <div className="border-t border-border my-1"></div>
                               <button 
