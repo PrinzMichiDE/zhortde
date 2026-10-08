@@ -92,7 +92,7 @@ export async function getUserTags(userId: number) {
 
   // De-duplicate by tag name, keeping the first occurrence
   const uniqueTags = new Map<string, { id: number; tag: string; color: string | null }>();
-  rows.forEach((row) => {
+  rows.forEach((row: { id: number; tag: string; color: string | null }) => {
     if (!uniqueTags.has(row.tag)) {
       uniqueTags.set(row.tag, row);
     }

@@ -28,7 +28,7 @@ export default async function DashboardLinksPage() {
 
   // Tag filter chips + per-link badges for the dashboard list
   const tags = await getUserTags(userId);
-  const tagsByLink = await getTagsForLinks(userLinks.map((l) => l.id));
+  const tagsByLink = await getTagsForLinks(userLinks.map((l: typeof links.$inferSelect) => l.id));
 
   return (
     <PageShell>

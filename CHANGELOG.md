@@ -17,6 +17,16 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 ### Added
 
 - 19 Regressionstests für Paste-Seite, Raw-Route, Unlock-API, kryptografische Zugriffsnachweise sowie Konkurrenz- und Ausfallverhalten des Rate-Limits ergänzt; die vollständige Suite umfasst nun 31 Tests in acht Dateien.
+- Redirect-Zeitpunkt-Enforcement ergänzt: Zeitplanung (aktiv/abgelaufen mit Fallback-URL), A/B-Varianten, Geo-Targeting und Tracking-Pixel werden nun serverseitig in `lib/redirect-target.ts` ausgewertet und beim Redirect angewendet; die Pixel-Dashboard-Seite `/dashboard/links/[linkId]/pixels` verwaltet Pixel-Codes inklusive Masking-Generator.
+- Webhook-Zustellung robuster gemacht: `lib/webhooks.ts` liefert Ereignisse mit bis zu drei Versuchen und exponentiellem Backoff inklusive Jitter aus, wertet nur 2xx-Antworten als Erfolg und aktualisiert `lastTriggeredAt` bei Zustellung; die Ereignisse `link.expired` und `paste.created` sind jetzt gültig und `link.created` wird in allen authentifizierten Erstellungspfaden (V1-API, Bulk, MCP) ausgelöst.
+- V1-Endpoint `GET /api/v1/links/:shortCode/analytics` (API-Key-Authentifizierung, Eigentümerprüfung) liefert Klicks, eindeutige IPs und Geräte-/Länder-/Browser-Aufschlüsselungen; in der OpenAPI-Dokumentation spezifiziert.
+- API-Keys unterstützen jetzt Verfall (`expiresIn`: 30d/90d/365d/never), Rotation über `POST /api/user/api-keys/[id]/rotate` sowie Audit-Einträge für Anlegen, Rotieren und Löschen; das Dashboard zeigt eine Ablaufspalte und einen Rotieren-Button.
+- Duplikaterkennung beim Kürzen: Authentifizierte Benutzer erhalten HTTP 409 mit dem bestehenden Kurzcode, wenn dieselbe (monetarisierte) URL bereits gekürzt wurde; das Formular zeigt den bestehenden Link mit Kopierfunktion an.
+- Link-Kommentare und interne Notizen end-to-end umgesetzt: `lib/link-comments.ts`, `GET/POST/DELETE /api/links/[linkId]/comments` mit Eigentümerprüfung sowie die Seite `/dashboard/links/[linkId]/comments`, erreichbar über das Quick-Actions-Menü.
+- Links-Dashboard um Tag-Filter-Chips (fehlerhafte `getUserTags`-Abfrage per Join korrigiert), Schnellfilter Meistgeklickt/Aktiv/Abgelaufen, entprellte Suche, CSV-Export der gefilterten Links und Teilen-Aktion (Web Share API mit Zwischenablage-Fallback) erweitert.
+- Custom-Domain-Verwaltung: neue Seite `/dashboard/domains` mit DNS-Einträgen, Verifizierungs-Token und erneutem Prüfen sowie `DELETE /api/user/domains/[id]`; Sidebar-Eintrag ergänzt.
+- Enterprise-Audit-Trail verdrahtet: `link.created`, `link.updated`, `link.deleted`, `team.created` und `team.member.added` schreiben zusammen mit den bereits vorhandenen `api_key.*`- und `custom_domain.deleted`-Einträgen in `audit_logs`; Link-UPdates/-Löschungen lösen zusätzlich die Webhooks `link.updated`/`link.deleted` aus.
+- V1-Links-API speichert übergebene Passwörter jetzt als bcrypt-Hash statt sie zu ignorieren.
 
 ### Changed
 

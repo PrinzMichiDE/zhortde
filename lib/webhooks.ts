@@ -123,7 +123,7 @@ export async function triggerWebhooks(userId: number, event: WebhookEvent, data:
       where: eq(webhooks.userId, userId),
     });
 
-    const relevantWebhooks = userWebhooks.filter((webhook) => {
+    const relevantWebhooks = userWebhooks.filter((webhook: typeof webhooks.$inferSelect) => {
       if (!webhook.isActive) return false;
       
       try {
@@ -141,7 +141,7 @@ export async function triggerWebhooks(userId: number, event: WebhookEvent, data:
     // Build the payload once and deliver to all subscribers with retries
     const payload = buildWebhookPayload(event, data);
 
-    const promises = relevantWebhooks.map(async (webhook) => {
+    const promises = relevantWebhooks.map(async (webhook: typeof webhooks.$inferSelect) => {
       const delivered = await deliverWebhook(
         { id: webhook.id, url: webhook.url, secret: webhook.secret, event },
         payload
