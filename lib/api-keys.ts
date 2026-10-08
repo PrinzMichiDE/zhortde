@@ -30,17 +30,46 @@ export async function verifyApiKey(key: string, hash: string): Promise<boolean> 
 }
 
 /**
+ * Map an expiresIn selector to an absolute expiry date.
+ * Kept pure so the mapping is unit-testable.
+ */
+export function calculateApiKeyExpiry(
+  expiresIn: '30d' | '90d' | '365d' | 'never' | undefined,
+  now: Date = new Date()
+): Date | null {
+  if (!expiresIn || expiresIn === 'never') {
+    return null;
+  }
+
+  const days: Record<'30d' | '90d' | '365d', number> = {
+    '30d': 30,
+    '90d': 90,
+    '365d': 365,
+  };
+
+  const expiry = new Date(now);
+  expiry.setDate(expiry.getDate() + days[expiresIn]);
+  return expiry;
+}
+
+/**
  * Create a new API key for a user
  */
-export async function createApiKey(userId: number, name: string) {
+export async function createApiKey(
+  userId: number,
+  name: string,
+  expiresIn?: '30d' | '90d' | '365d' | 'never'
+) {
   const { key, prefix } = generateApiKey();
   const keyHash = await hashApiKey(key);
+  const expiresAt = calculateApiKeyExpiry(expiresIn);
 
   const [apiKey] = await db.insert(apiKeys).values({
     userId,
     name,
     keyHash,
     keyPrefix: prefix,
+    expiresAt,
   }).returning();
 
   // Return the plain key ONCE (user must save it)
@@ -50,7 +79,35 @@ export async function createApiKey(userId: number, name: string) {
     prefix,
     name,
     createdAt: apiKey.createdAt,
+    expiresAt,
   };
+}
+
+/**
+ * Rotate an API key: replaces the stored hash/prefix with a brand-new key
+ * while keeping the same id. Returns the new plain-text key (shown once).
+ */
+export async function rotateApiKey(
+  apiKeyId: number,
+  userId: number
+): Promise<{ key: string; prefix: string } | null> {
+  const apiKey = await db.query.apiKeys.findFirst({
+    where: eq(apiKeys.id, apiKeyId),
+  });
+
+  if (!apiKey || apiKey.userId !== userId) {
+    return null;
+  }
+
+  const { key, prefix } = generateApiKey();
+  const keyHash = await hashApiKey(key);
+
+  await db
+    .update(apiKeys)
+    .set({ keyHash, keyPrefix: prefix, lastUsedAt: null })
+    .where(eq(apiKeys.id, apiKeyId));
+
+  return { key, prefix };
 }
 
 /**

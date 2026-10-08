@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { apiKeys } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { createApiKey } from '@/lib/api-keys';
+import { logAuditEvent } from '@/lib/enterprise-features';
 import {
   requireAuth,
   validateBody,
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
       return secureErrorResponse(ApiErrors.VALIDATION_ERROR(validation.error));
     }
 
-    const { name } = validation.data;
+    const { name, expiresIn } = validation.data;
 
     // 3. Check API key limit
     const existingKeys = await db
@@ -78,7 +79,18 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Create API key
-    const apiKey = await createApiKey(auth.userId, name.trim());
+    const apiKey = await createApiKey(auth.userId, name.trim(), expiresIn);
+
+    // 5. Audit trail (never blocks the response)
+    logAuditEvent({
+      userId: auth.userId,
+      action: 'api_key.created',
+      resourceType: 'api_key',
+      resourceId: apiKey.id,
+      changes: { name: name.trim(), expiresIn: expiresIn || 'never' },
+    }).catch((error) => {
+      console.error('Audit log error:', error);
+    });
 
     // Note: The full key is only returned on creation
     return secureResponse({ apiKey }, 201);

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff } from 'lucide-react';
+import { Key, Plus, Trash2, Copy, Check, Eye, EyeOff, RefreshCcw } from 'lucide-react';
 
 type ApiKey = {
   id: number;
@@ -18,6 +18,7 @@ export default function ApiKeysPage() {
   const [loading, setLoading] = useState(true);
   const [showNewKeyModal, setShowNewKeyModal] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyExpiry, setNewKeyExpiry] = useState<'30d' | '90d' | '365d' | 'never'>('never');
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<ApiKey | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
   const [showFullKey, setShowFullKey] = useState(false);
@@ -47,7 +48,7 @@ export default function ApiKeysPage() {
       const res = await fetch('/api/user/api-keys', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newKeyName }),
+        body: JSON.stringify({ name: newKeyName, expiresIn: newKeyExpiry }),
       });
 
       if (res.ok) {
@@ -55,6 +56,7 @@ export default function ApiKeysPage() {
         setNewlyCreatedKey(data.apiKey);
         setApiKeys([data.apiKey, ...apiKeys]);
         setNewKeyName('');
+        setNewKeyExpiry('never');
         setShowNewKeyModal(false);
       } else {
         const error = await res.json();
@@ -63,6 +65,34 @@ export default function ApiKeysPage() {
     } catch (error) {
       console.error('Failed to create API key:', error);
       alert('Failed to create API key');
+    }
+  }
+
+  async function rotateApiKey(keyId: number) {
+    if (!confirm('Rotating this key will immediately invalidate the current key. Continue?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/user/api-keys/${keyId}/rotate`, {
+        method: 'POST',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setNewlyCreatedKey(data.apiKey);
+
+        // Mark the rotated key as rotated in the list (refresh metadata)
+        fetchApiKeys();
+        setShowFullKey(false);
+        setCopiedKey(false);
+      } else {
+        const error = await res.json();
+        alert('Error: ' + error.error);
+      }
+    } catch (error) {
+      console.error('Failed to rotate API key:', error);
+      alert('Failed to rotate API key');
     }
   }
 
@@ -128,7 +158,7 @@ export default function ApiKeysPage() {
         {newlyCreatedKey && newlyCreatedKey.key && (
           <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6 mb-6">
             <h3 className="text-lg font-semibold text-green-900 mb-2">
-              ✅ API Key Created Successfully!
+              ✅ API Key Issued Successfully!
             </h3>
             <p className="text-sm text-green-700 mb-4">
               <strong>Important:</strong> Copy this key now. You won&apos;t be able to see it again!
@@ -184,6 +214,9 @@ export default function ApiKeysPage() {
                     Key Prefix
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Expires
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Last Used
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -206,6 +239,15 @@ export default function ApiKeysPage() {
                       </code>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {apiKey.expiresAt ? (
+                        <span className={new Date(apiKey.expiresAt) < new Date() ? 'text-red-600 font-medium' : ''}>
+                          {new Date(apiKey.expiresAt).toLocaleDateString('de-DE')}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">Never</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {apiKey.lastUsedAt
                         ? new Date(apiKey.lastUsedAt).toLocaleDateString('de-DE')
                         : 'Never'}
@@ -214,13 +256,23 @@ export default function ApiKeysPage() {
                       {new Date(apiKey.createdAt).toLocaleDateString('de-DE')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => deleteApiKey(apiKey.id)}
-                        className="text-red-600 hover:text-red-900 inline-flex items-center gap-1"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </button>
+                      <div className="flex items-center justify-end gap-3">
+                        <button
+                          onClick={() => rotateApiKey(apiKey.id)}
+                          className="text-indigo-600 hover:text-indigo-900 inline-flex items-center gap-1"
+                          title="Rotate key"
+                        >
+                          <RefreshCcw className="h-4 w-4" />
+                          Rotate
+                        </button>
+                        <button
+                          onClick={() => deleteApiKey(apiKey.id)}
+                          className="text-red-600 hover:text-red-900 inline-flex items-center gap-1"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -246,6 +298,22 @@ export default function ApiKeysPage() {
                   placeholder="My API Key"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
+              </div>
+              <div className="mb-4">
+                <label htmlFor="keyExpiry" className="block text-sm font-medium text-gray-700 mb-2">
+                  Expiration
+                </label>
+                <select
+                  id="keyExpiry"
+                  value={newKeyExpiry}
+                  onChange={(e) => setNewKeyExpiry(e.target.value as typeof newKeyExpiry)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                >
+                  <option value="never">Never expires</option>
+                  <option value="30d">30 days</option>
+                  <option value="90d">90 days</option>
+                  <option value="365d">365 days</option>
+                </select>
               </div>
               <div className="flex gap-3">
                 <button

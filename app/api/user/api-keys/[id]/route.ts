@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
 import { apiKeys } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
+import { logAuditEvent } from '@/lib/enterprise-features';
 
 /**
  * DELETE /api/user/api-keys/[id] - Delete an API key
@@ -43,6 +44,16 @@ export async function DELETE(
         { status: 404 }
       );
     }
+
+    // Audit trail (fire and forget)
+    logAuditEvent({
+      userId: parseInt(session.user.id),
+      action: 'api_key.deleted',
+      resourceType: 'api_key',
+      resourceId: apiKeyId,
+    }).catch((error) => {
+      console.error('Audit log error:', error);
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
