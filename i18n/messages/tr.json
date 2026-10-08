@@ -285,7 +285,22 @@
     "cancel": "Cancel",
     "save": "Save",
     "copiedHint": "(copied to clipboard)",
-    "deleting": "Deleting…"
+    "deleting": "Deleting…",
+    "addDomain": "Add Domain",
+    "addedOn": "Added on",
+    "copy": "Copy",
+    "dnsRecords": "DNS Records",
+    "domainCreatedHint": "Create the following DNS records at your DNS provider, then click \"Verify\":",
+    "domainCreatedTitle": "Domain added — configure DNS records",
+    "domainHelper": "Use a subdomain, not a bare root domain. After adding, configure the DNS records.",
+    "domainPlaceholder": "links.mydomain.de",
+    "domainsPageDescription": "Manage your own domains for white-label short links",
+    "myDomains": "Custom Domains",
+    "noDomains": "No custom domains yet",
+    "unverified": "Unverified",
+    "verificationToken": "Verification token (TXT value):",
+    "verified": "Verified",
+    "verify": "Verify"
   },
   "errors": {
     "notFound": "Sayfa bulunamadı",

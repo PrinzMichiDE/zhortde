@@ -284,7 +284,22 @@
     "cancel": "Cancel",
     "save": "Save",
     "copiedHint": "（已复制到剪贴板）",
-    "deleting": "删除中…"
+    "deleting": "删除中…",
+    "addDomain": "添加域名",
+    "addedOn": "添加于",
+    "copy": "复制",
+    "dnsRecords": "DNS 记录",
+    "domainCreatedHint": "请在 DNS 提供商处创建以下 DNS 记录，然后点击“验证”：",
+    "domainCreatedTitle": "域名已添加 — 请配置 DNS 记录",
+    "domainHelper": "请使用子域名。添加后，请配置 DNS 记录。",
+    "domainPlaceholder": "links.mydomain.de",
+    "domainsPageDescription": "管理您自己的域名以用于白标短链接",
+    "myDomains": "自定义域名",
+    "noDomains": "还没有自定义域名",
+    "unverified": "未验证",
+    "verificationToken": "验证令牌（TXT 值）：",
+    "verified": "已验证",
+    "verify": "验证"
   },
   "errors": {
     "notFound": "页面未找到",

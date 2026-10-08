@@ -22,6 +22,7 @@ import {
   Fingerprint,
   Building2,
   Folder,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ZhortLogo } from '@/components/zhort-logo';
@@ -57,6 +58,7 @@ export function DashboardSidebar() {
     { name: 'Bulk Shorten', href: '/dashboard/bulk', icon: Package },
     { name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
     { name: 'Webhooks', href: '/dashboard/webhooks', icon: Webhook },
+    { name: 'Domains', href: '/dashboard/domains', icon: Globe },
     { name: 'Teams', href: '/dashboard/teams', icon: Users },
     { name: 'Enterprise', href: '/dashboard/enterprise', icon: Building2 },
     { name: 'Integrations', href: '/dashboard/integrations', icon: Zap },

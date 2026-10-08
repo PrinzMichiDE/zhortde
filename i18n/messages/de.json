@@ -296,7 +296,22 @@
     "cancel": "Abbrechen",
     "save": "Speichern",
     "copiedHint": "(in die Zwischenablage kopiert)",
-    "deleting": "Löschen…"
+    "deleting": "Löschen…",
+    "addDomain": "Domain hinzufügen",
+    "addedOn": "Hinzugefügt am",
+    "copy": "Kopieren",
+    "dnsRecords": "DNS-Einträge",
+    "domainCreatedHint": "Erstellen Sie die folgenden DNS-Einträge bei Ihrem DNS-Anbieter und klicken Sie danach auf \"Verifizieren\":",
+    "domainCreatedTitle": "Domain hinzugefügt — DNS-Einträge konfigurieren",
+    "domainHelper": "Verwenden Sie eine Subdomain, keine nackte Root-Domain. Nach dem Hinzufügen konfigurieren Sie die DNS-Einträge.",
+    "domainPlaceholder": "links.meinedomain.de",
+    "domainsPageDescription": "Verwalten Sie Ihre eigenen Domains für weiße Beschriftung (White-Label)",
+    "myDomains": "Eigene Domains",
+    "noDomains": "Noch keine Domains hinzugefügt",
+    "unverified": "Nicht verifiziert",
+    "verificationToken": "Verifizierungs-Token (TXT-Wert):",
+    "verified": "Verifiziert",
+    "verify": "Verifizieren"
   },
   "analytics": {
     "title": "Analytics Dashboard",
