@@ -133,7 +133,7 @@ export function PasskeyRegister({ onSuccess, onError }: PasskeyRegisterProps) {
       </Button>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        You'll be prompted to use your device's biometric authentication (TouchID, FaceID, Windows Hello) or a security key
+        You&apos;ll be prompted to use your device&apos;s biometric authentication (TouchID, FaceID, Windows Hello) or a security key
       </p>
     </div>
   );

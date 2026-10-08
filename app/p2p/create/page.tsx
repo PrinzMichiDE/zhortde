@@ -170,7 +170,7 @@ export default function CreateP2PSharePage() {
                   <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-2 list-disc list-inside">
                     <li>The file is <strong>never stored on the server</strong></li>
                     <li>When someone accesses the share link, a direct peer-to-peer connection is established</li>
-                    <li>The file is transferred directly between your browser and the recipient's browser</li>
+                    <li>The file is transferred directly between your browser and the recipient&#39;s browser</li>
                     <li><strong>Keep this page open</strong> until the transfer is complete</li>
                   </ul>
                 </div>

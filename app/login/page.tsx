@@ -164,7 +164,7 @@ function LoginContent() {
                   </h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Use your device's biometric authentication or security key to sign in securely.
+                  Use your device&apos;s biometric authentication or security key to sign in securely.
                 </p>
                 <PasskeyLogin
                   email={email}

@@ -143,7 +143,7 @@ function matchesIpRange(ip: string, range: string): boolean {
 export async function getTeamUsageStats(teamId: number, period: 'daily' | 'monthly' | 'yearly' = 'monthly') {
   const now = new Date();
   let periodStart: Date;
-  let periodEnd: Date = now;
+  const periodEnd: Date = now;
 
   switch (period) {
     case 'daily':
@@ -184,7 +184,7 @@ export async function trackUsage(params: {
   resourceType: 'link' | 'click' | 'api_call' | 'export';
   resourceId?: number;
   count?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }) {
   const { teamId, userId, resourceType, resourceId, count = 1, metadata } = params;
 

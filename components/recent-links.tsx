@@ -11,8 +11,9 @@ export function RecentLinks() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const t = useTranslations('linkForm');
 
+  const [mounted, setMounted] = useState(true);
+
   useEffect(() => {
-    setMounted(true);
     setLinks(getRecentLinks());
 
     const refresh = () => setLinks(getRecentLinks());

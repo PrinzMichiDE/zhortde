@@ -22,6 +22,12 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 - Das Passwortformular sendet Zugangsdaten per `POST /api/pastes/[slug]/unlock`; URLs, Browserhistorie und Referrer enthalten kein Paste-Passwort mehr.
 
+### Fixed
+
+- Unescape apostrophes in template strings to resolve `react/no-unescaped-entities` ESLint errors.
+- Resolve `react-hooks/set-state-in-effect` by removing synchronous `setState` calls from `useEffect` in `recent-links.tsx`.
+- Replace `any` with `unknown` and `Blob` in type annotations across enterprise and p2p feature modules to resolve `@typescript-eslint/no-explicit-any`.
+
 ## [2026-07-20]
 
 ### Security

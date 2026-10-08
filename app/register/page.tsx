@@ -286,7 +286,7 @@ export default function RegisterPage() {
                   </h3>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Create a Passkey to sign in without a password using your device's biometric authentication.
+                  Create a Passkey to sign in without a password using your device&apos;s biometric authentication.
                 </p>
                 <PasskeyRegister
                   onSuccess={() => {

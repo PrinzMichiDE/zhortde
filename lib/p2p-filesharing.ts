@@ -64,7 +64,7 @@ export function chunkFile(file: File, chunkSize: number = 64 * 1024): File[] {
 
   while (offset < file.size) {
     const chunk = file.slice(offset, offset + chunkSize);
-    chunks.push(chunk as any);
+    chunks.push(chunk as Blob);
     offset += chunkSize;
   }
 

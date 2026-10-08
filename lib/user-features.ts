@@ -270,7 +270,7 @@ export async function checkLinkHealth(linkId: number): Promise<{
     
     return { status: 'broken', statusCode, responseTime };
     
-  } catch (error: any) {
+  } catch (error: unknown) {
     const responseTime = Date.now() - startTime;
     let status: 'timeout' | 'ssl_error' | 'broken' | 'unknown' = 'unknown';
     let errorMessage = error.message;
@@ -384,7 +384,7 @@ export async function logQuickAction(params: {
   userId?: number;
   linkId?: number;
   actionType: 'copy' | 'share' | 'qr' | 'analytics' | 'edit';
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }) {
   const { userId, linkId, actionType, metadata } = params;
 

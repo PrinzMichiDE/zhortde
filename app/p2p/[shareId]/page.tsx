@@ -194,7 +194,7 @@ export default function AccessP2PSharePage() {
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
           <p className="text-sm font-semibold mb-2">🌐 Peer-to-Peer Transfer</p>
           <p className="text-sm">
-            The file will be transferred directly from the sender's browser to yours.
+            The file will be transferred directly from the sender&apos;s browser to yours.
             No server storage is used.
           </p>
         </div>

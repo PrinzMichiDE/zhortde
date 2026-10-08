@@ -4,7 +4,7 @@ import * as schema from './schema';
 
 // Globale Cache-Variable für die DB-Verbindung
 declare global {
-  // eslint-disable-next-line no-var
+   
   var dbConnection: ReturnType<typeof drizzle<typeof schema>> | undefined;
 }
 

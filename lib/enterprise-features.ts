@@ -28,13 +28,13 @@ export async function createScheduledReport(params: {
   frequency: 'daily' | 'weekly' | 'monthly';
   recipients: string[]; // Stored but not used for email sending
   format?: 'pdf' | 'csv' | 'json' | 'html';
-  filters?: Record<string, any>;
+  filters?: Record<string, unknown>;
 }) {
   const { teamId, userId, name, reportType, frequency, recipients, format = 'pdf', filters } = params;
 
   // Calculate next send date (for report generation, not email sending)
   const now = new Date();
-  let nextSendAt = new Date();
+  const nextSendAt = new Date();
   
   switch (frequency) {
     case 'daily':
@@ -193,8 +193,8 @@ export async function logAuditEvent(params: {
   resourceId?: number;
   ipAddress?: string;
   userAgent?: string;
-  changes?: Record<string, any>;
-  metadata?: Record<string, any>;
+  changes?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }) {
   const {
     teamId,
@@ -231,7 +231,7 @@ export async function logActivity(params: {
   title: string;
   description?: string;
   linkId?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }) {
   const { teamId, userId, activityType, title, description, linkId, metadata } = params;
 
