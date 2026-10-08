@@ -117,6 +117,59 @@ export async function GET() {
           },
         },
       },
+      '/api/v1/links/{shortCode}/analytics': {
+        get: {
+          operationId: 'getLinkAnalyticsV1',
+          summary: 'Get link analytics (API key required)',
+          description:
+            'Returns click analytics for a link that belongs to the API key owner: total clicks, unique IPs and device/country/browser breakdowns plus the most recent clicks.',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'shortCode',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            '200': {
+              description: 'Analytics',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean' },
+                      shortCode: { type: 'string' },
+                      longUrl: { type: 'string', format: 'uri' },
+                      totalClicks: { type: 'integer' },
+                      uniqueIps: { type: 'integer' },
+                      deviceBreakdown: {
+                        type: 'object',
+                        additionalProperties: { type: 'integer' },
+                      },
+                      countryBreakdown: {
+                        type: 'object',
+                        additionalProperties: { type: 'integer' },
+                      },
+                      browserBreakdown: {
+                        type: 'object',
+                        additionalProperties: { type: 'integer' },
+                      },
+                      recentClicks: { type: 'array' },
+                    },
+                  },
+                },
+              },
+            },
+            '401': { description: 'Unauthorized' },
+            '403': { description: 'Forbidden (link belongs to another user)' },
+            '404': { description: 'Link not found' },
+            '500': { description: 'Server Error' },
+          },
+        },
+      },
       '/api/mcp': {
         get: {
           operationId: 'mcpSse',
