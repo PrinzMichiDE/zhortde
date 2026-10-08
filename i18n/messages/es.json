@@ -149,7 +149,8 @@
     "downloadQr": "Descargar QR",
     "validUrlError": "Por favor, introduce una URL válida (comienza con http:// o https://)",
     "customCodeLengthError": "El código corto debe tener entre 3 y 50 caracteres",
-    "shorteningError": "Error al acortar URL"
+    "shorteningError": "Error al acortar URL",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "Iniciar sesión",

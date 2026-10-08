@@ -10,6 +10,7 @@ import { incrementStat } from '@/lib/db/init-stats';
 import { checkRateLimit, getClientIp, getRateLimitHeaders } from '@/lib/rate-limit';
 import { hashPassword, calculateExpiration } from '@/lib/password-protection';
 import { triggerWebhooks } from '@/lib/webhooks';
+import { findDuplicateLink } from '@/lib/duplicate-links';
 import { logLinkAction } from '@/lib/audit-log';
 import { monetizeUrl } from '@/lib/monetization';
 import { 
@@ -163,6 +164,22 @@ export async function POST(request: NextRequest) {
         { error: 'Diese Domain ist auf der Blocklist und kann nicht gekürzt werden' },
         { status: 403 }
       );
+    }
+
+    // 7b. 🧑‍🤝‍🧑 Duplicate detection for authenticated users
+    if (session?.user?.id) {
+      const duplicate = await findDuplicateLink(parseInt(session.user.id), longUrl);
+      if (duplicate) {
+        return NextResponse.json(
+          {
+            error: 'Diese URL wurde bereits gekürzt',
+            existingShortCode: duplicate.shortCode,
+            existingLinkId: duplicate.id,
+            existingShortUrl: `${process.env.NEXT_PUBLIC_BASE_URL || request.nextUrl.origin}/s/${duplicate.shortCode}`,
+          },
+          { status: 409 }
+        );
+      }
     }
 
     // 8. Generate or validate Short Code

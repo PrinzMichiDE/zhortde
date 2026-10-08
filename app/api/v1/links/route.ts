@@ -6,6 +6,8 @@ import { validateApiKey } from '@/lib/api-keys';
 import { nanoid } from 'nanoid';
 import { monetizeUrl } from '@/lib/monetization';
 import { triggerWebhooks } from '@/lib/webhooks';
+import { findDuplicateLink } from '@/lib/duplicate-links';
+import { hashPassword } from '@/lib/password-protection';
 
 /**
  * API v1 - Create Link
@@ -47,6 +49,20 @@ export async function POST(request: NextRequest) {
     // Monetize URL
     const longUrl = monetizeUrl(rawLongUrl);
 
+    // 🧑‍🤝‍🧑 Duplicate detection: same stored URL for the same user
+    const duplicate = await findDuplicateLink(userId, longUrl);
+    if (duplicate) {
+      return NextResponse.json(
+        {
+          error: 'This URL has already been shortened',
+          existingShortCode: duplicate.shortCode,
+          existingLinkId: duplicate.id,
+          existingShortUrl: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://zhort.app'}/s/${duplicate.shortCode}`,
+        },
+        { status: 409 }
+      );
+    }
+
     // Generate or validate custom code
     const shortCode = customCode || nanoid(8);
 
@@ -82,12 +98,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const passwordHash = password ? await hashPassword(password) : null;
+
     // Create link
     const [link] = await db.insert(links).values({
       shortCode,
       longUrl, // Store monetized URL
       userId,
       isPublic: true,
+      passwordHash,
       expiresAt,
     }).returning();
 

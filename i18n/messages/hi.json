@@ -149,7 +149,8 @@
     "downloadQr": "QR डाउनलोड करें",
     "validUrlError": "कृपया एक वैध URL दर्ज करें (http:// या https:// से शुरू होता है)",
     "customCodeLengthError": "शॉर्ट कोड 3 से 50 वर्णों के बीच होना चाहिए",
-    "shorteningError": "URL छोटा करने में त्रुटि"
+    "shorteningError": "URL छोटा करने में त्रुटि",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "लॉगिन",

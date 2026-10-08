@@ -149,7 +149,8 @@
     "downloadQr": "下载二维码",
     "validUrlError": "请输入有效的URL（以 http:// 或 https:// 开头）",
     "customCodeLengthError": "短码长度必须在3到50个字符之间",
-    "shorteningError": "缩短链接时出错"
+    "shorteningError": "缩短链接时出错",
+    "duplicateHint": "此 URL 已存在短链接。请打开现有链接，或有意创建新链接。"
   },
   "auth": {
     "login": "登录",

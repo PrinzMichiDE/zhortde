@@ -149,7 +149,8 @@
     "downloadQr": "QR 다운로드",
     "validUrlError": "유효한 URL을 입력하세요 (http:// 또는 https://로 시작)",
     "customCodeLengthError": "단축 코드는 3~50자 사이여야 합니다",
-    "shorteningError": "URL 단축 오류"
+    "shorteningError": "URL 단축 오류",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "로그인",

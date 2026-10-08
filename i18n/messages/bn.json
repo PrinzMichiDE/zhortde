@@ -149,7 +149,8 @@
     "downloadQr": "QR ডাউনলোড করুন",
     "validUrlError": "অনুগ্রহ করে একটি বৈধ URL দিন (http:// বা https:// দিয়ে শুরু হয়)",
     "customCodeLengthError": "শর্ট কোড 3 থেকে 50 অক্ষরের মধ্যে হতে হবে",
-    "shorteningError": "URL সংক্ষিপ্ত করতে ত্রুটি"
+    "shorteningError": "URL সংক্ষিপ্ত করতে ত্রুটি",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "লগইন",

@@ -161,7 +161,8 @@
     "hideUtm": "Hide UTM builder",
     "privateVisible": "Private",
     "qrPreviewAlt": "QR code preview",
-    "autoCopied": "Copied to clipboard automatically"
+    "autoCopied": "Copied to clipboard automatically",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "Login",

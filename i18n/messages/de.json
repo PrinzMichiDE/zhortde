@@ -161,7 +161,8 @@
     "hideUtm": "UTM-Builder ausblenden",
     "privateVisible": "Privat",
     "qrPreviewAlt": "QR-Code-Vorschau",
-    "autoCopied": "Automatisch in die Zwischenablage kopiert"
+    "autoCopied": "Automatisch in die Zwischenablage kopiert",
+    "duplicateHint": "Für diese URL existiert bereits ein Kurzlink. Öffnen Sie den bestehenden Link oder erstellen Sie bewusst einen neuen."
   },
   "auth": {
     "login": "Login",

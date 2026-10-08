@@ -34,6 +34,11 @@ export function LinkForm() {
   const [shortCode, setShortCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [existingLink, setExistingLink] = useState<{
+    error: string;
+    shortUrl: string;
+    shortCode: string;
+  } | null>(null);
   const [copied, setCopied] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showUtm, setShowUtm] = useState(false);
@@ -84,6 +89,7 @@ export function LinkForm() {
 
   const submitForm = useCallback(async () => {
     setError('');
+    setExistingLink(null);
     setUrlError('');
     setCustomCodeError('');
     setShortUrl('');
@@ -135,6 +141,15 @@ export function LinkForm() {
       const data = await response.json();
 
       if (!response.ok) {
+        // If the server detected a duplicate, offer the existing link directly
+        if (data && data.existingShortUrl) {
+          setExistingLink({
+            error: data.error || t('shorteningError'),
+            shortUrl: data.existingShortUrl,
+            shortCode: data.existingShortCode,
+          });
+          return;
+        }
         throw new Error(data.error || t('shorteningError'));
       }
 
@@ -385,6 +400,29 @@ export function LinkForm() {
         {error && (
           <Alert variant="error" icon="⚠️">
             {error}
+          </Alert>
+        )}
+
+        {existingLink && (
+          <Alert variant="warning" icon="🔁" className="mt-4">
+            <div className="space-y-2">
+              <p>{existingLink.error}</p>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <a
+                  href={existingLink.shortUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm text-primary hover:bg-accent"
+                >
+                  {existingLink.shortUrl}
+                </a>
+                <Button type="button" variant="outline" size="sm" onClick={() => copyToClipboard(existingLink.shortUrl)}>
+                  <ClipboardIcon className="h-4 w-4 mr-1" />
+                  {t('copyShort')}
+                </Button>
+              </div>
+              <p className="text-xs opacity-80">{t('duplicateHint')}</p>
+            </div>
           </Alert>
         )}
 

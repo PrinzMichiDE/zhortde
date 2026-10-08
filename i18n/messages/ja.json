@@ -149,7 +149,8 @@
     "downloadQr": "QRをダウンロード",
     "validUrlError": "有効なURLを入力してください（http://またはhttps://で始まる）",
     "customCodeLengthError": "ショートコードは3〜50文字である必要があります",
-    "shorteningError": "URL短縮エラー"
+    "shorteningError": "URL短縮エラー",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "ログイン",

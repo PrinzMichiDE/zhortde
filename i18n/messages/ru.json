@@ -149,7 +149,8 @@
     "downloadQr": "Скачать QR",
     "validUrlError": "Пожалуйста, введите корректный URL (начинается с http:// или https://)",
     "customCodeLengthError": "Короткий код должен содержать от 3 до 50 символов",
-    "shorteningError": "Ошибка при сокращении URL"
+    "shorteningError": "Ошибка при сокращении URL",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "Вход",

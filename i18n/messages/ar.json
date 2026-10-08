@@ -149,7 +149,8 @@
     "downloadQr": "تحميل QR",
     "validUrlError": "الرجاء إدخال رابط صالح (يبدأ بـ http:// أو https://)",
     "customCodeLengthError": "الرمز المختصر يجب أن يكون بين 3 و 50 حرفًا",
-    "shorteningError": "خطأ في اختصار الرابط"
+    "shorteningError": "خطأ في اختصار الرابط",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "تسجيل الدخول",

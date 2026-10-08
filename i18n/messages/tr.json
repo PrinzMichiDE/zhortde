@@ -149,7 +149,8 @@
     "downloadQr": "QR İndir",
     "validUrlError": "Lütfen geçerli bir URL girin (http:// veya https:// ile başlamalı)",
     "customCodeLengthError": "Kısa kod 3 ile 50 karakter arasında olmalıdır",
-    "shorteningError": "URL kısaltma hatası"
+    "shorteningError": "URL kısaltma hatası",
+    "duplicateHint": "A short link already exists for this URL. Open the existing link or deliberately create a new one."
   },
   "auth": {
     "login": "Giriş",
