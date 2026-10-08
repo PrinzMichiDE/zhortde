@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
-import { users, pastes, links } from '@/lib/db/schema';
+import { users, pastes, links, pasteTags, tags } from '@/lib/db/schema';
 import { isSuperAdmin } from '@/lib/admin';
 import { eq } from 'drizzle-orm';
+import { and, inArray } from 'drizzle-orm';
 
 export async function DELETE(
   request: NextRequest,
@@ -31,7 +32,17 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
     }
 
-    // Delete associated pastes (which cascade to paste_tags)
+    // Cascade delete pasteTags and tags before deleting pastes
+    await db.delete(pasteTags).where(inArray(pasteTags.pasteId, (
+      await db.select({ id: pastes.id }).from(pastes).where(eq(pastes.userId, userId))
+    ).map(p => p.id)));
+    await db.delete(tags).where(inArray(tags.id, (
+      await db.select({ id: pasteTags.tagId }).from(pasteTags).where(inArray(pasteTags.pasteId, (
+        await db.select({ id: pastes.id }).from(pastes).where(eq(pastes.userId, userId))
+      ).map(p => p.id)))
+    ).map(t => t.id)));
+
+    // Delete associated pastes
     await db.delete(pastes).where(eq(pastes.userId, userId));
 
     // Delete associated links

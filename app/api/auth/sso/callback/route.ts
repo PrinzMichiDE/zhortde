@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { ssoDomains, users } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
+import { signIn } from 'next-auth/react';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -123,11 +124,9 @@ export async function GET(request: NextRequest) {
       ssoLoginExpiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 mins
     }).where(eq(users.id, user.id));
 
-    // Redirect to Magic Login Handler (Client Side will execute signIn)
-    // Actually, we can't trigger NextAuth signin from server side easily without a client.
-    // So we redirect to a client page that executes signIn('credentials', { sso_token: ... })
-    
-    return NextResponse.redirect(new URL(`/login/sso-callback?token=${ssoToken}&email=${encodeURIComponent(email)}`, request.url));
+    // Sign in via NextAuth (creates session)
+    await signIn('credentials', { ssoToken, email, redirect: false });
+    return NextResponse.redirect(new URL('/dashboard', request.url));
 
   } catch (error) {
     console.error('SSO Callback Error:', error);
