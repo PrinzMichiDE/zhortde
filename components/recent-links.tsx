@@ -11,9 +11,9 @@ export function RecentLinks() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const t = useTranslations('linkForm');
 
-  const [mounted, setMounted] = useState(true);
-
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
     setLinks(getRecentLinks());
 
     const refresh = () => setLinks(getRecentLinks());
