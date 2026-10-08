@@ -69,20 +69,27 @@ export async function getGeoLocation(ipAddress: string | null): Promise<{
 
 /**
  * Track a link click with detailed analytics
+ *
+ * An optional pre-resolved geo location can be passed in to avoid a second
+ * external geo-lookup when the caller already resolved the country for smart
+ * redirects.
  */
-export async function trackLinkClick(params: {
-  linkId: number;
-  ipAddress: string | null;
-  userAgent: string | null;
-  referer: string | null;
-}) {
+export async function trackLinkClick(
+  params: {
+    linkId: number;
+    ipAddress: string | null;
+    userAgent: string | null;
+    referer: string | null;
+  },
+  geo?: { country: string | null; city: string | null }
+) {
   const { linkId, ipAddress, userAgent, referer } = params;
 
   // Parse user agent
   const { deviceType, browser, os } = parseUserAgent(userAgent);
 
   // Get geo-location (async, can be slow)
-  const { country, city } = await getGeoLocation(ipAddress);
+  const { country, city } = geo ?? (await getGeoLocation(ipAddress));
 
   // Insert click record
   await db.insert(linkClicks).values({

@@ -3,32 +3,48 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
+import { TrackingPixels } from '@/components/tracking-pixels';
+import type { TrackingPixel } from '@/lib/tracking-pixels';
+
+type MaskConfig = {
+  inactive: boolean;
+  fallbackUrl: string | null;
+  targetUrl: string | null;
+  enableFrame: boolean;
+  enableSplash: boolean;
+  splashHtml: string;
+  splashDuration: number;
+  pixels: TrackingPixel[];
+};
 
 export default function MaskedLinkPage() {
   const params = useParams();
   const router = useRouter();
-  const [targetUrl, setTargetUrl] = useState<string | null>(null);
-  const [enableFrame, setEnableFrame] = useState(false);
+  const [config, setConfig] = useState<MaskConfig | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const [showSplash, setShowSplash] = useState(true);
-  const [splashHtml, setSplashHtml] = useState<string>('');
-  const [splashDuration, setSplashDuration] = useState(3000);
 
   useEffect(() => {
     // Fetch link details and masking config
     async function fetchLinkData() {
       try {
         const res = await fetch(`/api/mask-config/${params.shortCode}`);
-        const data = await res.json();
+        const data: MaskConfig = await res.json();
 
-        if (!data.targetUrl) {
+        if (!data.targetUrl && !data.inactive) {
           router.push('/404');
           return;
         }
 
-        setTargetUrl(data.targetUrl);
-        setEnableFrame(data.enableFrame);
-        setSplashHtml(data.splashHtml || '');
-        setSplashDuration(data.splashDuration || 3000);
+        setConfig(data);
+
+        // Inactive schedule: go to fallback or stay hidden
+        if (data.inactive) {
+          if (data.fallbackUrl) {
+            window.location.href = data.fallbackUrl;
+          }
+          return;
+        }
 
         // Auto-hide splash after duration
         if (data.enableSplash) {
@@ -41,6 +57,8 @@ export default function MaskedLinkPage() {
       } catch (error) {
         console.error('Failed to load link:', error);
         router.push('/404');
+      } finally {
+        setLoaded(true);
       }
     }
 
@@ -49,17 +67,43 @@ export default function MaskedLinkPage() {
 
   // Handle redirects for non-iframe masking (Splash only)
   useEffect(() => {
-    if (!showSplash && !enableFrame && targetUrl) {
-      window.location.href = targetUrl;
+    if (!showSplash && !config?.enableFrame && config?.targetUrl) {
+      window.location.href = config.targetUrl;
     }
-  }, [showSplash, enableFrame, targetUrl]);
+  }, [showSplash, config]);
+
+  if (config?.inactive && !config.fallbackUrl) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center text-muted-foreground">
+          <p className="text-xl font-semibold text-foreground">Dieser Link ist derzeit nicht aktiv</p>
+          <p className="mt-2 text-sm">Bitte versuchen Sie es später erneut.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!config || !loaded) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const { splashHtml, enableFrame, targetUrl } = config;
+
+  // Always fire tracking pixels once the link is reachable
+  const pixels = config.pixels.length > 0 ? <TrackingPixels pixels={config.pixels} /> : null;
 
   if (showSplash && splashHtml) {
     return (
       <div
         className="min-h-screen flex items-center justify-center"
         dangerouslySetInnerHTML={{ __html: splashHtml }}
-      />
+      >
+        {pixels}
+      </div>
     );
   }
 
@@ -70,17 +114,18 @@ export default function MaskedLinkPage() {
           <Loader2 className="h-16 w-16 animate-spin mx-auto mb-4" />
           <p className="text-xl font-semibold">Wird geladen...</p>
         </div>
+        {pixels}
       </div>
     );
   }
 
   if (!enableFrame && targetUrl) {
-      // Show loader while redirecting
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-white">
-             <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
-        </div>
-      );
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-10 w-10 animate-spin text-gray-500" />
+        {pixels}
+      </div>
+    );
   }
 
   if (!targetUrl) {
@@ -89,11 +134,14 @@ export default function MaskedLinkPage() {
 
   // Iframe mode (frame-based cloaking)
   return (
-    <iframe
-      src={targetUrl}
-      className="w-full h-screen border-0"
-      title="Masked Content"
-      sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
-    />
+    <>
+      <iframe
+        src={targetUrl}
+        className="w-full h-screen border-0"
+        title="Masked Content"
+        sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
+      />
+      {pixels}
+    </>
   );
 }

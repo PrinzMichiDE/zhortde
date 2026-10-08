@@ -5,9 +5,12 @@ import { eq } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { isExpired, verifyPassword } from '@/lib/password-protection';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
-import { trackLinkClick } from '@/lib/analytics';
+import { trackLinkClick, getGeoLocation } from '@/lib/analytics';
 import { triggerWebhooks } from '@/lib/webhooks';
 import { getSmartRedirectUrl } from '@/lib/smart-redirects';
+import { isLinkScheduled } from '@/lib/link-scheduling';
+import { selectVariant } from '@/lib/ab-testing';
+import { resolveRedirectTarget } from '@/lib/redirect-target';
 
 export async function GET(
   request: NextRequest,
@@ -35,9 +38,32 @@ export async function GET(
 
     // Check if expired
     if (link.expiresAt && isExpired(link.expiresAt)) {
+      // 🔔 Notify subscribers that the link has expired
+      if (link.userId) {
+        triggerWebhooks(link.userId, 'link.expired', {
+          linkId: link.id,
+          shortCode: link.shortCode,
+          longUrl: link.longUrl,
+        }).catch((error) => {
+          console.error('Webhook trigger error:', error);
+        });
+      }
+
       return NextResponse.json(
         { error: 'Dieser Link ist abgelaufen' },
         { status: 410 } // 410 Gone
+      );
+    }
+
+    // 📅 Enforce link scheduling (inactive links go to fallback or stay hidden)
+    const schedule = await isLinkScheduled(link.id);
+    if (!schedule.isActive) {
+      if (schedule.fallbackUrl) {
+        return NextResponse.redirect(schedule.fallbackUrl, 302);
+      }
+      return NextResponse.json(
+        { error: 'Dieser Link ist derzeit nicht aktiv' },
+        { status: 404 }
       );
     }
 
@@ -84,13 +110,16 @@ export async function GET(
     const userAgent = request.headers.get('user-agent');
     const referer = request.headers.get('referer');
     
+    // Resolve geo-location once and reuse it for analytics + smart redirects
+    const geo = await getGeoLocation(clientIp);
+
     // Fire and forget (don't await to avoid slowing down redirect)
     trackLinkClick({
       linkId: link.id,
       ipAddress: clientIp,
       userAgent,
       referer,
-    }).catch((error) => {
+    }, geo).catch((error) => {
       console.error('Analytics tracking error:', error);
     });
 
@@ -108,10 +137,35 @@ export async function GET(
       });
     }
 
-    // 🎯 Check for smart redirect rules
-    const country = null; // Could extract from IP with geolocation service
-    const smartRedirectUrl = await getSmartRedirectUrl(link.id, userAgent, country);
-    const finalUrl = smartRedirectUrl || link.longUrl;
+    // 🧪 A/B testing: pick the winning variant based on traffic split
+    const variantUrl = await selectVariant(link.id);
+
+    // Resolve schedule + variant precedence (pure decision)
+    const resolved = resolveRedirectTarget({
+      longUrl: link.longUrl,
+      schedule,
+      variantUrl,
+    });
+
+    if (resolved.kind === 'schedule-inactive') {
+      if (resolved.url) {
+        return NextResponse.redirect(resolved.url, 302);
+      }
+      return NextResponse.json(
+        { error: 'Dieser Link ist derzeit nicht aktiv' },
+        { status: 404 }
+      );
+    }
+
+    let finalUrl = resolved.url; // variant URL or long URL
+
+    // 🎯 Smart redirect rules apply when no A/B variant won the split
+    if (!variantUrl) {
+      const smartRedirectUrl = await getSmartRedirectUrl(link.id, userAgent, geo.country);
+      if (smartRedirectUrl) {
+        finalUrl = smartRedirectUrl;
+      }
+    }
 
     // 🎭 Check for link masking
     if (link.linkMasking && (link.linkMasking.enableFrame || link.linkMasking.enableSplash)) {
@@ -129,4 +183,3 @@ export async function GET(
     );
   }
 }
-
