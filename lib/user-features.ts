@@ -273,12 +273,13 @@ export async function checkLinkHealth(linkId: number): Promise<{
   } catch (error: unknown) {
     const responseTime = Date.now() - startTime;
     let status: 'timeout' | 'ssl_error' | 'broken' | 'unknown' = 'unknown';
-    let errorMessage = error.message;
+    const err = error instanceof Error ? error : new Error(String(error));
+    let errorMessage = err.message;
     
-    if (error.name === 'AbortError') {
+    if (err.name === 'AbortError') {
       status = 'timeout';
       errorMessage = 'Request timeout';
-    } else if (error.message?.includes('SSL') || error.message?.includes('certificate')) {
+    } else if (err.message?.includes('SSL') || err.message?.includes('certificate')) {
       status = 'ssl_error';
     } else {
       status = 'broken';

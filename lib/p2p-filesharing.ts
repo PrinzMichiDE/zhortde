@@ -58,13 +58,13 @@ export async function calculateFileHash(file: File): Promise<string> {
  * Chunk file for P2P transfer
  * Splits file into chunks for efficient transfer
  */
-export function chunkFile(file: File, chunkSize: number = 64 * 1024): File[] {
-  const chunks: File[] = [];
+export function chunkFile(file: File, chunkSize: number = 64 * 1024): Blob[] {
+  const chunks: Blob[] = [];
   let offset = 0;
 
   while (offset < file.size) {
     const chunk = file.slice(offset, offset + chunkSize);
-    chunks.push(chunk as Blob);
+    chunks.push(chunk);
     offset += chunkSize;
   }
 
