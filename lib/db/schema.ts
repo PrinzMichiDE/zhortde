@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, boolean, timestamp, index } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, integer, boolean, timestamp, index, uuid } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 export const stats = pgTable('stats', {
@@ -935,4 +935,53 @@ export const linkCollectionsRelations = relations(linkCollections, ({ one, many 
     references: [users.id],
   }),
   links: many(links),
+}));
+
+// ─── Batch Bulk Shortening Tables ───────────────────────────────────────────────
+
+export const batchJobs = pgTable('batch_jobs', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: text('user_id').notNull(),
+  status: text('status').notNull().default('pending'), // pending, processing, completed, failed, cancelled
+  totalUrls: integer('total_urls').notNull().default(0),
+  processedUrls: integer('processed_urls').notNull().default(0),
+  successCount: integer('success_count').notNull().default(0),
+  failedCount: integer('failed_count').notNull().default(0),
+  csvFileName: text('csv_file_name'),
+  csvFileUrl: text('csv_file_url'),
+  errorMessages: text('error_messages').array(),
+  errorMessage: text('error_message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+});
+
+export const batchLinks = pgTable('batch_links', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  batchId: uuid('batch_id')
+    .references(() => batchJobs.id, { onDelete: 'cascade' })
+    .notNull(),
+  originalUrl: text('original_url').notNull(),
+  shortCode: text('short_code'),
+  shortUrl: text('short_url'),
+  status: text('status').notNull().default('pending'), // pending, success, failed
+  errorMessage: text('error_message'),
+  lineIndex: integer('line_index').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const linkBatches = relations(batchLinks, ({ one }) => ({
+  batch: one(batchJobs, {
+    fields: [batchLinks.batchId],
+    references: [batchJobs.id],
+  }),
+}));
+
+export const batchJobsRelations = relations(batchJobs, ({ many, one }) => ({
+  links: many(batchLinks),
+  user: one(users, {
+    fields: [batchJobs.userId],
+    references: [users.id],
+  }),
 }));
