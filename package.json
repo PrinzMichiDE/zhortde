@@ -54,6 +54,9 @@
     "ua-parser-js": "^2.0.6",
     "zod": "^4.2.1"
   },
+  "overrides": {
+    "esbuild": "0.28.2"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
