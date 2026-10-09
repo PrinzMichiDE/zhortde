@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { updateBlocklist, getBlocklistStats } from '@/lib/db/blocklist-service';
+import { isSuperAdmin } from '@/lib/admin';
 
 /**
  * GET /api/admin/blocklist
@@ -39,6 +40,15 @@ export async function POST() {
       return NextResponse.json(
         { error: 'Authentifizierung erforderlich' },
         { status: 401 }
+      );
+    }
+
+    // Prüfe Super-Admin Berechtigung
+    if (!isSuperAdmin(session.user.email)) {
+      console.warn(`Blocklist update denied for non-admin: ${session.user.email}`);
+      return NextResponse.json(
+        { error: 'Nicht berechtigt' },
+        { status: 403 }
       );
     }
 
