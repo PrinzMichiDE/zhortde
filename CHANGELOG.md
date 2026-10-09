@@ -14,6 +14,24 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - Passwortversuche für Pastes sind datenbankgestützt auf fünf Anfragen je Client-IP und Paste in 15 Minuten begrenzt.
 - Gleichzeitige Versuche desselben Schlüssels werden über eine PostgreSQL-Transaktion mit Advisory Lock serialisiert; fällt der Rate-Limit-Speicher aus, verweigert der Paste-Unlock die Prüfung mit HTTP 503 statt unbegrenzt weiterzuprüfen.
 
+### Gap-Features umgesetzt
+
+- **Redirect-Zeitpunkt-Enforcement** (`ef81031`): Scheduling, A/B-Varianten, Geo-Targeting und Tracking-Pixel werden nun beim Redirect serverseitig ausgewertet (Priorität: inaktiver Zeitplan → A/B-Variante → Smart-Redirect → lange URL); Pixel-Dashboard-Seite inkl. Masking-Generator.
+- **Webhook-Zustellung & Ereignisabdeckung** (`14814a1`): `deliverWebhook` mit 3 Versuchen, exponentiellem Backoff + Jitter; nur 2xx als Erfolg; `link.expired` und `paste.created` sind jetzt gültige Ereignisse; 6 Tests.
+- **V1-Analytics-Endpoint** (`273337f`): `GET /api/v1/links/:shortCode/analytics` mit API-Key-Auth, Eigentümerprüfung; liefert Klicks, eindeutige IPs, Geräte-/Länder-/Browser-Aufschlüsselung; OpenAPI-Spezifikation erweitert; 5 Tests.
+- **API-Keys: Verfall, Rotation, Audit** (`672b310`): `expiresIn` (30d/90d/365d/never), Rotation über `POST /api/user/api-keys/[id]/rotate`, Audit-Einträge für Anlegen/Rotieren/Löschen; Dashboard mit Ablaufspalte und Rotate-Button; 5 Tests.
+- **Duplikaterkennung** (`09d21d4`): `findDuplicateLink` prüft auf Benutzer + gespeicherte URL, HTTP 409 mit bestehendem Shortcode, Formular zeigt Warnhinweis mit Kopierfunktion; 2 Tests.
+- **Link-Kommentare & Notizen** (`ab86a75`): `lib/link-comments.ts` mit Liste neueste zuerst, Anlegen/Löschen, Route mit `requireAuth` + Eigentümerprüfung + Zod-Schema; Dashboard-Seite `/dashboard/links/[linkId]/comments`; 5 Tests.
+- **Dashboard: Suche, Filter, Export, Teilen** (`eeacdc3`): Tag-Filter-Chips (AND-Verknüpfung), Quick-Filter Meistgeklickt/Aktiv/Abgelaufen, entprellte Suche (250 ms), CSV-Export, Teilen über Web Share API; Tag-Join-Bugfix; 4 Tests.
+- **Custom Domains** (`02d828e`): Seite `/dashboard/domains` mit Domain hinzufügen, DNS-Einträge (CNAME + TXT-Token), erneut verifizieren (PUT), löschen; `DELETE /api/user/domains/[id]` mit Audit-Eintrag; Sidebar-Eintrag; 17 neue Übersetzungen.
+- **Enterprise-Audit-Trail** (`5652def`): `logAuditEvent` an allen sensiblen Stellen: `link.created`, `link.updated`, `link.deleted`, `team.created`, `team.member.added`; PATCH/DELETE-Link lösen zusätzlich Webhooks aus; alle Schreibvorgänge fire-and-forget.
+- **Bulk-Shortener** (`b92de2b`): Tabellen `batch_jobs` und `batch_links` für Stapelverarbeitung, Massenkürzung mit Fortschrittsverfolgung und Status-Management.
+- **Admin-Routentests** (`b92de2b`): Umfassende Testsuite für Admin-Routen, inkl. Blocklist-Handler mit `isSuperAdmin`-Prüfung (Commit `3cab839`) und SSO-Callback-Route-Tests (Commit `95e89bc`).
+- **Fehlerbehandlungs-Infrastruktur** (`b92de2b`): Konsistente Fehlerbehandlung über alle API-Routen und Server-Komponenten hinweg, inkl. Validation Error Handling, Global Error Boundary, und API Error Responses.
+- **I18n-Abdeckung aller Frontend-Seiten** (`b92de2b`): Neue UI-Keys (`copiedHint`, `deleting` u. a.) in allen 15 Locales; Propagation-Skript für automatische Übersetzungsverteilung.
+- **Link-Management-Paginate & Suche** (`b92de2b`): Paginierte Link-Verwaltung mit erweiterter Suche über Kurz- und Lang-URLs.
+- **CORS-Konfiguration & Preflight-Handler** (`b92de2b`): CORS-Header auf allen API-Routen, OPTIONS-Handler für Preflight-Anfragen, konfigurierbare Origins-Richtlinie.
+
 ### Added
 
 - 19 Regressionstests für Paste-Seite, Raw-Route, Unlock-API, kryptografische Zugriffsnachweise sowie Konkurrenz- und Ausfallverhalten des Rate-Limits ergänzt; die vollständige Suite umfasst nun 31 Tests in acht Dateien.
