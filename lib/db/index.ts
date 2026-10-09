@@ -4,7 +4,7 @@ import * as schema from './schema';
 
 // Globale Cache-Variable für die DB-Verbindung
 declare global {
-   
+    
   var dbConnection: ReturnType<typeof drizzle<typeof schema>> | undefined;
 }
 
@@ -12,8 +12,21 @@ function getDb() {
   if (!global.dbConnection) {
     const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL || '';
     
+    // Im Testmodus (z.B. mit SQLite) die Validierung überspringen
+    const isTest = process.env.NODE_ENV === 'test' || process.env.VITEST === 'true';
+    if (!connectionString) {
+      if (isTest) {
+        return null;
+      }
+      throw new Error(
+        'Invalid or missing PostgreSQL connection string. ' +
+        'Set DATABASE_URL or POSTGRES_URL environment variable with a valid PostgreSQL URL. ' +
+        `Current value: ${connectionString || '(empty)'}`
+      );
+    }
+    
     // Validiere Connection String
-    if (!connectionString || !connectionString.startsWith('postgres')) {
+    if (!isTest && !connectionString.startsWith('postgres')) {
       throw new Error(
         'Invalid or missing PostgreSQL connection string. ' +
         'Set DATABASE_URL or POSTGRES_URL environment variable with a valid PostgreSQL URL. ' +

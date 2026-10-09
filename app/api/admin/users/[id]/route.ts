@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { users, pastes, links, pasteTags, tags } from '@/lib/db/schema';
 import { isSuperAdmin } from '@/lib/admin';
 import { eq } from 'drizzle-orm';
-import { and, inArray } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 
 export async function DELETE(
   request: NextRequest,
@@ -14,15 +14,14 @@ export async function DELETE(
   const session = await getServerSession(authOptions);
   
   if (!session?.user?.email || !isSuperAdmin(session.user.email)) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-  }
-
-  const userId = parseInt((await params).id);
-  if (isNaN(userId)) {
-    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
   try {
+    const userId = parseInt((await params).id);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    }
     // Prevent deleting self
     const currentUser = await db.query.users.findFirst({
       where: eq(users.email, session.user.email)
