@@ -17,6 +17,7 @@ import { addRecentLink } from '@/lib/recent-links';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Alert } from './ui/alert';
+import { Label } from './ui/label';
 import { SmartSuggestions } from './smart-suggestions';
 import { UtmBuilder } from './utm-builder';
 import { RecentLinks } from './recent-links';
@@ -28,6 +29,10 @@ export function LinkForm() {
   const [longUrl, setLongUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formSuccess, setFormSuccess] = useState(false);
+  const liveRegionRef = useRef<HTMLDivElement>(null);
   const [password, setPassword] = useState('');
   const [expiresIn, setExpiresIn] = useState<string>('never');
   const [shortUrl, setShortUrl] = useState('');

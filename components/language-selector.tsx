@@ -1,28 +1,29 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useCallback } from 'react';
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react';
 import { GlobeAltIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { locales, localeNames, localeFlags, type Locale } from '@/i18n/config';
 
 export function LanguageSelector() {
   const currentLocale = useLocale() as Locale;
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations('languageSelector');
 
-  const handleLocaleChange = (newLocale: Locale) => {
+  const handleLocaleChange = useCallback((newLocale: Locale) => {
     startTransition(() => {
       // Set cookie and reload page to apply new locale
       document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
       window.location.reload();
     });
-  };
+  }, [startTransition]);
 
   return (
-    <Menu as="div" className="relative">
+    <Menu as="div" className="relative" aria-label={t('ariaLabel')}>
       <MenuButton 
         className="flex items-center justify-center w-11 h-11 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        aria-label="Change language"
+        aria-label={t('ariaLabel')}
         disabled={isPending}
       >
         {isPending ? (
