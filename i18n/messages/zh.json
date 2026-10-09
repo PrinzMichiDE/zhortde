@@ -176,7 +176,12 @@
     "passwordMinLength": "密码至少需要8个字符",
     "passwordMismatch": "密码不匹配",
     "minChars": "至少8个字符",
-    "registrationFailed": "注册失败"
+    "registrationFailed": "注册失败",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "永不",

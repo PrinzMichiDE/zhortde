@@ -176,7 +176,12 @@
     "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "minChars": "Au moins 8 caractères",
-    "registrationFailed": "Échec de l'inscription"
+    "registrationFailed": "Échec de l'inscription",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "Jamais",

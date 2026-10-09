@@ -176,7 +176,12 @@
     "passwordMinLength": "पासवर्ड कम से कम 8 वर्णों का होना चाहिए",
     "passwordMismatch": "पासवर्ड मेल नहीं खाते",
     "minChars": "कम से कम 8 वर्ण",
-    "registrationFailed": "पंजीकरण विफल"
+    "registrationFailed": "पंजीकरण विफल",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "कभी नहीं",

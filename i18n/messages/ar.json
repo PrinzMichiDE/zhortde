@@ -176,7 +176,12 @@
     "passwordMinLength": "كلمة المرور يجب أن تكون 8 أحرف على الأقل",
     "passwordMismatch": "كلمات المرور غير متطابقة",
     "minChars": "8 أحرف على الأقل",
-    "registrationFailed": "فشل التسجيل"
+    "registrationFailed": "فشل التسجيل",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "أبدًا",

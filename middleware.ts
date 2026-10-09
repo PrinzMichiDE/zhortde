@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { createClient as createSupabaseClient } from '@/lib/supabase/middleware';
 
 /**
  * Security Middleware
@@ -181,13 +182,17 @@ function validateRequest(request: NextRequest): { valid: boolean; reason?: strin
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  
-  // Skip middleware for static files and Next.js internals
+
+  // Supabase session refresh for OAuth callbacks and protected routes
   if (
+    pathname.startsWith('/api/auth/supabase/callback') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/static') ||
-    pathname.includes('.') && !pathname.endsWith('.json')
+    (pathname.includes('.') && !pathname.endsWith('.json'))
   ) {
+    if (pathname.startsWith('/api/auth/supabase/callback')) {
+      return createSupabaseClient(request);
+    }
     return NextResponse.next();
   }
   

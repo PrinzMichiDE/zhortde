@@ -176,7 +176,12 @@
     "passwordMinLength": "Şifre en az 8 karakter olmalıdır",
     "passwordMismatch": "Şifreler eşleşmiyor",
     "minChars": "En az 8 karakter",
-    "registrationFailed": "Kayıt başarısız"
+    "registrationFailed": "Kayıt başarısız",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "Asla",

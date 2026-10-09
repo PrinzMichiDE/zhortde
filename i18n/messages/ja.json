@@ -176,7 +176,12 @@
     "passwordMinLength": "パスワードは8文字以上である必要があります",
     "passwordMismatch": "パスワードが一致しません",
     "minChars": "8文字以上",
-    "registrationFailed": "登録に失敗しました"
+    "registrationFailed": "登録に失敗しました",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "なし",

@@ -37,6 +37,10 @@ const envSchema = z.object({
   GOOGLE_SAFE_BROWSING_KEY: z.string().optional(),
   AMAZON_AFFILIATE_TAG: z.string().optional(),
 
+  // Supabase OAuth
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+
   // Node environment
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
 });

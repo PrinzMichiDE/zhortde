@@ -176,7 +176,12 @@
     "passwordMinLength": "Mật khẩu phải có ít nhất 8 ký tự",
     "passwordMismatch": "Mật khẩu không khớp",
     "minChars": "Ít nhất 8 ký tự",
-    "registrationFailed": "Đăng ký thất bại"
+    "registrationFailed": "Đăng ký thất bại",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "Không bao giờ",

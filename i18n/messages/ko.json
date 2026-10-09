@@ -176,7 +176,12 @@
     "passwordMinLength": "비밀번호는 최소 8자 이상이어야 합니다",
     "passwordMismatch": "비밀번호가 일치하지 않습니다",
     "minChars": "최소 8자",
-    "registrationFailed": "등록에 실패했습니다"
+    "registrationFailed": "등록에 실패했습니다",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "없음",

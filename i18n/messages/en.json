@@ -188,7 +188,12 @@
     "passwordMinLength": "Password must be at least 8 characters",
     "passwordMismatch": "Passwords do not match",
     "minChars": "At least 8 characters",
-    "registrationFailed": "Registration failed"
+    "registrationFailed": "Registration failed",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "Never",

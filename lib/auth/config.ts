@@ -26,7 +26,49 @@ export const authOptions: NextAuthOptions = {
                          req?.headers?.['x-real-ip'] || 
                          'unknown';
         
-        // 1. SSO Token Login
+        // 1. Supabase OAuth Login (sso_token = '__supabase_oauth__')
+        if (credentials?.sso_token === '__supabase_oauth__' && credentials?.email) {
+          const emailResult = emailSchema.safeParse(credentials.email);
+          if (!emailResult.success) {
+            logSecurityEvent({
+              type: 'auth_failure',
+              ip: clientIp as string,
+              details: { reason: 'invalid_email_format', method: 'supabase_oauth' },
+              timestamp: new Date(),
+            });
+            return null;
+          }
+          
+          const user = await db.query.users.findFirst({
+            where: eq(users.email, emailResult.data),
+          });
+
+          if (!user) {
+            logSecurityEvent({
+              type: 'auth_failure',
+              ip: clientIp as string,
+              details: { reason: 'user_not_found', email: emailResult.data, method: 'supabase_oauth' },
+              timestamp: new Date(),
+            });
+            return null;
+          }
+
+          logSecurityEvent({
+            type: 'auth_success',
+            userId: user.id,
+            ip: clientIp as string,
+            details: { method: 'supabase_oauth', email: emailResult.data },
+            timestamp: new Date(),
+          });
+          
+          return {
+            id: user.id.toString(),
+            email: user.email,
+            role: user.role,
+          };
+        }
+
+        // 2. SSO Token Login
         if (credentials?.sso_token && credentials?.email) {
           // Validate email format
           const emailResult = emailSchema.safeParse(credentials.email);
@@ -206,16 +248,16 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = user.role;
+        (token as Record<string, unknown>).id = user.id;
+        (token as Record<string, unknown>).role = (user as Record<string, unknown>).role;
         token.iat = Math.floor(Date.now() / 1000);
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role;
+        (session.user as Record<string, unknown>).id = token.id as string;
+        (session.user as Record<string, unknown>).role = token.role;
       }
       return session;
     },

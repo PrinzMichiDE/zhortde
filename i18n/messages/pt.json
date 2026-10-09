@@ -176,7 +176,12 @@
     "passwordMinLength": "A senha deve ter pelo menos 8 caracteres",
     "passwordMismatch": "As senhas não coincidem",
     "minChars": "Pelo menos 8 caracteres",
-    "registrationFailed": "Cadastro falhou"
+    "registrationFailed": "Cadastro falhou",
+    "loginWithGoogle": "Sign in with Google",
+    "loginWithDiscord": "Sign in with Discord",
+    "loginWithTwitch": "Sign in with Twitch",
+    "loginWithEmail": "Sign in with Email",
+    "back": "Back"
   },
   "expiration": {
     "never": "Nunca",
