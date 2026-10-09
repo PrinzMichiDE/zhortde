@@ -1,11 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Alert } from '@/components/ui/alert';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ClipboardIcon, DocumentArrowUpIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import {
+  ClipboardIcon,
+  DocumentArrowUpIcon,
+  CheckIcon,
+  ArrowDownTrayIcon,
+  ExclamationTriangleIcon,
+  XCircleIcon,
+  SpinnerIcon,
+} from '@heroicons/react/24/outline';
+import { parseCSV, parseTextInput, type BulkLinkRequest } from '@/lib/bulk-shortening';
 
 interface BulkResult {
   success: boolean;
@@ -23,26 +34,85 @@ interface BulkResponse {
   results: BulkResult[];
 }
 
+interface BatchJobStatus {
+  jobId: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  total: number;
+  processed: number;
+  successful: number;
+  failed: number;
+  results?: BulkResult[];
+  error?: string;
+}
+
 export default function BulkShorteningPage() {
   const [mode, setMode] = useState<'text' | 'csv'>('text');
   const [textInput, setTextInput] = useState('');
   const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvContent, setCsvContent] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<BulkResponse | null>(null);
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleTextSubmit = async () => {
+  // Batch job polling state
+  const [batchJob, setBatchJob] = useState<BatchJobStatus | null>(null);
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Clear polling interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, []);
+
+  // Poll for batch job status updates
+  useEffect(() => {
+    if (!batchJob || batchJob.status === 'completed' || batchJob.status === 'failed') {
+      return;
+    }
+
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/batch-jobs/${batchJob.jobId}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch job status');
+        }
+        const updatedJob: BatchJobStatus = await response.json();
+        setBatchJob(updatedJob);
+      } catch {
+        // Silently fail polling — job may still be processing
+      }
+    }, 1000);
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+      }
+    };
+  }, [batchJob?.jobId, batchJob?.status]);
+
+  const handleTextSubmit = useCallback(async () => {
     if (!textInput.trim()) {
+      setError('Please enter at least one URL.');
       return;
     }
 
     setLoading(true);
+    setError(null);
+    setResults(null);
+    setBatchJob(null);
+
     try {
-      const urls = textInput
-        .split('\n')
-        .map(line => line.trim())
-        .filter(line => line.length > 0)
-        .map(url => ({ url }));
+      const urls = parseTextInput(textInput);
+      if (urls.length === 0) {
+        setError('No valid URLs found in the input.');
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch('/api/links/bulk', {
         method: 'POST',
@@ -51,24 +121,100 @@ export default function BulkShorteningPage() {
       });
 
       const data: BulkResponse = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to process bulk links.');
+        return;
+      }
+
       setResults(data);
-    } catch (error) {
-      console.error('Bulk shortening error:', error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [textInput]);
 
-  const handleCSVUpload = async () => {
-    if (!csvFile) {
+  const handleCsvFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+      setError('Please upload a CSV file.');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size exceeds 10MB limit.');
+      return;
+    }
+
+    try {
+      const content = await file.text();
+      setCsvContent(content);
+      setCsvFile(file);
+      setError(null);
+    } catch {
+      setError('Failed to read the uploaded file.');
+    }
+  }, []);
+
+  const handleCsvSubmit = useCallback(async () => {
+    if (!csvContent) {
+      setError('Please upload a CSV file first.');
       return;
     }
 
     setLoading(true);
+    setError(null);
+    setResults(null);
+    setBatchJob(null);
+
+    try {
+      const urls = parseCSV(csvContent);
+      if (urls.length === 0) {
+        setError('No valid URLs found in the CSV file.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('/api/links/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls }),
+      });
+
+      const data: BulkResponse = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to process bulk links.');
+        return;
+      }
+
+      setResults(data);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [csvContent]);
+
+  const handleFileUpload = useCallback(async () => {
+    if (!csvFile) {
+      setError('Please select a file first.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setResults(null);
+    setBatchJob(null);
+
     try {
       const formData = new FormData();
       formData.append('file', csvFile);
-      formData.append('format', 'csv');
 
       const response = await fetch('/api/links/bulk', {
         method: 'PUT',
@@ -76,287 +222,198 @@ export default function BulkShorteningPage() {
       });
 
       const data: BulkResponse = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to process bulk links.');
+        return;
+      }
+
       setResults(data);
-    } catch (error) {
-      console.error('CSV upload error:', error);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      setError(message);
     } finally {
       setLoading(false);
     }
-  };
+  }, [csvFile]);
 
-  const copyToClipboard = (text: string, index: number) => {
-    navigator.clipboard.writeText(text);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
-  };
-
-  const exportResults = () => {
+  const handleExportCSV = useCallback(() => {
     if (!results) return;
 
-    const csv = [
-      'Long URL,Short Code,Short URL,Status',
-      ...results.results.map(r =>
-        `"${r.longUrl}","${r.shortCode || ''}","${r.shortUrl || ''}","${r.success ? 'Success' : 'Failed: ' + (r.error || 'Unknown')}"`
-      ),
+    const headers = ['URL', 'Short URL', 'Status', 'Error'];
+    const rows = results.results.map((r) => [
+      r.longUrl,
+      r.shortUrl || '',
+      r.success ? 'Success' : 'Failed',
+      r.error || '',
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')),
     ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `bulk-links-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bulk-results-${Date.now()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
-  };
+  }, [results]);
 
   return (
-    <div className="min-h-full bg-background">
-      <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground tracking-tight mb-2">
-            Bulk URL Shortening
-          </h1>
-          <p className="text-muted-foreground">
-            Kürzen Sie mehrere URLs gleichzeitig - perfekt für Marketing-Kampagnen und Newsletter
-          </p>
-        </div>
+    <div className="container mx-auto py-10 space-y-6">
+      <h1 className="text-3xl font-bold">Bulk URL Shortening</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Input Mode Selection */}
+      {error && (
+        <Alert variant="destructive">
+          <ExclamationTriangleIcon className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs value={mode} onValueChange={(v) => setMode(v as 'text' | 'csv')}>
+        <TabsList>
+          <TabsTrigger value="text">Text Input</TabsTrigger>
+          <TabsTrigger value="csv">CSV Upload</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="text">
           <Card>
             <CardHeader>
-              <CardTitle>Input-Methode wählen</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 mb-6">
-                <Button
-                  variant={mode === 'text' ? 'default' : 'outline'}
-                  onClick={() => setMode('text')}
-                  fullWidth
-                >
-                  Text-Input
-                </Button>
-                <Button
-                  variant={mode === 'csv' ? 'default' : 'outline'}
-                  onClick={() => setMode('csv')}
-                  fullWidth
-                >
-                  CSV Upload
-                </Button>
-              </div>
-
-              {mode === 'text' ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                      URLs (eine pro Zeile)
-                    </label>
-                    <textarea
-                      value={textInput}
-                      onChange={(e) => setTextInput(e.target.value)}
-                      placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"
-                      className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-card text-foreground placeholder-gray-500 dark:placeholder-gray-400 transition-all duration-300 font-mono text-sm min-h-[200px]"
-                      rows={10}
-                    />
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Geben Sie eine URL pro Zeile ein. Maximal 100 URLs pro Batch.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleTextSubmit}
-                    loading={loading}
-                    fullWidth
-                    disabled={!textInput.trim()}
-                  >
-                    URLs kürzen
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                      CSV-Datei hochladen
-                    </label>
-                    <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
-                      <DocumentArrowUpIcon className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                      <input
-                        type="file"
-                        accept=".csv,.txt"
-                        onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                        className="hidden"
-                        id="csv-upload"
-                      />
-                      <label
-                        htmlFor="csv-upload"
-                        className="cursor-pointer inline-block px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      >
-                        Datei auswählen
-                      </label>
-                      {csvFile && (
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          {csvFile.name}
-                        </p>
-                      )}
-                    </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      CSV-Format: url,customCode,password,expiresIn,isPublic (optional)
-                    </p>
-                  </div>
-                  <Button
-                    onClick={handleCSVUpload}
-                    loading={loading}
-                    fullWidth
-                    disabled={!csvFile}
-                  >
-                    CSV verarbeiten
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Instructions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Anleitung</CardTitle>
+              <CardTitle>Enter URLs</CardTitle>
+              <CardDescription>
+                Paste one URL per line (e.g., https://example.com/page1).
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  Text-Input Modus:
-                </h3>
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>Eine URL pro Zeile eingeben</li>
-                  <li>Maximal 100 URLs pro Batch</li>
-                  <li>Automatische Short-Code-Generierung</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  CSV-Format:
-                </h3>
-                <pre className="text-xs bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto">
-{`url,customCode,password,expiresIn,isPublic
-https://example.com,my-link,,never,true
-https://example2.com,link2,secret123,7-day,false`}
-                </pre>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">
-                  Tipps:
-                </h3>
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                  <li>CSV kann optional Header-Zeile enthalten</li>
-                  <li>Passwörter werden sicher gehasht</li>
-                  <li>Ergebnisse können als CSV exportiert werden</li>
-                </ul>
+              <textarea
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3"
+                className="w-full h-40 resize-y rounded-md border border-input bg-background p-3 font-mono text-sm"
+              />
+              <Button onClick={handleTextSubmit} disabled={loading}>
+                {loading ? 'Processing...' : 'Shorten URLs'}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="csv">
+          <Card>
+            <CardHeader>
+              <CardTitle>Upload CSV File</CardTitle>
+              <CardDescription>
+                Upload a CSV file with one URL per line (first column).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleCsvFileChange}
+                className="hidden"
+              />
+              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <DocumentArrowUpIcon className="mr-2 h-4 w-4" />
+                Choose CSV File
+              </Button>
+              {csvFile && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: {csvFile.name} ({(csvFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+              <div className="space-y-2">
+                <Button onClick={handleCsvSubmit} disabled={loading || !csvContent}>
+                  {loading ? 'Processing...' : 'Process Parsed CSV'}
+                </Button>
+                <Button variant="outline" onClick={handleFileUpload} disabled={loading || !csvFile}>
+                  {loading ? 'Processing...' : 'Upload & Process'}
+                </Button>
               </div>
             </CardContent>
           </Card>
-        </div>
+        </TabsContent>
+      </Tabs>
 
-        {/* Results */}
-        {results && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>
-                  Ergebnisse ({results.successful}/{results.total} erfolgreich)
-                </CardTitle>
-                {results.successful > 0 && (
-                  <Button variant="outline" onClick={exportResults} size="sm">
-                    <ClipboardIcon className="h-4 w-4 mr-2" />
-                    Als CSV exportieren
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {results.failed > 0 && (
-                <Alert variant="warning" className="mb-4">
-                  {results.failed} Link(s) konnten nicht erstellt werden. Bitte prüfen Sie die Fehlermeldungen.
-                </Alert>
-              )}
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                  <thead className="bg-gray-50 dark:bg-gray-800">
+      {results && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Results</CardTitle>
+            <CardDescription>
+              {results.successful} successful, {results.failed} failed out of {results.total} URLs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex gap-2">
+              <Button onClick={handleExportCSV} disabled={!results}>
+                <ArrowDownTrayIcon className="mr-2 h-4 w-4" />
+                Export Results as CSV
+              </Button>
+              <Button variant="outline" onClick={() => { navigator.clipboard.writeText(JSON.stringify(results, null, 2)); }}>
+                <ClipboardIcon className="mr-2 h-4 w-4" />
+                Copy Results
+              </Button>
+            </div>
+
+            <div className="rounded-md border">
+              <div className="max-h-96 overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-muted/50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                        Long URL
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                        Short Code
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                        Short URL
-                      </th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
-                        Aktion
-                      </th>
+                      <th className="p-3 text-left">URL</th>
+                      <th className="p-3 text-left">Short URL</th>
+                      <th className="p-3 text-left">Status</th>
+                      <th className="p-3 text-left">Error</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-card divide-y divide-gray-200 dark:divide-gray-700">
-                    {results.results.map((result, index) => (
-                      <tr key={index} className={result.success ? '' : 'bg-red-50 dark:bg-red-900/20'}>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {result.success ? (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                              Erfolg
+                  <tbody>
+                    {results.results.map((r, i) => (
+                      <tr key={i} className="border-t">
+                        <td className="p-3 max-w-xs truncate">{r.longUrl}</td>
+                        <td className="p-3 max-w-xs truncate">
+                          {r.shortUrl ? (
+                            <a
+                              href={r.shortUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {r.shortUrl}
+                            </a>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="p-3">
+                          {r.success ? (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <CheckIcon className="h-4 w-4" />
+                              Success
                             </span>
                           ) : (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
-                              Fehler
+                            <span className="flex items-center gap-1 text-red-600">
+                              <XCircleIcon className="h-4 w-4" />
+                              Failed
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm text-foreground max-w-md truncate">
-                            {result.longUrl}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <code className="text-sm font-mono text-primary">
-                            {result.shortCode || '-'}
-                          </code>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className="text-sm text-primary max-w-md truncate">
-                            {result.shortUrl || '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          {result.success && result.shortUrl && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => copyToClipboard(result.shortUrl!, index)}
-                              aria-label="Kopieren"
-                            >
-                              {copiedIndex === index ? (
-                                <CheckIcon className="h-4 w-4 text-green-600" />
-                              ) : (
-                                <ClipboardIcon className="h-4 w-4" />
-                              )}
-                            </Button>
-                          )}
-                          {!result.success && (
-                            <span className="text-xs text-red-600 dark:text-red-400">
-                              {result.error}
-                            </span>
-                          )}
-                        </td>
+                        <td className="p-3 max-w-xs truncate text-muted-foreground">{r.error}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

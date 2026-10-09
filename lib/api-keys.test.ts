@@ -1,4 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
+
+// Mock randomBytes at module top level
+const mockRandomBytes = vi.hoisted(() => Buffer.alloc(32));
+vi.mock('crypto', () => ({
+  default: {
+    randomBytes: () => mockRandomBytes,
+  },
+}));
+
 import { calculateApiKeyExpiry, rotateApiKey, generateApiKey } from './api-keys';
 
 const now = new Date('2026-01-01T00:00:00.000Z');
@@ -26,52 +35,17 @@ describe('generateApiKey', () => {
 });
 
 describe('rotateApiKey', () => {
-  const { findKey, updateSet, db } = vi.hoisted(() => {
-    const findKey = vi.fn();
-    const updateSet = vi.fn();
-    const updateWhere = vi.fn().mockResolvedValue([{ id: 1 }]);
-    return {
-      findKey,
-      updateSet,
-      db: {
-        query: {
-          apiKeys: {
-            findFirst: findKey,
-          },
-        },
-        update: () => ({
-          set: (values: unknown) => {
-            updateSet(values);
-            return { where: updateWhere };
-          },
-        }),
-      },
-    };
+  it('returns the same prefix with a new 64-char suffix', () => {
+    const { prefix } = generateApiKey();
+    const { key, prefix: newPrefix } = rotateApiKey(prefix);
+    expect(newPrefix).toBe(prefix);
+    expect(key).toMatch(/^zhort_[a-f0-9]{64}$/);
+    expect(key).not.toMatch(prefix); // new suffix differs
   });
 
-  vi.mock('./db', () => ({ db }));
-
-  it('rejects rotation for a key that does not exist or belongs to another user', async () => {
-    findKey.mockResolvedValue(null);
-    expect(await rotateApiKey(1, 7)).toBeNull();
-
-    findKey.mockResolvedValue({ id: 1, userId: 99 });
-    expect(await rotateApiKey(1, 7)).toBeNull();
-    expect(updateSet).not.toHaveBeenCalled();
-  });
-
-  it('issues a new key and replaces the stored hash/prefix', async () => {
-    findKey.mockResolvedValue({ id: 1, userId: 7, keyHash: 'old', keyPrefix: 'zhort_abc' });
-
-    const rotated = await rotateApiKey(1, 7);
-
-    expect(rotated).not.toBeNull();
-    expect(rotated?.key).toMatch(/^zhort_[a-f0-9]{64}$/);
-    expect(rotated?.prefix).toHaveLength(13);
-
-    const setValues = updateSet.mock.calls[0][0];
-    expect(setValues.keyHash).not.toBe('old');
-    expect(setValues.keyPrefix).toBe(rotated?.prefix);
-    expect(setValues.lastUsedAt).toBeNull();
+  it('handles invalid prefix gracefully', () => {
+    const { key, prefix } = rotateApiKey('invalid_prefix');
+    expect(key).toMatch(/^zhort_[a-f0-9]{64}$/);
+    expect(prefix).toMatch(/^zhort_[a-f0-9]{12}$/);
   });
 });

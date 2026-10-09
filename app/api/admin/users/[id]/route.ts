@@ -28,8 +28,21 @@ export async function DELETE(
       where: eq(users.email, session.user.email)
     });
     
+    // Prevent deleting self
     if (currentUser?.id === userId) {
       return NextResponse.json({ error: 'Cannot delete yourself' }, { status: 400 });
+    }
+
+    // Prevent deleting super admins (only super admins can manage each other)
+    const targetUser = await db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+
+    if (targetUser?.isSuperAdmin) {
+      return NextResponse.json(
+        { error: 'Cannot delete super admin users' },
+        { status: 403 }
+      );
     }
 
     // Cascade delete pasteTags and tags before deleting pastes

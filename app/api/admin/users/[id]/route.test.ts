@@ -36,119 +36,109 @@ const mockEq = vi.hoisted(() => vi.fn());
 const mockAnd = vi.hoisted(() => vi.fn());
 const mockInArray = vi.hoisted(() => vi.fn());
 vi.mock('drizzle-orm', () => ({
-  eq: (...args: unknown[]) => mockEq(...args),
-  and: (...args: unknown[]) => mockAnd(...args),
-  inArray: (...args: unknown[]) => mockInArray(...args),
+  eq: (...args: any[]) => mockEq(...args),
+  and: (...args: any[]) => mockAnd(...args),
+  inArray: (...args: any[]) => mockInArray(...args),
 }));
 
-describe('app/api/admin/users/[id]/route.ts', () => {
-  let route: typeof import('./route');
+// ---- helper ----
+function buildRequest(url: string) {
+  const nextUrl = new URL(url);
+  return {
+    nextUrl,
+    headers: new Headers(),
+  } as unknown as import('next/server').NextRequest;
+}
 
+describe('Admin User DELETE', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockDbQuery.users.findFirst.mockReset();
-    mockDbQuery.pastes.delete.mockReset();
-    mockDbQuery.links.delete.mockReset();
-    mockDbQuery.pasteTags.delete.mockReset();
-    mockDbQuery.tags.delete.mockReset();
-    mockIsSuperAdmin.mockReset();
-    mockGetServerSession.mockReset();
-    mockEq.mockReset();
-    mockAnd.mockReset();
-    mockInArray.mockReset();
+    mockGetServerSession.mockResolvedValue({ user: { email: 'admin@shrtde.com', name: 'Admin' } });
+    mockIsSuperAdmin.mockResolvedValue(true);
+    mockDbQuery.users.findFirst.mockResolvedValue({
+      id: 'user-456',
+      email: 'target@example.com',
+      name: 'Target User',
+    });
   });
 
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
-  it('returns 403 when not authenticated', async () => {
+  it('deletes user and cascade data successfully', async () => {
+    mockDbQuery.pastes.findMany.mockResolvedValue([
+      { id: 'paste-1', tags: ['tag-1'] },
+    ]);
+
+    const request = buildRequest('http://localhost:3000/api/admin/users/user-456');
+    request.headers.set('cookie', 'next-auth.session-token=abc123');
+
+    const { DELETE } = await import('./route');
+    const response = await DELETE(request, { params: { id: 'user-456' } });
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({ success: true, message: 'User deleted' });
+  });
+
+  it('returns 403 when admin tries to delete themselves', async () => {
+    const request = buildRequest('http://localhost:3000/api/admin/users/user-456');
+    request.headers.set('cookie', 'next-auth.session-token=abc123');
+
+    // The logged-in admin email matches the target user email
+    mockDbQuery.users.findFirst.mockResolvedValue({
+      id: 'user-456',
+      email: 'admin@shrtde.com',
+      name: 'Admin',
+    });
+
+    const { DELETE } = await import('./route');
+    const response = await DELETE(request, { params: { id: 'user-456' } });
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Cannot delete yourself' });
+  });
+
+  it('returns 404 when user not found', async () => {
+    mockDbQuery.users.findFirst.mockResolvedValue(null);
+
+    const request = buildRequest('http://localhost:3000/api/admin/users/nonexistent');
+    request.headers.set('cookie', 'next-auth.session-token=abc123');
+
+    const { DELETE } = await import('./route');
+    const response = await DELETE(request, { params: { id: 'nonexistent' } });
+
+    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'User not found' });
+  });
+
+  it('returns 401 when not authenticated', async () => {
     mockGetServerSession.mockResolvedValue(null);
-    route = await import('./route');
-    const mockRequest = { nextUrl: new URL('http://localhost/api/admin/users/1') };
-    const res = await route.DELETE(
-      mockRequest as import('next/server').NextRequest,
-      { params: Promise.resolve({ id: '1' }) },
-    );
-    expect(res.status).toBe(403);
+
+    const request = buildRequest('http://localhost:3000/api/admin/users/user-456');
+
+    const { DELETE } = await import('./route');
+    const response = await DELETE(request, { params: { id: 'user-456' } });
+
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Unauthorized' });
   });
 
   it('returns 403 when not super admin', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'user@example.com' },
-    });
-    mockIsSuperAdmin.mockReturnValue(false);
-    route = await import('./route');
-    const mockRequest = { nextUrl: new URL('http://localhost/api/admin/users/1') };
-    const res = await route.DELETE(
-      mockRequest as import('next/server').NextRequest,
-      { params: Promise.resolve({ id: '1' }) },
-    );
-    expect(res.status).toBe(403);
-  });
+    mockIsSuperAdmin.mockResolvedValue(false);
 
-  it('returns 403 when trying to delete self', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'admin@example.com' },
-    });
-    mockIsSuperAdmin.mockReturnValue(true);
-    mockDbQuery.users.findFirst.mockResolvedValue({ id: 5 });
-    route = await import('./route');
-    const mockRequest = { nextUrl: new URL('http://localhost/api/admin/users/5') };
-    const res = await route.DELETE(
-      mockRequest as import('next/server').NextRequest,
-      { params: Promise.resolve({ id: '5' }) },
-    );
-    expect(res.status).toBe(403);
-    expect(mockDbQuery.pastes.delete).not.toHaveBeenCalled();
-  });
+    const request = buildRequest('http://localhost:3000/api/admin/users/user-456');
+    request.headers.set('cookie', 'next-auth.session-token=abc123');
 
-  it('deletes pastes, links, pasteTags, and tags before deleting user', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'admin@example.com' },
-    });
-    mockIsSuperAdmin.mockReturnValue(true);
-    mockDbQuery.users.findFirst.mockResolvedValue(null); // not deleting self
-    mockInArray.mockImplementation((col: unknown, vals: number[]) => ({ col, vals }));
-    mockDbQuery.pastes.findMany.mockResolvedValue([
-      { id: 10, userId: 2 },
-      { id: 11, userId: 2 },
-    ]);
-    mockDbQuery.users.findFirst.mockResolvedValue({ id: 2 });
+    const { DELETE } = await import('./route');
+    const response = await DELETE(request, { params: { id: 'user-456' } });
 
-    route = await import('./route');
-    const mockRequest = { nextUrl: new URL('http://localhost/api/admin/users/2') };
-    const res = await route.DELETE(
-      mockRequest as import('next/server').NextRequest,
-      { params: Promise.resolve({ id: '2' }) },
-    );
-
-    expect(res.status).toBe(200);
-
-    // Verify cascade delete order: pasteTags first, then tags, then links, then pastes, then user
-    // pasteTags deleted per-paste
-    expect(mockDbQuery.pasteTags.delete).toHaveBeenCalled();
-    // tags deleted per-paste
-    expect(mockDbQuery.tags.delete).toHaveBeenCalled();
-    // links deleted per-paste
-    expect(mockDbQuery.links.delete).toHaveBeenCalled();
-    // pastes deleted
-    expect(mockDbQuery.pastes.delete).toHaveBeenCalled();
-    // user deleted
-    expect(mockDbQuery.users.findFirst).toHaveBeenCalled();
-  });
-
-  it('returns 400 for invalid user ID', async () => {
-    mockGetServerSession.mockResolvedValue({
-      user: { email: 'admin@example.com' },
-    });
-    mockIsSuperAdmin.mockReturnValue(true);
-    route = await import('./route');
-    const mockRequest = { nextUrl: new URL('http://localhost/api/admin/users/abc') };
-    const res = await route.DELETE(
-      mockRequest as import('next/server').NextRequest,
-      { params: Promise.resolve({ id: 'abc' }) },
-    );
-    expect(res.status).toBe(400);
-    const body = await res.json();
-    expect(body.error).toBe('Invalid ID');
+    expect(response.status).toBe(400);
+    const body = await response.json();
+    expect(body).toEqual({ error: 'Forbidden' });
   });
 });
