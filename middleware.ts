@@ -191,7 +191,7 @@ export async function middleware(request: NextRequest) {
     (pathname.includes('.') && !pathname.endsWith('.json'))
   ) {
     if (pathname.startsWith('/api/auth/supabase/callback')) {
-      return createSupabaseClient(request);
+      return await createSupabaseClient(request);
     }
     return NextResponse.next();
   }

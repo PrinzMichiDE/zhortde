@@ -10,7 +10,8 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        error: 'bg-red-50 border-red-500 text-red-700 dark:bg-red-900/20 dark:border-red-400 dark:text-red-300',
+        default: 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-300',
+        destructive: 'bg-red-50 border-red-500 text-red-700 dark:bg-red-900/20 dark:border-red-400 dark:text-red-300',
         success: 'bg-green-50 border-green-500 text-green-700 dark:bg-green-900/20 dark:border-green-400 dark:text-green-300',
         warning: 'bg-yellow-50 border-yellow-500 text-yellow-700 dark:bg-yellow-900/20 dark:border-yellow-400 dark:text-yellow-300',
         info: 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:border-blue-400 dark:text-blue-300',
@@ -33,7 +34,17 @@ export interface AlertProps
 }
 
 const alertIcons: Record<string, React.ReactNode> = {
+  default: (
+    <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+    </svg>
+  ),
   error: (
+    <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+    </svg>
+  ),
+  destructive: (
     <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
     </svg>
@@ -56,11 +67,9 @@ const alertIcons: Record<string, React.ReactNode> = {
 };
 
 const Alert = forwardRef<HTMLDivElement, AlertProps>(
-  ({ className, variant, title, icon, dismissible = false, onDismiss, 'aria-label': ariaLabel, ...props }, ref) => {
+  ({ className, variant, icon, dismissible = false, onDismiss, 'aria-label': ariaLabel, ...props }, ref) => {
     const dismissButtonRef = useRef<HTMLButtonElement>(null);
     const alertId = `alert-${Math.random().toString(36).slice(2, 9)}`;
-
-    // Auto-dismiss after timeout if specified
     const timeoutRef = useRef<number | null>(null);
 
     useEffect(() => {
@@ -77,22 +86,33 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
       }
     };
 
+    // Check if children contain AlertTitle or AlertDescription
+    const hasStructuredChildren = React.Children.toArray(props.children).some(
+      child => React.isValidElement(child) && (child.type === AlertTitle || child.type === AlertDescription)
+    );
+
     const alertContent = (
       <div
         ref={ref}
         id={alertId}
         role="alert"
         aria-live="polite"
-        aria-label={ariaLabel || title}
+        aria-label={ariaLabel}
         className={cn(alertVariants({ variant }), className)}
         {...props}
       >
-        {icon || alertIcons[variant as keyof typeof alertIcons]}
+        {icon || alertIcons[variant as keyof typeof alertIcons] || alertIcons.default}
         <div className="flex-1 min-w-0">
-          {title && (
-            <h3 className="text-sm font-semibold">{title}</h3>
+          {hasStructuredChildren ? (
+            props.children
+          ) : (
+            <>
+              {props.title && (
+                <h3 className="text-sm font-semibold">{props.title}</h3>
+              )}
+              <div className="text-sm">{props.children}</div>
+            </>
           )}
-          <div className="text-sm">{props.children}</div>
         </div>
         {dismissible && (
           <button
@@ -112,14 +132,31 @@ const Alert = forwardRef<HTMLDivElement, AlertProps>(
     return alertContent;
   }
 );
-
 Alert.displayName = 'Alert';
+
+export interface AlertTitleProps extends HTMLAttributes<HTMLHeadingElement> {
+  className?: string;
+}
+
+const AlertTitle = forwardRef<HTMLHeadingElement, AlertTitleProps>(({ className, ...props }, ref) => (
+  <h3 ref={ref} className={cn('text-sm font-semibold leading-none', className)} {...props} />
+));
+AlertTitle.displayName = 'AlertTitle';
+
+export interface AlertDescriptionProps extends HTMLAttributes<HTMLParagraphElement> {
+  className?: string;
+}
+
+const AlertDescription = forwardRef<HTMLParagraphElement, AlertDescriptionProps>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn('text-sm [&_p]:leading-relaxed', className)} {...props} />
+));
+AlertDescription.displayName = 'AlertDescription';
 
 // Toast/Alerter for dynamic notifications
 export interface AlerterToastProps {
   id: string;
   message: string;
-  variant?: 'error' | 'success' | 'warning' | 'info';
+  variant?: 'error' | 'success' | 'warning' | 'info' | 'default' | 'destructive';
   duration?: number;
   onDismiss?: (id: string) => void;
 }
@@ -151,4 +188,4 @@ export function AlerterToast({ id, message, variant = 'info', duration = 5000, o
   );
 }
 
-export { Alert };
+export { Alert, AlertTitle, AlertDescription };

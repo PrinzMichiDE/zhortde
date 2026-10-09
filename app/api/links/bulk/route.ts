@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import { processBulkLinks, parseCSV, parseTextInput, type BulkLinkRequest } from '@/lib/bulk-shortening';
+import { processBulkLinks } from '@/lib/bulk-shortening-db';
+import { parseCSV, parseTextInput, type BulkLinkRequest } from '@/lib/bulk-shortening';
 import { incrementStat } from '@/lib/db/init-stats';
 import { triggerWebhooks } from '@/lib/webhooks';
 
