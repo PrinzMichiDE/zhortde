@@ -392,7 +392,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-2">
-                <Button type="button" variant="outline" onClick={closeEdit} fullWidth>
+                <Button type="button" variant="outline" onClick={closeEdit}>
                   {tc('cancel')}
                 </Button>
                 <Button

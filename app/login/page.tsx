@@ -139,7 +139,7 @@ function LoginContent() {
                 </Alert>
               )}
 
-              <Button type="submit" loading={loading} fullWidth size="lg">
+              <Button type="submit" isLoading={loading} size="lg">
                 {t('continue')} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
@@ -238,7 +238,7 @@ function LoginContent() {
                 </Alert>
               )}
 
-              <Button type="submit" loading={loading} fullWidth size="lg">
+              <Button type="submit" isLoading={loading} size="lg">
                 {t('signIn')}
               </Button>
             </form>

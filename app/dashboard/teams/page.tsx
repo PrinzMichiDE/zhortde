@@ -102,19 +102,21 @@ export default function TeamsPage() {
           <div className="bg-card rounded-2xl shadow-xl p-6 border border-gray-100 dark:border-gray-700 mb-8">
             <h2 className="text-xl font-bold text-foreground mb-4">Neues Team erstellen</h2>
             <form onSubmit={handleCreateTeam} className="space-y-4">
-              <Input 
-                label="Team Name"
-                placeholder="z.B. Marketing Department"
-                value={newTeamName}
-                onChange={(e) => setNewTeamName(e.target.value)}
-                required
-              />
+              <label>
+                Team Name
+                <Input 
+                  placeholder="z.B. Marketing Department"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value)}
+                  required
+                />
+              </label>
               {error && <Alert variant="error">{error}</Alert>}
               <div className="flex justify-end gap-3">
                 <Button type="button" variant="outline" onClick={() => setIsCreating(false)}>
                   Abbrechen
                 </Button>
-                <Button type="submit" loading={loading}>
+                <Button type="submit" isLoading={loading}>
                   Team erstellen
                 </Button>
               </div>
@@ -164,10 +166,10 @@ export default function TeamsPage() {
                   </p>
 
                   <div className="flex gap-2">
-                    <Button variant="outline" fullWidth size="sm" onClick={() => router.push(`/dashboard/teams/${team.id}`)}>
+                    <Button variant="outline"  size="sm" onClick={() => router.push(`/dashboard/teams/${team.id}`)}>
                       Einstellungen
                     </Button>
-                    <Button fullWidth size="sm" onClick={() => router.push(`/dashboard/teams/${team.id}`)}>
+                    <Button  size="sm" onClick={() => router.push(`/dashboard/teams/${team.id}`)}>
                       Ansehen &rarr;
                     </Button>
                   </div>

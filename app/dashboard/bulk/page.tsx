@@ -14,7 +14,7 @@ import {
   ArrowDownTrayIcon,
   ExclamationTriangleIcon,
   XCircleIcon,
-  SpinnerIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 import { parseCSV, parseTextInput, type BulkLinkRequest } from '@/lib/bulk-shortening';
 

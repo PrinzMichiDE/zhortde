@@ -158,36 +158,40 @@ export default function RegisterPage() {
               />
             </div>
             
-            <Input
-              id="email"
-              type="email"
-              label={t('email')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t('emailPlaceholder')}
-              required
-              autoComplete="email"
-            />
+            <label htmlFor="email">
+              {t('email')}
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={t('emailPlaceholder')}
+                required
+                autoComplete="email"
+              />
+            </label>
 
             <div className="space-y-2">
-              <Input
-                id="password"
-                type="password"
-                label={t('password')}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setPasswordError('');
-                  setShowPasswordStrength(true);
-                }}
-                onFocus={() => setShowPasswordStrength(true)}
-                placeholder={t('passwordPlaceholder')}
-                required
-                minLength={8}
-                error={!!passwordError}
-                errorText={passwordError}
-                autoComplete="new-password"
-              />
+              <label htmlFor="password">
+                {t('password')}
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setPasswordError('');
+                    setShowPasswordStrength(true);
+                  }}
+                  onFocus={() => setShowPasswordStrength(true)}
+                  placeholder={t('passwordPlaceholder')}
+                  required
+                  minLength={8}
+                  error={!!passwordError}
+                  errorText={passwordError}
+                  autoComplete="new-password"
+                />
+              </label>
               
               {/* Password Strength Indicator */}
               {showPasswordStrength && password.length > 0 && (
@@ -257,7 +261,7 @@ export default function RegisterPage() {
 
             <Button
               type="submit"
-              loading={loading}
+              isLoading={loading}
               fullWidth
               size="lg"
             >

@@ -180,21 +180,23 @@ export default function LinkPixelsPage() {
                     <option value="custom">Custom Pixel (Tracking-Image URL)</option>
                   </select>
                 </div>
-                <Input
-                  id="pixelId"
-                  type="text"
-                  label={formData.pixelType === 'custom' ? 'Tracking-Image URL' : 'Pixel-ID'}
-                  value={formData.pixelId}
-                  onChange={(e) => setFormData({ ...formData, pixelId: e.target.value })}
-                  placeholder={
-                    formData.pixelType === 'facebook'
-                      ? 'z.B. 123456789012345'
-                      : formData.pixelType === 'google'
-                        ? 'z.B. G-ABCDEF123'
-                        : 'https://track.example.com/beacon.png'
-                  }
-                  required
-                />
+                <label>
+                  {formData.pixelType === 'custom' ? 'Tracking-Image URL' : 'Pixel-ID'}
+                  <Input
+                    id="pixelId"
+                    type="text"
+                    value={formData.pixelId}
+                    onChange={(e) => setFormData({ ...formData, pixelId: e.target.value })}
+                    placeholder={
+                      formData.pixelType === 'facebook'
+                        ? 'z.B. 123456789012345'
+                        : formData.pixelType === 'google'
+                          ? 'z.B. G-ABCDEF123'
+                          : 'https://track.example.com/beacon.png'
+                    }
+                    required
+                  />
+                </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
