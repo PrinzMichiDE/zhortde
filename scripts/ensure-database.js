@@ -12,6 +12,17 @@ const { readFileSync, readdirSync, existsSync } = require('fs');
 const path = require('path');
 const postgres = require('postgres');
 
+// Skip silently during Docker build when no database URL is available.
+// The migration will run at container startup via docker-entrypoint.js.
+if (!process.env.DATABASE_URL && !process.env.POSTGRES_URL) {
+  console.warn(
+    '[ensure-database] No DATABASE_URL or POSTGRES_URL set — skipping migration. ' +
+      'A database URL is required at runtime; set SKIP_DB_ENSURE=1 at startup ' +
+      'if the database is already initialized.',
+  );
+  process.exit(0);
+}
+
 const IGNORABLE_PG_CODES = new Set([
   '42P07',
   '42701',
