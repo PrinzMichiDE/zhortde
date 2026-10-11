@@ -51,9 +51,18 @@ function getDb() {
 export const db = new Proxy({} as ReturnType<typeof drizzle<typeof schema>>, {
   get(_target, prop) {
     const dbInstance = getDb();
-    const value = dbInstance[prop as keyof typeof dbInstance];
+    if (dbInstance === null) {
+      throw new Error(
+        'Database is not available. Set DATABASE_URL/POSTGRES_URL (tests may use SQLite).',
+      );
+    }
+    const value = (dbInstance as unknown as Record<PropertyKey, unknown>)[
+      prop as PropertyKey
+    ];
     // Binde Funktionen an die DB-Instanz
-    return typeof value === 'function' ? value.bind(dbInstance) : value;
+    return typeof value === 'function'
+      ? (value as (...args: unknown[]) => unknown).bind(dbInstance)
+      : value;
   },
 });
 

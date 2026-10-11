@@ -58,12 +58,14 @@ export async function POST(
     const sslResult = await verifySslCertificate(domainEntry.domain);
 
     if (sslResult.valid) {
-      await logAuditEvent(
+      await logAuditEvent({
         userId,
-        'ssl_verified',
-        { domain: domainEntry.domain },
-        'success',
-      );
+        action: 'ssl_verified',
+        resourceType: 'custom_domain',
+        resourceId: domainId,
+        changes: { domain: domainEntry.domain },
+        metadata: { result: 'success', expired: sslResult.expired },
+      });
 
       return NextResponse.json({
         message: 'SSL certificate valid',
@@ -73,12 +75,14 @@ export async function POST(
       });
     }
 
-    await logAuditEvent(
+    await logAuditEvent({
       userId,
-      'ssl_verification_failed',
-      { domain: domainEntry.domain },
-      'failure',
-    );
+      action: 'ssl_verification_failed',
+      resourceType: 'custom_domain',
+      resourceId: domainId,
+      changes: { domain: domainEntry.domain },
+      metadata: { result: 'failure' },
+    });
 
     return NextResponse.json(
       {

@@ -252,8 +252,7 @@ export function LinkForm() {
             }}
             placeholder={t('placeholder')}
             required
-            error={!!urlError}
-            errorText={urlError}
+            error={urlError}
           />
           <div className="flex flex-wrap items-center gap-2">
             <Button
@@ -297,8 +296,7 @@ export function LinkForm() {
               placeholder={t('customCodePlaceholder')}
               minLength={3}
               maxLength={50}
-              error={!!customCodeError}
-              errorText={customCodeError}
+              error={customCodeError}
               helperText={t('customCodeHelper')}
               className="flex-1"
             />

@@ -359,8 +359,11 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                 onChange={(e) => setEditForm((prev) => ({ ...prev, longUrl: e.target.value }))}
                 placeholder="https://example.com"
                 required
-                error={editForm.longUrl.trim().length > 0 && !longUrlIsValid}
-                errorText={t('invalidUrl') as string}
+                error={
+                  editForm.longUrl.trim().length > 0 && !longUrlIsValid
+                    ? (t('invalidUrl') as string)
+                    : undefined
+                }
               />
 
               <Input
@@ -369,8 +372,11 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                 onChange={(e) => setEditForm((prev) => ({ ...prev, shortCode: e.target.value }))}
                 required
                 helperText={tLinkForm('customCodeHelper') as string}
-                error={editForm.shortCode.trim().length > 0 && !shortCodeIsValid}
-                errorText={t('invalidShortCode') as string}
+                error={
+                  editForm.shortCode.trim().length > 0 && !shortCodeIsValid
+                    ? (t('invalidShortCode') as string)
+                    : undefined
+                }
               />
 
               <div className="flex items-start gap-3 rounded-xl border border-border bg-gray-50 dark:bg-gray-900/30 p-4">
@@ -397,7 +403,7 @@ export function LinksList({ links: initialLinks }: LinksListProps) {
                 </Button>
                 <Button
                   type="submit"
-                  loading={saving}
+                  isLoading={saving}
                   fullWidth
                   disabled={!longUrlIsValid || !shortCodeIsValid}
                 >

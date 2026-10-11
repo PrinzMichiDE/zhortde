@@ -58,14 +58,14 @@ function makeRequest({
     formData: () => Promise.resolve(undefined),
     text: () => Promise.resolve(''),
     url: 'http://localhost/api/links/bulk',
-  };
+  } as unknown as import('next/server').NextRequest;
 }
 
 // ── helper: given a mocked result, turn it into what the route returns ──
 function normalizeResult(result: unknown): { status: number; body: unknown } {
   // The route always returns a NextResponse.json(...) with a .status and .body
   if (result && typeof result === 'object' && 'status' in result) {
-    return { status: result.status as unknown as number, body: (result as { body: unknown }).body };
+    return { status: result.status as unknown as number, body: (result as unknown as { body: unknown }).body };
   }
   throw new Error('Expected NextResponse object');
 }

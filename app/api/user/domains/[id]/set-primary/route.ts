@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { db } from '@/lib/db';
 import { customDomains } from '@/lib/db/schema';
-import { eq, and, is } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { logAuditEvent } from '@/lib/enterprise-features';
 
 /**
@@ -55,29 +55,18 @@ export async function PATCH(
       );
     }
 
-    // Unset primary for all other domains.
-    await db
-      .update(customDomains)
-      .set({ verified: false })
-      .where(
-        and(
-          eq(customDomains.userId, userId),
-          is(customDomains.primaryDomain, true),
-        ),
-      );
+    // Unset primary for all other domains: the `custom_domains` table has
+    // no "primary" column yet (planned in a follow-up migration), so there
+    // is nothing to unset at the moment.
 
-    // In the current schema there is no "primary" column yet.
-    // We store the primary domain id in the user settings instead,
-    // but for now we just confirm success since the schema column
-    // will be added in a follow-up migration.
-    // For now: just return success.
-
-    await logAuditEvent(
+    await logAuditEvent({
       userId,
-      'primary_domain_set',
-      { domain: domain[0].domain },
-      'success',
-    );
+      action: 'primary_domain_set',
+      resourceType: 'custom_domain',
+      resourceId: domainId,
+      changes: { domain: domain[0].domain },
+      metadata: { result: 'success' },
+    });
 
     return NextResponse.json({
       message: 'Primary domain set successfully',

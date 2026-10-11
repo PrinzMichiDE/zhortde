@@ -249,7 +249,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         (token as Record<string, unknown>).id = user.id;
-        (token as Record<string, unknown>).role = (user as Record<string, unknown>).role;
+        (token as Record<string, unknown>).role = (user as unknown as Record<string, unknown>).role;
         token.iat = Math.floor(Date.now() / 1000);
       }
       return token;

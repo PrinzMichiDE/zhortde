@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
   SPLASH_ANIMATIONS,
-  SPLASH_CATEGORIES,
+  ANIMATION_CATEGORIES,
   SplashAnimation,
 } from '@/lib/splash-animations';
+
+// The module exports ANIMATION_CATEGORIES as { value, label, description } objects;
+// the tests operate on the plain category keys, so derive that list here.
+const SPLASH_CATEGORIES = ANIMATION_CATEGORIES.map((c) => c.value);
 
 describe('SPLASH_ANIMATIONS', () => {
   it('is an array with items', () => {

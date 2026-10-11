@@ -87,7 +87,8 @@ export async function getUserTags(userId: number) {
       color: linkTags.color,
     })
     .from(linkTags)
-    .where(eq(linkTags.userId, userId));
+    .innerJoin(links, eq(linkTags.linkId, links.id))
+    .where(eq(links.userId, userId));
 
   // De-duplicate by tag name, keeping the first occurrence
   const uniqueTags = new Map<string, { id: number; tag: string; color: string | null }>();

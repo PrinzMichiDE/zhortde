@@ -146,7 +146,7 @@ describe('parseUtmUrl', () => {
 describe('validateUtmParameters', () => {
   it('returns valid when parameters are empty', () => {
     const result = validateUtmParameters({});
-    expect(result.isValid).toBe(true);
+    expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
   });
 
@@ -157,7 +157,7 @@ describe('validateUtmParameters', () => {
       campaign: 'welcome',
     };
     const result = validateUtmParameters(params);
-    expect(result.isValid).toBe(true);
+    expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
   });
 
@@ -166,7 +166,7 @@ describe('validateUtmParameters', () => {
       campaign: 'test',
     };
     const result = validateUtmParameters(params);
-    expect(result.isValid).toBe(false);
+    expect(result.valid).toBe(false);
     expect(result.errors).toContain('source is recommended for UTM parameters');
   });
 
@@ -175,7 +175,7 @@ describe('validateUtmParameters', () => {
       source: 'google',
     };
     const result = validateUtmParameters(params);
-    expect(result.isValid).toBe(false);
+    expect(result.valid).toBe(false);
     expect(result.errors).toContain('medium is recommended for UTM parameters');
   });
 
@@ -185,7 +185,7 @@ describe('validateUtmParameters', () => {
       medium: 'cpc',
     };
     const result = validateUtmParameters(params);
-    expect(result.isValid).toBe(false);
+    expect(result.valid).toBe(false);
     expect(result.errors).toContain('campaign is recommended for UTM parameters');
   });
 
@@ -198,11 +198,11 @@ describe('validateUtmParameters', () => {
       content: 'ad_variant_a',
     };
     const result = validateUtmParameters(params);
-    expect(result.isValid).toBe(true);
+    expect(result.valid).toBe(true);
     expect(result.errors).toEqual([]);
   });
 
-  it('counts all fields including optional ones', () => {
+  it('validates all five parameters as a complete set', () => {
     const params: UtmParameters = {
       source: 'facebook',
       medium: 'social',
@@ -211,13 +211,15 @@ describe('validateUtmParameters', () => {
       content: 'cta',
     };
     const result = validateUtmParameters(params);
-    expect(result.fieldCount).toBe(5);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
   });
 
-  it('counts fields for partially filled params', () => {
+  it('validates partially filled params without errors', () => {
     const params: UtmParameters = { source: 'email' };
     const result = validateUtmParameters(params);
-    expect(result.fieldCount).toBe(1);
+    expect(result.valid).toBe(true);
+    expect(result.errors).toEqual([]);
   });
 });
 

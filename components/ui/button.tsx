@@ -51,10 +51,11 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean;
   isLoading?: boolean;
+  fullWidth?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, shape, asChild = false, isLoading = false, children, disabled, ...props }, ref) => {
+  ({ className, variant, size, shape, asChild = false, isLoading = false, fullWidth = false, children, disabled, ...props }, ref) => {
     const baseClassName = cn(
       buttonVariants({ variant, size, shape, className })
     );
@@ -62,6 +63,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // Ensure minimum touch target size (WCAG 2.5.5)
     const finalClassName = cn(baseClassName, {
       'min-h-[44px] min-w-[44px]': !size || size === 'icon',
+      'w-full': fullWidth,
     });
 
     const buttonContent = asChild ? (

@@ -50,7 +50,8 @@ vi.mock('node:http', () => ({
   request: vi.fn(),
 }));
 
-import { processBulkLinks, parseCSV, parseTextInput, type BulkLinkResult } from './bulk-shortening';
+import { parseCSV, parseTextInput } from './bulk-shortening';
+import { processBulkLinks } from './bulk-shortening-db';
 import { db } from './db';
 
 const now = new Date('2026-01-01T00:00:00.000Z');
@@ -260,7 +261,7 @@ describe('processBulkLinks', () => {
     expect(results[0].success).toBe(true);
     const insertCall = vi.mocked(db.insert).mock.calls[0];
     expect(insertCall).toBeDefined();
-    const values = insertCall[0];
+    const values = insertCall[0] as unknown as { values: { password?: string } };
     expect(values.values).toEqual(expect.objectContaining({ password: 'secret' }));
   });
 
@@ -272,7 +273,7 @@ describe('processBulkLinks', () => {
     await processBulkLinks(linksToProcess);
 
     const insertCall = vi.mocked(db.insert).mock.calls[0];
-    const values = insertCall[0];
+    const values = insertCall[0] as unknown as { values: { expiresAt?: Date } };
     const expectedExpiry = new Date('2026-01-31T00:00:00.000Z');
     expect(values.values.expiresAt?.getTime()).toBe(expectedExpiry.getTime());
   });
@@ -285,7 +286,7 @@ describe('processBulkLinks', () => {
     await processBulkLinks(linksToProcess);
 
     const insertCall = vi.mocked(db.insert).mock.calls[0];
-    const values = insertCall[0];
+    const values = insertCall[0] as unknown as { values: { isPublic?: boolean } };
     expect(values.values.isPublic).toBe(false);
   });
 
@@ -349,7 +350,7 @@ describe('processBulkLinks', () => {
     await processBulkLinks(linksToProcess);
 
     const insertCall = vi.mocked(db.insert).mock.calls[0];
-    const values = insertCall[0];
+    const values = insertCall[0] as unknown as { values: { shortCode?: string } };
     expect(values.values.shortCode).toBe('xyz');
   });
 });

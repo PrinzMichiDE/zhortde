@@ -35,7 +35,7 @@ export async function DELETE(
       where: eq(users.id, userId),
     });
 
-    if (targetUser?.isSuperAdmin) {
+    if (targetUser && isSuperAdmin(targetUser.email)) {
       return NextResponse.json(
         { error: 'Cannot delete super admin users' },
         { status: 403 }

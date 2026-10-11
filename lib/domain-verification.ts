@@ -1,9 +1,11 @@
 import dns from 'node:dns';
 import { promisify } from 'node:util';
+import type { TLSSocket } from 'node:tls';
 
 const resolveTxt = promisify(dns.resolveTxt);
 const resolveCname = promisify(dns.resolveCname);
-const resolveAny = promisify(dns.resolveAny);
+const resolve4 = promisify(dns.resolve4);
+const resolve6 = promisify(dns.resolve6);
 
 /**
  * DNS TXT Record Verification
@@ -52,9 +54,13 @@ export async function verifyDnsCnameRecord(
  */
 export async function verifyDnsARecord(hostname: string): Promise<boolean> {
   try {
-    const addresses = await resolveAny(hostname);
-    return addresses.some(
-      (record) => record === 'A' || record === 'AAAA',
+    const [v4, v6] = await Promise.allSettled([
+      resolve4(hostname),
+      resolve6(hostname),
+    ]);
+    return (
+      (v4.status === 'fulfilled' && v4.value.length > 0) ||
+      (v6.status === 'fulfilled' && v6.value.length > 0)
     );
   } catch {
     return false;
@@ -75,57 +81,64 @@ export async function verifySslCertificate(
     // Use the built-in https module to perform the TLS handshake.
     const https = await import('node:https');
 
-    return new Promise((resolve) => {
-      const req = https.request(
-        {
-          hostname: host,
-          port,
-          method: 'GET',
-          rejectUnauthorized: false, // Accept self-signed during verification
-          timeout: 5000,
-        },
-        (res) => {
-          res.destroy();
-          // If we reach here, the TLS handshake succeeded.
-          const cert = res.socket?.getPeerCertificate(true);
-          const raw = cert?.raw;
+    return new Promise<{ valid: boolean; expired: boolean; subject?: string }>(
+      (resolve) => {
+        const req = https.request(
+          {
+            hostname: host,
+            port,
+            method: 'GET',
+            rejectUnauthorized: false, // Accept self-signed during verification
+            timeout: 5000,
+          },
+          (res) => {
+            res.destroy();
+            // If we reach here, the TLS handshake succeeded.
+            const socket = res.socket as unknown as TLSSocket | null;
 
-          if (!raw) {
-            resolve({ valid: false, expired: false });
-            return;
-          }
+            let cert: ReturnType<TLSSocket['getPeerCertificate']> | undefined;
+            try {
+              cert = socket?.getPeerCertificate(true);
+            } catch {
+              cert = undefined;
+            }
 
-          // Parse the certificate to check dates.
-          try {
-            const { createRequire } = await import('node:module');
-            const asn1 = await import('asn1').catch(() => null);
+            if (!cert || !cert.subject) {
+              resolve({ valid: false, expired: false });
+              return;
+            }
 
-            let notAfter = cert.exp;
-            const subject = cert.subject?.CN ?? cert.subject?.toString() ?? '';
+            // `valid_to` is a Date with detail=true, but typed as string in
+            // some @types/node versions – handle both.
+            const rawValidTo: unknown = cert.valid_to;
+            const validToTime =
+              rawValidTo instanceof Date
+                ? rawValidTo.getTime()
+                : typeof rawValidTo === 'string'
+                  ? Date.parse(rawValidTo)
+                  : NaN;
+            const expired = Number.isFinite(validToTime) && validToTime < Date.now();
+            const subject =
+              (cert.subject as { CN?: string }).CN ??
+              cert.subject?.toString() ??
+              '';
 
-            // If we could parse ASN.1, use that; otherwise fall back to
-            // the built-in certificate which already has `exp`.
-            const expired = notAfter < Date.now();
             resolve({ valid: true, expired, subject: subject || undefined });
-          } catch {
-            // Fallback: if the handshake succeeded, consider it valid.
-            const subject = cert.subject?.CN ?? '';
-            resolve({ valid: true, expired: false, subject });
-          }
-        },
-      );
+          },
+        );
 
-      req.on('error', () => {
-        resolve({ valid: false, expired: false });
-      });
+        req.on('error', () => {
+          resolve({ valid: false, expired: false });
+        });
 
-      req.on('timeout', () => {
-        req.destroy();
-        resolve({ valid: false, expired: false });
-      });
+        req.on('timeout', () => {
+          req.destroy();
+          resolve({ valid: false, expired: false });
+        });
 
-      req.end();
-    });
+        req.end();
+      },
+    );
   } catch {
     return { valid: false, expired: false };
   }
@@ -144,7 +157,8 @@ export async function isDomainReachable(domain: string): Promise<boolean> {
       { method: 'HEAD', timeout: 5000 },
       (res) => {
         res.destroy();
-        resolve(res.statusCode >= 200 && res.statusCode < 500);
+        const code = res.statusCode;
+        resolve(code !== undefined && code >= 200 && code < 500);
       },
     );
     req.on('error', () => resolve(false));

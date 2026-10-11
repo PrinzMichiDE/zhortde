@@ -75,7 +75,7 @@ describe('Admin User DELETE', () => {
     request.headers.set('cookie', 'next-auth.session-token=abc123');
 
     const { DELETE } = await import('./route');
-    const response = await DELETE(request, { params: { id: 'user-456' } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'user-456' }) });
 
     expect(response.status).toBe(200);
     const body = await response.json();
@@ -94,7 +94,7 @@ describe('Admin User DELETE', () => {
     });
 
     const { DELETE } = await import('./route');
-    const response = await DELETE(request, { params: { id: 'user-456' } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'user-456' }) });
 
     expect(response.status).toBe(400);
     const body = await response.json();
@@ -108,7 +108,7 @@ describe('Admin User DELETE', () => {
     request.headers.set('cookie', 'next-auth.session-token=abc123');
 
     const { DELETE } = await import('./route');
-    const response = await DELETE(request, { params: { id: 'nonexistent' } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'nonexistent' }) });
 
     expect(response.status).toBe(404);
     const body = await response.json();
@@ -121,7 +121,7 @@ describe('Admin User DELETE', () => {
     const request = buildRequest('http://localhost:3000/api/admin/users/user-456');
 
     const { DELETE } = await import('./route');
-    const response = await DELETE(request, { params: { id: 'user-456' } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'user-456' }) });
 
     expect(response.status).toBe(400);
     const body = await response.json();
@@ -135,7 +135,7 @@ describe('Admin User DELETE', () => {
     request.headers.set('cookie', 'next-auth.session-token=abc123');
 
     const { DELETE } = await import('./route');
-    const response = await DELETE(request, { params: { id: 'user-456' } });
+    const response = await DELETE(request, { params: Promise.resolve({ id: 'user-456' }) });
 
     expect(response.status).toBe(400);
     const body = await response.json();

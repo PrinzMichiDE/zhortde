@@ -32,7 +32,7 @@ vi.mock('next/server', () => ({
   },
 }));
 
-import { handler } from './route';
+import { GET } from './route';
 
 describe('SSO Callback Route', () => {
   beforeEach(() => {

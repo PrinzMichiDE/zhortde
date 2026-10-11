@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 import {
   getCookiePreferences,
@@ -117,7 +118,7 @@ export function CookieConsentBanner() {
               Mit der Annahme stimmen Sie der Verwendung von Analyse- und Marketing-Cookies zu.
               Mehr Infos in unserer{' '}
               <Link
-                href="/privacy"
+                href="/datenschutz"
                 className="font-medium text-primary underline-offset-4 hover:underline focus:outline-none focus-visible:rounded focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
               >
                 Datenschutzerklärung

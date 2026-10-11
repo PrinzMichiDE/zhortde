@@ -13,7 +13,7 @@ export function Footer() {
   const [linkCount, setLinkCount] = useState(INITIAL_STATS.links);
   const t = useTranslations('footer');
   const locale = useLocale();
-  const footerRef = useRef<HTMLFooterElement>(null);
+  const footerRef = useRef<HTMLElement>(null);
 
   const handleStatsApi = useCallback(async () => {
     try {

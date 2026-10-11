@@ -8,6 +8,14 @@ vi.mock('crypto', () => ({
   },
 }));
 
+const mockApiKeysFindFirst = vi.hoisted(() => vi.fn());
+vi.mock('./db', () => ({
+  db: {
+    query: { apiKeys: { findFirst: mockApiKeysFindFirst } },
+    update: () => ({ set: () => ({ where: () => Promise.resolve([]) }) }),
+  },
+}));
+
 import { calculateApiKeyExpiry, rotateApiKey, generateApiKey } from './api-keys';
 
 const now = new Date('2026-01-01T00:00:00.000Z');
@@ -35,17 +43,17 @@ describe('generateApiKey', () => {
 });
 
 describe('rotateApiKey', () => {
-  it('returns the same prefix with a new 64-char suffix', () => {
-    const { prefix } = generateApiKey();
-    const { key, prefix: newPrefix } = rotateApiKey(prefix);
-    expect(newPrefix).toBe(prefix);
-    expect(key).toMatch(/^zhort_[a-f0-9]{64}$/);
-    expect(key).not.toMatch(prefix); // new suffix differs
+  it('returns a new key with a 13-char prefix for an existing key', async () => {
+    mockApiKeysFindFirst.mockResolvedValue({ id: 1, userId: 1 });
+    const result = await rotateApiKey(1, 1);
+    expect(result).not.toBeNull();
+    expect(result?.key).toMatch(/^zhort_[a-f0-9]{64}$/);
+    expect(result?.prefix).toHaveLength(13);
   });
 
-  it('handles invalid prefix gracefully', () => {
-    const { key, prefix } = rotateApiKey('invalid_prefix');
-    expect(key).toMatch(/^zhort_[a-f0-9]{64}$/);
-    expect(prefix).toMatch(/^zhort_[a-f0-9]{12}$/);
+  it('returns null when the key is not found', async () => {
+    mockApiKeysFindFirst.mockResolvedValue(null);
+    const result = await rotateApiKey(999, 1);
+    expect(result).toBeNull();
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 
 // ─── Type Definitions ────────────────────────────────────────────────────────
 
@@ -132,6 +133,55 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {children}
       <ToastRegion />
     </ToastContext.Provider>
+  );
+}
+
+// ─── Toast item ──────────────────────────────────────────────────────────────
+
+const toastStyles: Record<ToastType, string> = {
+  default: 'border-border bg-card text-foreground',
+  success: 'border-green-500/50 bg-green-50 text-green-900 dark:bg-green-900/20 dark:text-green-100',
+  error: 'border-red-500/50 bg-red-50 text-red-900 dark:bg-red-900/20 dark:text-red-100',
+  warning: 'border-yellow-500/50 bg-yellow-50 text-yellow-900 dark:bg-yellow-900/20 dark:text-yellow-100',
+  info: 'border-blue-500/50 bg-blue-50 text-blue-900 dark:bg-blue-900/20 dark:text-blue-100',
+};
+
+function Toast({ toast }: { toast: ToastProps }) {
+  const { removeToast } = useToastContext();
+
+  return (
+    <div
+      role="status"
+      className={cn(
+        'pointer-events-auto flex items-start gap-3 rounded-lg border p-4 shadow-lg',
+        toastStyles[toast.type],
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        {toast.title && <p className="text-sm font-semibold">{toast.title}</p>}
+        {toast.description && (
+          <p className="mt-1 text-sm opacity-90">{toast.description}</p>
+        )}
+        {toast.action}
+      </div>
+      {toast.closeButton && (
+        <button
+          type="button"
+          onClick={() => removeToast(toast.id)}
+          className="rounded p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          aria-label="Benachrichtigung schließen"
+        >
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            aria-hidden="true"
+          >
+            <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+          </svg>
+        </button>
+      )}
+    </div>
   );
 }
 

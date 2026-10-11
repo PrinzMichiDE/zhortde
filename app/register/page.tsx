@@ -187,8 +187,7 @@ export default function RegisterPage() {
                   placeholder={t('passwordPlaceholder')}
                   required
                   minLength={8}
-                  error={!!passwordError}
-                  errorText={passwordError}
+                  error={passwordError}
                   autoComplete="new-password"
                 />
               </label>
@@ -248,8 +247,7 @@ export default function RegisterPage() {
               }}
               placeholder={t('passwordPlaceholder')}
               required
-              error={!!confirmPasswordError}
-              errorText={confirmPasswordError}
+              error={confirmPasswordError}
               autoComplete="new-password"
             />
 

@@ -4,13 +4,15 @@ import React, { InputHTMLAttributes, forwardRef, useId } from 'react';
 import { cn } from '@/lib/utils';
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  label?: React.ReactNode;
   error?: string;
+  success?: boolean;
   helperText?: string;
   'aria-describedby'?: string;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, error, helperText, 'aria-describedby': ariaDescribedBy, id, ...props }, ref) => {
+  ({ className, type, label, error, success, helperText, 'aria-describedby': ariaDescribedBy, id, ...props }, ref) => {
     const generatedId = useId();
     const inputId = id || generatedId;
     const errorId = `${inputId}-error`;
@@ -26,7 +28,16 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
       : ariaDescribedBy;
 
     return (
-      <div className="relative w-full">
+      <div className="w-full">
+        {label && (
+          <label
+            htmlFor={inputId}
+            className="mb-1.5 block text-sm font-medium text-foreground"
+          >
+            {label}
+          </label>
+        )}
+        <div className="relative">
         <input
           type={type}
           id={inputId}
@@ -38,7 +49,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             // Error state
             error && 'border-red-500 focus-visible:border-red-500 focus-visible:ring-red-500 focus-visible:shadow-lg focus-visible:shadow-red-500/10',
             // Success state
-            props.success && 'border-green-500 focus-visible:border-green-500 focus-visible:ring-green-500 focus-visible:shadow-lg focus-visible:shadow-green-500/10',
+            success && 'border-green-500 focus-visible:border-green-500 focus-visible:ring-green-500 focus-visible:shadow-lg focus-visible:shadow-green-500/10',
             className
           )}
           aria-invalid={!!error}
@@ -65,6 +76,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             {helperText}
           </p>
         )}
+        </div>
       </div>
     );
   }

@@ -20,7 +20,7 @@ export function Header() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const t = useTranslations('header');
-  const firstNavItemRef = useRef<HTMLButtonElement | HTMLAnchorElement | null>(null);
+  const firstNavItemRef = useRef<HTMLAnchorElement>(null);
 
   const navigation = [
     { name: t('home'), href: '/', show: true },
@@ -48,7 +48,7 @@ export function Header() {
   }, [mobileMenuOpen]);
 
   // Keyboard navigation for mobile menu
-  const handleMobileNavKeyDown = (e: React.KeyboardEvent) => {
+  const handleMobileNavKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
     if (e.key === 'Escape') {
       setMobileMenuOpen(false);
       return;

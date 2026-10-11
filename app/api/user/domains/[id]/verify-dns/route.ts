@@ -113,12 +113,14 @@ export async function POST(
         .set({ verified: true, verifiedAt: new Date() })
         .where(and(eq(customDomains.id, domainId), eq(customDomains.userId, userId)));
 
-      await logAuditEvent(
+      await logAuditEvent({
         userId,
-        'domain_verified',
-        { domain: domainEntry.domain },
-        'success',
-      );
+        action: 'domain_verified',
+        resourceType: 'custom_domain',
+        resourceId: domainId,
+        changes: { domain: domainEntry.domain },
+        metadata: { result: 'success' },
+      });
 
       return NextResponse.json({
         message: 'Domain verified successfully',

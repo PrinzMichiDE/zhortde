@@ -29,7 +29,7 @@ export function CookiePreferencesModal({
   const [preferences, setPreferences] = useState<CookiePreferences>(initialPreferences);
   const dialogRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const focusableRef = useRef<HTMLButtonElement>(null);
+  const focusableRef = useRef<HTMLInputElement>(null);
 
   // Save focus of the element that opened the dialog
   const lastFocusedElement = useRef<HTMLElement | null>(null);
@@ -227,7 +227,7 @@ export function CookiePreferencesModal({
               <input
                 ref={category.key === 'necessary' ? focusableRef : undefined}
                 type="checkbox"
-                checked={preferences[category.key] ?? category.required}
+                checked={Boolean(preferences[category.key] ?? category.required)}
                 disabled={category.required}
                 onChange={() => handleToggle(category.key)}
                 className="mt-1 h-5 w-5 cursor-pointer rounded border-neutral-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-neutral-600 dark:focus:ring-offset-neutral-800"
