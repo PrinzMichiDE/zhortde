@@ -1,0 +1,130 @@
+# =============================================================================
+# Zentrale Traefik-Reverse-Proxy mit Let's Encrypt (TLS-Challenge)
+# Traefik v3.7 – Docker Provider
+#
+# Setup (einmalig):
+#   1. docker network create traefik
+#   2. E-Mail + Domains unten anpassen
+#   3. docker compose up -d
+#
+# Jeder weitere Container hängt sich an das Network "traefik" und bekommt
+# über Labels einen eigenen Router (Beispiel: whoami, siehe unten).
+# =============================================================================
+
+name: traefik
+
+services:
+  traefik:
+    image: traefik:v3.7
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      # --- API / Dashboard (nur lokal, Port 8080 auf 127.0.0.1) -------------
+      - --api=true
+      - --api.insecure=true
+      # --- Docker Provider ---------------------------------------------------
+      # Nur Container werden proxied, die sich explizit mit Labels anmelden
+      - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
+      - --providers.docker.network=traefik
+      # --- Entrypoints -------------------------------------------------------
+      # Port 80: alles automatisch auf HTTPS umleiten
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      # Port 443: TLS (TLS-ALPN-Challenge braucht 443 geöffnet)
+      - --entrypoints.websecure.address=:443
+      # --- Let's Encrypt (ACME) ----------------------------------------------
+      - --certificatesresolvers.le.acme.email=du@deinedomain.de
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      # TLS-Challenge: schneller und zuverlässiger als die HTTP-Challenge
+      # (wichtig: Ports 80 UND 443 müssen vom Internet erreichbar sein)
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      # Für Tests mit Let's Encrypt Staging-CA uncommenten (kein Rate-Limit):
+      # - --certificatesresolvers.le.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      # --- Healthcheck + Logging ---------------------------------------------
+      - --ping=true
+      - --accesslog=true
+      - --accesslog.format=json
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "443:443"
+      # Dashboard: nur lokal erreichbar. Für Remote-Zugang SSH-Tunnel nutzen:
+      #   ssh -L 8080:127.0.0.1:8080 user@server
+      - "127.0.0.1:8080:8080"
+    volumes:
+      # Docker Provider braucht Sockel-Zugriff (read-only)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Let's Encrypt Zertifikate (persistiert)
+      - letsencrypt:/letsencrypt
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      # --- Dashboard über https (optional) ----------------------------------
+      # Achtung: nur mit Basic-Auth im Internet belassen!
+      # Hash generieren: docker run --rm httpd:alpine htpasswd -nbN admin DEIN_PASSWORT
+      # Dann die Zeile unten anpassen und entkommentieren:
+      #
+      # - traefik.http.middlewares.dashboard-auth.basicauth.users=admin:$2y$10$...
+      # - traefik.http.routers.dashboard.rule=Host(`traefik.deinedomain.de`)
+      # - traefik.http.routers.dashboard.service=api@internal
+      # - traefik.http.routers.dashboard.entrypoints=websecure
+      # - traefik.http.routers.dashboard.tls=true
+      # - traefik.http.routers.dashboard.tls.certresolver=le
+      # - traefik.http.routers.dashboard.middlewares=dashboard-auth
+
+  # =============================================================================
+  # Test-Service: zeigt an, wer gerade fragt (zur Kontrolle, dass's klappt)
+  # Aufruf: https://whoami.deinedomain.de  → danach löschen/kommentieren
+  # =============================================================================
+  whoami:
+    image: traefik/whoami
+    container_name: whoami
+    restart: unless-stopped
+    networks:
+      - traefik
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.deinedomain.de`)
+      - traefik.http.routers.whoami.entrypoints=websecure
+      - traefik.http.routers.whoami.tls=true
+      - traefik.http.routers.whoami.tls.certresolver=le
+
+  # =============================================================================
+  # Beispiel: zhortde (Next.js) hinter Traefik
+  # Port im Label = Container-Port des Services (Next.js: 3000)
+  # =============================================================================
+  # zhortde:
+  #   image: dein-registry/zhortde:latest
+  #   restart: unless-stopped
+  #   environment:
+  #     - NEXT_PUBLIC_BASE_URL=https://zhort.deinedomain.de
+  #   networks:
+  #     - traefik
+  #   labels:
+  #     - traefik.enable=true
+  #     - traefik.http.routers.zhortde.rule=Host(`zhort.deinedomain.de`)
+  #     - traefik.http.routers.zhortde.entrypoints=websecure
+  #     - traefik.http.routers.zhortde.tls=true
+  #     - traefik.http.routers.zhortde.tls.certresolver=le
+  #     - traefik.http.services.zhortde.loadbalancer.server.port=3000
+  #     # Security-Header für alle Routers des Containers (optional)
+  #     - traefik.http.middlewares.security.headers.stsSeconds=31536000
+  #     - traefik.http.middlewares.security.headers.stsIncludeSubdomains=true
+  #     - traefik.http.middlewares.security.headers.frameDeny=true
+  #     - traefik.http.routers.zhortde.middlewares=security
+
+networks:
+  traefik:
+    external: true   # einmalig anlegen: docker network create traefik
+
+volumes:
+  letsencrypt:
