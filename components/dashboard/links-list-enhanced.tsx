@@ -544,7 +544,7 @@ export function LinksListEnhanced({
                 <Button type="button" variant="outline" onClick={() => setEditingLink(null)}>
                   {t('cancel')}
                 </Button>
-                <Button type="submit" loading={saving}>
+                <Button type="submit" isLoading={saving}>
                   {t('save')}
                 </Button>
               </div>

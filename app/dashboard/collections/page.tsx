@@ -153,19 +153,23 @@ export default function CollectionsPage() {
         {showCreateForm && (
           <Card className="p-6 mb-6">
             <form onSubmit={handleCreate} className="space-y-4">
-              <Input
-                label="Collection Name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="My Collection"
-                required
-              />
-              <Input
-                label="Description (optional)"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="A collection for..."
-              />
+              <label>
+                Collection Name
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="My Collection"
+                  required
+                />
+              </label>
+              <label>
+                Description (optional)
+                <Input
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="A collection for..."
+                />
+              </label>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-2">Color</label>
@@ -202,7 +206,7 @@ export default function CollectionsPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button type="submit" loading={submitting}>
+                <Button type="submit" isLoading={submitting}>
                   Create Collection
                 </Button>
                 <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)}>
@@ -263,7 +267,7 @@ export default function CollectionsPage() {
                 )}
                 <Button
                   variant="outline"
-                  fullWidth
+                  
                   onClick={() => router.push(`/dashboard/collections/${collection.id}`)}
                 >
                   View Links

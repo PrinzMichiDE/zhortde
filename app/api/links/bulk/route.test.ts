@@ -21,7 +21,7 @@ vi.mock('next-auth', () => ({
   getServerSession: mockGetServerSession,
 }));
 
-vi.mock('next/server', () => mockNextResponse);
+vi.mock('next/server', () => ({ ...mockNextResponse, NextResponse: mockNextResponse }));
 
 vi.mock('@/lib/db/init-stats', () => ({
   incrementStat: mockIncrementStat,
@@ -65,7 +65,7 @@ function makeRequest({
 function normalizeResult(result: unknown): { status: number; body: unknown } {
   // The route always returns a NextResponse.json(...) with a .status and .body
   if (result && typeof result === 'object' && 'status' in result) {
-    return { status: result.status as number, body: (result as { body: unknown }).body };
+    return { status: result.status as unknown as number, body: (result as { body: unknown }).body };
   }
   throw new Error('Expected NextResponse object');
 }

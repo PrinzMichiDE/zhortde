@@ -213,15 +213,17 @@ export default function ABTestingPage() {
           <CardContent>
             {showForm && (
               <form onSubmit={handleSubmit} className="space-y-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <Input
-                  id="variantUrl"
-                  type="url"
-                  label="Variant URL"
-                  value={formData.variantUrl}
-                  onChange={(e) => setFormData({ ...formData, variantUrl: e.target.value })}
-                  placeholder="https://example.com/variant"
-                  required
-                />
+                <label>
+                  Variant URL
+                  <Input
+                    id="variantUrl"
+                    type="url"
+                    value={formData.variantUrl}
+                    onChange={(e) => setFormData({ ...formData, variantUrl: e.target.value })}
+                    placeholder="https://example.com/variant"
+                    required
+                  />
+                </label>
                 <div>
                   <label className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Traffic-Anteil: {formData.trafficPercentage}%

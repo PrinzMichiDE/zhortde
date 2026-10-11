@@ -17,6 +17,7 @@ import { addRecentLink } from '@/lib/recent-links';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Alert } from './ui/alert';
+import { Label } from './ui/label';
 import { SmartSuggestions } from './smart-suggestions';
 import { UtmBuilder } from './utm-builder';
 import { RecentLinks } from './recent-links';
@@ -28,6 +29,10 @@ export function LinkForm() {
   const [longUrl, setLongUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [isPublic, setIsPublic] = useState(true);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formSuccess, setFormSuccess] = useState(false);
+  const liveRegionRef = useRef<HTMLDivElement>(null);
   const [password, setPassword] = useState('');
   const [expiresIn, setExpiresIn] = useState<string>('never');
   const [shortUrl, setShortUrl] = useState('');
@@ -324,20 +329,20 @@ export function LinkForm() {
 
         {showAdvanced && (
           <div id="advanced-options" className="space-y-4 p-5 bg-muted/40 rounded-lg border border-border">
-            <Input
-              id="password"
-              type="password"
-              label={
-                <span className="flex items-center">
-                  <LockClosedIcon className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
-                  {t('passwordProtection')}
-                </span>
-              }
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t('passwordPlaceholder')}
-              helperText={t('passwordHelper')}
-            />
+            <label>
+              <span className="flex items-center">
+                <LockClosedIcon className="h-4 w-4 mr-2 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+                {t('passwordProtection')}
+              </span>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={t('passwordPlaceholder')}
+                helperText={t('passwordHelper')}
+              />
+            </label>
 
             <div>
               <label htmlFor="expiresIn" className="flex items-center text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
@@ -426,7 +431,7 @@ export function LinkForm() {
           </Alert>
         )}
 
-        <Button type="submit" loading={loading} fullWidth size="lg">
+        <Button type="submit" isLoading={loading} size="lg">
           {loading ? t('shortening') : t('shortenUrl')}
         </Button>
       </form>

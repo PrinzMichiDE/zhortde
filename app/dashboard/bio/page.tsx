@@ -190,12 +190,14 @@ export default function BioDashboardPage() {
                     <p className="mt-1 text-xs text-gray-500">Dies ist die Adresse Ihres Profils.</p>
                   </div>
 
-                  <Input 
-                    label="Anzeigename" 
-                    value={displayName} 
-                    onChange={(e) => setDisplayName(e.target.value)} 
-                    placeholder="Max Mustermann"
-                  />
+                  <label>
+                    Anzeigename
+                    <Input 
+                      value={displayName} 
+                      onChange={(e) => setDisplayName(e.target.value)} 
+                      placeholder="Max Mustermann"
+                    />
+                  </label>
 
                   <div>
                     <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Biografie</label>
@@ -292,7 +294,7 @@ export default function BioDashboardPage() {
                  <span className="text-sm text-gray-500 hidden sm:inline">
                    Vergessen Sie nicht zu speichern!
                  </span>
-                 <Button type="submit" loading={loading} size="lg" className="w-full sm:w-auto shadow-lg shadow-indigo-500/20">
+                 <Button type="submit" isLoading={loading} size="lg" className="w-full sm:w-auto shadow-lg shadow-indigo-500/20">
                    Speichern & Veröffentlichen
                  </Button>
               </div>

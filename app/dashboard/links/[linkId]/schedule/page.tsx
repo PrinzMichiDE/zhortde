@@ -169,20 +169,24 @@ export default function LinkSchedulePage() {
             {showForm && (
               <form onSubmit={handleSubmit} className="space-y-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    id="activeFrom"
-                    type="datetime-local"
-                    label="Aktiv ab"
-                    value={formData.activeFrom}
-                    onChange={(e) => setFormData({ ...formData, activeFrom: e.target.value })}
-                  />
-                  <Input
-                    id="activeUntil"
-                    type="datetime-local"
-                    label="Aktiv bis"
-                    value={formData.activeUntil}
-                    onChange={(e) => setFormData({ ...formData, activeUntil: e.target.value })}
-                  />
+                  <label>
+                    Aktiv ab
+                    <Input
+                      id="activeFrom"
+                      type="datetime-local"
+                      value={formData.activeFrom}
+                      onChange={(e) => setFormData({ ...formData, activeFrom: e.target.value })}
+                    />
+                  </label>
+                  <label>
+                    Aktiv bis
+                    <Input
+                      id="activeUntil"
+                      type="datetime-local"
+                      value={formData.activeUntil}
+                      onChange={(e) => setFormData({ ...formData, activeUntil: e.target.value })}
+                    />
+                  </label>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -201,15 +205,17 @@ export default function LinkSchedulePage() {
                       <option value="Asia/Tokyo">Asia/Tokyo (JST)</option>
                     </select>
                   </div>
-                  <Input
-                    id="fallbackUrl"
-                    type="url"
-                    label="Fallback URL (optional)"
-                    value={formData.fallbackUrl}
-                    onChange={(e) => setFormData({ ...formData, fallbackUrl: e.target.value })}
-                    placeholder="https://example.com/expired"
-                    helperText="URL die angezeigt wird, wenn der Link nicht aktiv ist"
-                  />
+                  <label>
+                    Fallback URL (optional)
+                    <Input
+                      id="fallbackUrl"
+                      type="url"
+                      value={formData.fallbackUrl}
+                      onChange={(e) => setFormData({ ...formData, fallbackUrl: e.target.value })}
+                      placeholder="https://example.com/expired"
+                      helperText="URL die angezeigt wird, wenn der Link nicht aktiv ist"
+                    />
+                  </label>
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" variant="default">

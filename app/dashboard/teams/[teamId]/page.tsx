@@ -232,7 +232,7 @@ export default function TeamDetailsPage() {
                         <Button type="button" variant="outline" onClick={() => setIsInviting(false)}>
                           Abbrechen
                         </Button>
-                        <Button type="submit" loading={inviteLoading}>
+                        <Button type="submit" isLoading={inviteLoading}>
                           Einladen
                         </Button>
                       </div>

@@ -260,21 +260,25 @@ export default function EnterpriseDashboardPage() {
 
               {showWhitelistForm && (
                 <form onSubmit={handleAddWhitelist} className="mb-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg space-y-3">
-                  <Input
-                    label="IP Address or CIDR"
-                    value={ipAddress}
-                    onChange={(e) => setIpAddress(e.target.value)}
-                    placeholder="192.168.1.1 or 192.168.1.0/24"
-                    required
-                  />
-                  <Input
-                    label="Description (optional)"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Office network"
-                  />
+                  <label>
+                    IP Address or CIDR
+                    <Input
+                      value={ipAddress}
+                      onChange={(e) => setIpAddress(e.target.value)}
+                      placeholder="192.168.1.1 or 192.168.1.0/24"
+                      required
+                    />
+                  </label>
+                  <label>
+                    Description (optional)
+                    <Input
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Office network"
+                    />
+                  </label>
                   <div className="flex gap-2">
-                    <Button type="submit" loading={submitting}>
+                    <Button type="submit" isLoading={submitting}>
                       Add
                     </Button>
                     <Button

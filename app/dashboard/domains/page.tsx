@@ -183,7 +183,7 @@ export default function DomainsPage() {
                   className="flex-1 px-4 py-2 border border-input rounded-lg bg-background text-foreground text-sm"
                   required
                 />
-                <Button type="submit" loading={submitting}>
+                <Button type="submit" isLoading={submitting}>
                   {t('save')}
                 </Button>
               </form>
@@ -276,7 +276,7 @@ export default function DomainsPage() {
                               size="sm"
                               variant="outline"
                               onClick={() => handleVerify(domain.id)}
-                              loading={verifyingId === domain.id}
+                              isLoading={verifyingId === domain.id}
                             >
                               <ArrowPathIcon className="h-4 w-4 mr-1" />
                               {t('verify')}

@@ -224,12 +224,14 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label={t('syntaxLanguage') as string}
-                  value={editForm.language}
-                  onChange={(e) => setEditForm({...editForm, language: e.target.value})}
-                  placeholder="javascript, python, css"
-                />
+                <label>
+                  {t('syntaxLanguage')}
+                  <Input
+                    value={editForm.language}
+                    onChange={(e) => setEditForm({...editForm, language: e.target.value})}
+                    placeholder="javascript, python, css"
+                  />
+                </label>
                 
                 <div className="flex items-center gap-2 pt-8">
                   <input
@@ -249,7 +251,7 @@ export function PastesList({ pastes: initialPastes }: PastesListProps) {
                 <Button type="button" variant="outline" onClick={() => setEditingPaste(null)}>
                   {tc('cancel')}
                 </Button>
-                <Button type="submit" loading={saving}>
+                <Button type="submit" isLoading={saving}>
                   {t('saveChanges')}
                 </Button>
               </div>

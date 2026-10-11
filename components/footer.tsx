@@ -1,32 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { HeartIcon, LinkIcon, UserIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { HeartIcon, LinkIcon, UserIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
 import { CookieSettingsButton } from './cookie-settings-button';
 import { ZhortLogo } from './zhort-logo';
 import { INITIAL_STATS } from '@/lib/stats-config';
 import { useTranslations, useLocale } from 'next-intl';
+import { Button } from './ui/button';
 
 export function Footer() {
   const [visitorCount, setVisitorCount] = useState(INITIAL_STATS.visitors);
   const [linkCount, setLinkCount] = useState(INITIAL_STATS.links);
   const t = useTranslations('footer');
   const locale = useLocale();
+  const footerRef = useRef<HTMLFooterElement>(null);
+
+  const handleStatsApi = useCallback(async () => {
+    try {
+      const response = await fetch('/api/counter', { method: 'POST' });
+      const data = await response.json();
+      setVisitorCount(data.visitors || 0);
+      setLinkCount(data.links || 0);
+    } catch {
+      setVisitorCount(INITIAL_STATS.visitors);
+      setLinkCount(INITIAL_STATS.links);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const response = await fetch('/api/counter', { method: 'POST' });
-        const data = await response.json();
-        setVisitorCount(data.visitors || 0);
-        setLinkCount(data.links || 0);
-      } catch {
-        setVisitorCount(INITIAL_STATS.visitors);
-        setLinkCount(INITIAL_STATS.links);
-      }
-    };
-    loadStats();
-  }, []);
+    handleStatsApi();
+  }, [handleStatsApi]);
 
   const formatNumber = (num: number) => num.toLocaleString(locale);
 
